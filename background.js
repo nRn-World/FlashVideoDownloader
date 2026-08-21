@@ -1,4 +1,4 @@
-// Flash Video Downloader - Background Service Worker (v3.0 PRO)
+// Flash Video Downloader - Background Service Worker (v3.0 PRO) with Offscreen Document Saver
 
 const tabMedia = new Map();
 const activeDownloads = new Map();
@@ -206,17 +206,14 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   tabMedia.delete(tabId);
 });
 
-// Fast binary to base64 Data URL converter
-async function blobToDataURL(blob) {
-  const buffer = await blob.arrayBuffer();
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  const len = bytes.byteLength;
-  const CHUNK_SZ = 0x8000;
-  for (let i = 0; i < len; i += CHUNK_SZ) {
-    binary += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + CHUNK_SZ, len)));
-  }
-  return `data:video/mp4;base64,${btoa(binary)}`;
+// Säkerställ att ett offscreen-dokument finns för att hantera storskalig filsparande
+async function ensureOffscreenDocument() {
+  if (await chrome.offscreen.hasDocument()) return;
+  await chrome.offscreen.createDocument({
+    url: 'offscreen.html',
+    reasons: ['BLOBS'],
+    justification: 'Create object URLs and save assembled large video streams directly to disk'
+  });
 }
 
 // Download History Handler
@@ -224,9 +221,8 @@ async function saveDownloadToHistory(item) {
   try {
     const data = await chrome.storage.local.get(['downloadHistory', 'autoDelete24h']);
     let history = data.downloadHistory || [];
-    const autoDelete = data.autoDelete24h !== false; // default true
+    const autoDelete = data.autoDelete24h !== false;
 
-    // Clean up expired items (> 24h) if enabled
     const now = Date.now();
     if (autoDelete) {
       const oneDayAgo = now - (24 * 60 * 60 * 1000);
@@ -242,7 +238,6 @@ async function saveDownloadToHistory(item) {
       timestamp: now
     });
 
-    // Keep max 50 items
     if (history.length > 50) history = history.slice(0, 50);
 
     await chrome.storage.local.set({ downloadHistory: history });
@@ -251,7 +246,6 @@ async function saveDownloadToHistory(item) {
   }
 }
 
-// Check and purge history on startup / interval
 async function purgeExpiredHistory() {
   try {
     const data = await chrome.storage.local.get(['downloadHistory', 'autoDelete24h']);
@@ -422,30 +416,31 @@ async function startBackgroundHlsDownload(downloadId, playlistUrl, filename) {
     downloadState.status = 'merging';
     chrome.action.setBadgeText({ text: '💾' });
 
-    // 3. Merge
-    const mergedBlob = new Blob(buffers, { type: 'video/mp4' });
-    downloadState.totalBytes = mergedBlob.size;
+    // 3. Spara och trigga nedladdning via Offscreen Document (helt befriad från storleksbegränsningar och behörighetsfel)
+    await ensureOffscreenDocument();
 
-    // 4. Save to history
-    saveDownloadToHistory({
+    const saveResponse = await chrome.runtime.sendMessage({
+      type: 'DOWNLOAD_CHUNKS',
+      chunks: buffers,
       filename: filename,
-      url: playlistUrl,
-      size: formatBytes(mergedBlob.size),
-      duration: downloadState.totalDurationFormatted || 'Stream'
+      mimeType: 'video/mp4'
     });
 
-    // 5. Convert and download
-    const dataUrl = await blobToDataURL(mergedBlob);
-
-    chrome.downloads.download({
-      url: dataUrl,
-      filename: filename,
-      saveAs: true
-    }, () => {
+    if (saveResponse && saveResponse.status === 'ok') {
+      downloadState.totalBytes = saveResponse.size || totalLoadedBytes;
       downloadState.status = 'completed';
       downloadState.percent = 100;
       updateBadge();
-    });
+
+      saveDownloadToHistory({
+        filename: filename,
+        url: playlistUrl,
+        size: formatBytes(saveResponse.size || totalLoadedBytes),
+        duration: downloadState.totalDurationFormatted || 'Stream'
+      });
+    } else {
+      throw new Error(saveResponse?.error || 'Failed to trigger file download via offscreen writer.');
+    }
 
   } catch (err) {
     console.error('Background HLS download error:', err);
