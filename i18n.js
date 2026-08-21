@@ -35,7 +35,8 @@ const i18n = {
     downloadedOf: "Downloaded",
     mergingVideo: "Merging all parts into full MP4 video file...",
     savedToComputer: "Video saved to your computer.",
-    unknownDuration: "Stream"
+    unknownDuration: "Stream",
+    activeDownloads: "⚡ Active Downloads"
   },
   sv: {
     title: "Flash Video Downloader",
@@ -73,7 +74,8 @@ const i18n = {
     downloadedOf: "Nedladdat",
     mergingVideo: "Sammanfogar alla delar till en komplett MP4-videofil...",
     savedToComputer: "Videon har sparats till din dator.",
-    unknownDuration: "Ström"
+    unknownDuration: "Ström",
+    activeDownloads: "⚡ Aktiva Nedladdningar"
   },
   tr: {
     title: "Flash Video Downloader",
@@ -111,7 +113,8 @@ const i18n = {
     downloadedOf: "İndirilen",
     mergingVideo: "Tüm parçalar tam MP4 dosyasına birleştiriliyor...",
     savedToComputer: "Video bilgisayarınıza kaydedildi.",
-    unknownDuration: "Yayın"
+    unknownDuration: "Yayın",
+    activeDownloads: "⚡ Aktif İndirmeler"
   },
   es: {
     title: "Flash Video Downloader",
@@ -149,7 +152,8 @@ const i18n = {
     downloadedOf: "Descargado",
     mergingVideo: "Uniendo todas las partes en un archivo MP4...",
     savedToComputer: "Video guardado en su computadora.",
-    unknownDuration: "Stream"
+    unknownDuration: "Stream",
+    activeDownloads: "⚡ Descargas Activas"
   },
   fr: {
     title: "Flash Video Downloader",
@@ -187,7 +191,8 @@ const i18n = {
     downloadedOf: "Téléchargé",
     mergingVideo: "Fusion de toutes les parties en fichier MP4 complet...",
     savedToComputer: "Vidéo enregistrée sur votre ordinateur.",
-    unknownDuration: "Flux"
+    unknownDuration: "Flux",
+    activeDownloads: "⚡ Téléchargements Actifs"
   },
   ar: {
     title: "Flash Video Downloader",
@@ -225,6 +230,7 @@ const i18n = {
     downloadedOf: "تم تنزيل",
     mergingVideo: "جارٍ دمج جميع الأجزاء في ملف MP4 كامل...",
     savedToComputer: "تم حفظ الفيديو على جهاز الكمبيوتر الخاص بك.",
-    unknownDuration: "بث"
+    unknownDuration: "بث",
+    activeDownloads: "⚡ التنزيلات النشطة"
   }
 };

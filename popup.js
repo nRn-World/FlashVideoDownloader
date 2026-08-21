@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('txt-lang-title').textContent = t('language');
     document.getElementById('txt-history-title').textContent = t('downloadHistory');
     document.getElementById('txt-auto-delete').textContent = t('autoDelete24h');
+    document.getElementById('txt-active-downloads').textContent = t('activeDownloads');
     btnClearHistory.textContent = t('clearHistory');
     btnBackMain.textContent = t('back');
 
@@ -198,13 +199,82 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function checkOngoingDownloads() {
+    const activeSection = document.getElementById('active-downloads-section');
+    const activeList = document.getElementById('active-downloads-list');
+
     try {
       const res = await chrome.runtime.sendMessage({ type: 'GET_ALL_DOWNLOADS' });
       if (res && res.downloads) {
+        // Update any matching media cards (same tab)
         res.downloads.forEach(dl => {
           const card = document.querySelector(`.media-card[data-url="${CSS.escape(dl.url)}"]`);
           if (card) {
             updateCardDownloadState(card, dl);
+          }
+        });
+
+        // Render global Active Downloads banner (visible from ANY window)
+        const activeDls = res.downloads.filter(dl => dl.status === 'downloading' || dl.status === 'merging');
+        const completedRecent = res.downloads.filter(dl => dl.status === 'completed');
+
+        const showList = [...activeDls, ...completedRecent];
+
+        if (showList.length === 0) {
+          activeSection.classList.add('hidden');
+          activeList.innerHTML = '';
+          return;
+        }
+
+        activeSection.classList.remove('hidden');
+        document.getElementById('txt-active-downloads').textContent = t('activeDownloads');
+
+        // Update or create cards for each active download
+        showList.forEach(dl => {
+          const cardId = `adl-${CSS.escape(dl.id)}`;
+          let card = activeList.querySelector(`#${cardId}`);
+
+          if (!card) {
+            card = document.createElement('div');
+            card.className = 'active-dl-card';
+            card.id = cardId;
+            card.innerHTML = `
+              <div class="adl-title"></div>
+              <div class="adl-progress-bar-bg"><div class="adl-progress-bar-fill"></div></div>
+              <div class="adl-info"><span class="adl-percent"></span><span class="adl-segments"></span></div>
+              <div class="adl-duration"></div>
+            `;
+            activeList.appendChild(card);
+          }
+
+          card.querySelector('.adl-title').textContent = dl.filename || 'Video';
+          card.querySelector('.adl-progress-bar-fill').style.width = `${dl.percent || 0}%`;
+
+          if (dl.status === 'downloading') {
+            let durationStr = '';
+            if (dl.totalDurationFormatted) {
+              durationStr = `${dl.downloadedDurationFormatted || '0s'} / ${dl.totalDurationFormatted}`;
+            }
+            card.querySelector('.adl-percent').textContent = `${t('downloading')} ${dl.percent}%`;
+            card.querySelector('.adl-segments').textContent = `${dl.completed || 0}/${dl.total || '?'}`;
+            card.querySelector('.adl-duration').textContent = durationStr;
+          } else if (dl.status === 'merging') {
+            card.querySelector('.adl-percent').textContent = t('saving');
+            card.querySelector('.adl-segments').textContent = '100%';
+            card.querySelector('.adl-duration').textContent = t('mergingVideo');
+            card.querySelector('.adl-progress-bar-fill').style.width = '100%';
+          } else if (dl.status === 'completed') {
+            card.querySelector('.adl-percent').textContent = t('downloaded');
+            card.querySelector('.adl-segments').textContent = '✅';
+            card.querySelector('.adl-duration').textContent = dl.totalDurationFormatted || t('savedToComputer');
+            card.querySelector('.adl-progress-bar-fill').style.width = '100%';
+          }
+        });
+
+        // Remove cards for downloads that are no longer active
+        const activeIds = new Set(showList.map(dl => `adl-${CSS.escape(dl.id)}`));
+        activeList.querySelectorAll('.active-dl-card').forEach(card => {
+          if (!activeIds.has(card.id)) {
+            card.remove();
           }
         });
       }

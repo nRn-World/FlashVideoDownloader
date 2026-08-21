@@ -587,3 +587,76 @@ body {
   color: var(--text-muted);
   text-align: center;
 }
+
+/* Active Downloads Banner */
+.active-downloads-section {
+  background: rgba(16, 185, 129, 0.06);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 10px 16px;
+}
+
+.active-dl-header {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #34d399;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.active-downloads-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.active-dl-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.active-dl-card .adl-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.active-dl-card .adl-progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.active-dl-card .adl-progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  border-radius: 4px;
+  transition: width 0.15s ease;
+}
+
+.active-dl-card .adl-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.70rem;
+  color: #93c5fd;
+  font-weight: 500;
+}
+
+.active-dl-card .adl-duration {
+  font-size: 0.68rem;
+  color: #cbd5e1;
+  text-align: center;
+}
+

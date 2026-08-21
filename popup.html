@@ -26,6 +26,16 @@
 
     <!-- Main View: Video Detector -->
     <div id="view-main" class="view-panel">
+      <!-- Active Downloads Banner (always visible, all windows) -->
+      <div id="active-downloads-section" class="active-downloads-section hidden">
+        <div class="active-dl-header">
+          <span id="txt-active-downloads">⚡ Active Downloads</span>
+        </div>
+        <div id="active-downloads-list" class="active-downloads-list">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
       <!-- Filter Bar -->
       <div class="filter-bar">
         <input type="text" id="search-input" placeholder="Search detected videos..." />
