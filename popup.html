@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flash Video Downloader</title>
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <img src="icons/icon32.png" alt="FVD" class="logo-img" />
+        <div class="brand-text">
+          <h1 id="txt-app-title">Flash Video Downloader</h1>
+          <span class="version" id="txt-app-version">v3.0 PRO</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-settings-toggle" title="Settings & History" class="icon-btn">⚙️</button>
+        <button id="btn-refresh" title="Refresh" class="icon-btn">🔄</button>
+        <button id="btn-clear" title="Clear list" class="icon-btn">🗑️</button>
+      </div>
+    </header>
+
+    <!-- Main View: Video Detector -->
+    <div id="view-main" class="view-panel">
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <input type="text" id="search-input" placeholder="Search detected videos..." />
+        <div class="category-tabs">
+          <button class="tab-btn active" data-filter="all"><span id="tab-all-text">All</span> (<span id="count-all">0</span>)</button>
+          <button class="tab-btn" data-filter="video" id="tab-video-text">Video</button>
+          <button class="tab-btn" data-filter="stream" id="tab-stream-text">Streams</button>
+        </div>
+      </div>
+
+      <!-- Video List -->
+      <main class="media-container">
+        <div id="media-list" class="media-list">
+          <!-- Rendered dynamically by popup.js -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state hidden">
+          <div class="empty-icon">🎬</div>
+          <h3 id="txt-empty-title">No videos detected yet</h3>
+          <p id="txt-empty-desc">Start playing the video on the web page to capture the stream automatically!</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="loading-state">
+          <div class="spinner"></div>
+          <p id="txt-loading">Sniffing web page and network...</p>
+        </div>
+      </main>
+    </div>
+
+    <!-- Settings & History View -->
+    <div id="view-settings" class="view-panel hidden">
+      <div class="settings-container">
+        <div class="settings-section">
+          <h3 id="txt-lang-title">Language</h3>
+          <div class="select-wrapper">
+            <select id="select-language">
+              <option value="en">English (Default)</option>
+              <option value="sv">Svenska</option>
+              <option value="tr">Türkçe</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+              <option value="ar">العربية (Arabic)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="section-header-flex">
+            <h3 id="txt-history-title">Download History</h3>
+            <button id="btn-clear-history" class="btn-text-action">Clear</button>
+          </div>
+          
+          <label class="toggle-control">
+            <input type="checkbox" id="chk-auto-delete" checked />
+            <span class="toggle-label" id="txt-auto-delete">Auto-delete history after 24 hours</span>
+          </label>
+
+          <div id="history-list" class="history-list">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <div class="settings-footer-btn">
+          <button id="btn-back-main" class="btn-primary-action">← Back to Videos</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <span id="txt-footer">Captures MP4, WEBM, FLV, M3U8 & more</span>
+    </footer>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
