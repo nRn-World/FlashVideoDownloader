@@ -27,6 +27,58 @@ document.addEventListener('DOMContentLoaded', async () => {
   let activeTabId = null;
   let currentlyPlayingCard = null;
   let pollInterval = null;
+  let pendingCancel = null; // { id, url }
+  const confirmModal = document.getElementById('confirm-stop-modal');
+  const txtConfirmTitle = document.getElementById('txt-confirm-title');
+  const txtConfirmDesc = document.getElementById('txt-confirm-desc');
+  const btnConfirmYes = document.getElementById('btn-confirm-yes');
+  const btnConfirmNo = document.getElementById('btn-confirm-no');
+
+  // Smooth 1-100 animation helpers
+  const smoothPercents = new Map(); // downloadId -> last displayed percent
+  const smoothTimers = new Map(); // downloadId -> interval id
+  function animatePercentCounter(downloadId, targetPercent, onStep) {
+    let current = smoothPercents.get(downloadId);
+    if (current === undefined) {
+      // start from 0 so first animation shows 0→target step-by-step
+      current = 0;
+      smoothPercents.set(downloadId, 0);
+      if (targetPercent === 0) { onStep(0); return; }
+    }
+    if (current === targetPercent) {
+      onStep(targetPercent);
+      return;
+    }
+    if (smoothTimers.has(downloadId)) {
+      clearInterval(smoothTimers.get(downloadId));
+      smoothTimers.delete(downloadId);
+    }
+    const dir = targetPercent > current ? 1 : -1;
+    const steps = Math.abs(targetPercent - current);
+    const intervalMs = Math.max(18, Math.min(50, 320 / steps));
+    const timer = setInterval(() => {
+      current += dir;
+      smoothPercents.set(downloadId, current);
+      onStep(current);
+      if (current === targetPercent) {
+        clearInterval(timer);
+        smoothTimers.delete(downloadId);
+      }
+    }, intervalMs);
+    smoothTimers.set(downloadId, timer);
+  }
+
+  // Instant push update (no 500ms poll lag) - listen to OFFSCREEN_PROGRESS via background echo
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'OFFSCREEN_PROGRESS' && msg.state) {
+      const dl = msg.state;
+      // update card immediately if visible
+      const card = document.querySelector(`.media-card[data-url="${CSS.escape(dl.url)}"]`);
+      if (card) updateCardDownloadState(card, dl);
+      // also trigger active list refresh throttled
+      checkOngoingDownloads();
+    }
+  });
 
   // Hämta sparade inställningar
   const stored = await chrome.storage.local.get(['appLanguage', 'autoDelete24h']);
@@ -60,10 +112,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('txt-active-downloads').textContent = t('activeDownloads');
     btnClearHistory.textContent = t('clearHistory');
     btnBackMain.textContent = t('back');
+    if (txtConfirmTitle) txtConfirmTitle.textContent = t('confirmStopTitle');
+    if (txtConfirmDesc) txtConfirmDesc.textContent = t('confirmStopDesc');
+    if (btnConfirmYes) btnConfirmYes.textContent = t('confirmYes');
+    if (btnConfirmNo) btnConfirmNo.textContent = t('confirmNo');
 
     renderList();
     renderHistory();
   }
+
+  function openConfirmModal(downloadId, url) {
+    pendingCancel = { id: downloadId, url: url || '' };
+    if (txtConfirmTitle) txtConfirmTitle.textContent = t('confirmStopTitle');
+    if (txtConfirmDesc) txtConfirmDesc.textContent = t('confirmStopDesc');
+    confirmModal.classList.remove('hidden');
+  }
+  function closeConfirmModal() {
+    confirmModal.classList.add('hidden');
+    pendingCancel = null;
+  }
+  if (btnConfirmNo) btnConfirmNo.addEventListener('click', closeConfirmModal);
+  if (confirmModal) confirmModal.addEventListener('click', (e) => { if (e.target === confirmModal) closeConfirmModal(); });
+  if (btnConfirmYes) btnConfirmYes.addEventListener('click', async () => {
+    if (!pendingCancel) return;
+    const { id, url } = pendingCancel;
+    closeConfirmModal();
+    try {
+      const dlRes = await chrome.runtime.sendMessage({ type: 'GET_ALL_DOWNLOADS' });
+      const dl = dlRes && dlRes.downloads ? dlRes.downloads.find(d => d.id === id) : null;
+      const isActive = dl && (dl.status === 'downloading' || dl.status === 'paused' || dl.status === 'merging');
+      if (isActive) {
+        await chrome.runtime.sendMessage({ type: 'CANCEL_DOWNLOAD', downloadId: id });
+      } else {
+        await chrome.runtime.sendMessage({ type: 'REMOVE_DOWNLOAD_ENTRY', downloadId: id });
+      }
+      // hide progress on matching card
+      if (url) {
+        const card = document.querySelector(`.media-card[data-url="${CSS.escape(url)}"]`);
+        if (card) {
+          const pb = card.querySelector('.progress-box');
+          if (pb) pb.classList.add('hidden');
+          const db = card.querySelector('.btn-download');
+          if (db) { db.disabled = false; db.textContent = t('download'); }
+        }
+      }
+      checkOngoingDownloads();
+    } catch (e) {}
+  });
 
   applyLanguage();
 
@@ -81,46 +176,51 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function getSafeVideoFilename(originalFilename, url, format, contentType) {
+    // Alla tillåtna källor sparas som video (.mp4) för universell uppspelning, utom ren audio
     let name = (originalFilename || '').split('?')[0].split('#')[0].trim();
     name = name.replace(/[/\\?%*:|"<>]/g, '_');
-    name = name.replace(/\.(php|aspx|asp|jsp|html|htm|bin|do|cgi|axd)$/i, '');
+    name = name.replace(/\.(php|aspx|asp|jsp|html|htm|bin|do|cgi|axd|mpd|m3u|m3u8|ts|m4s|fmp4|m2ts)$/i, '');
 
     const urlLower = (url || '').toLowerCase();
     const formatLower = (format || '').toLowerCase();
     const mimeLower = (contentType || '').toLowerCase();
+    const isBlob = urlLower.startsWith('blob:');
 
-    let targetExt = 'mp4';
-    if (formatLower === 'webm' || urlLower.includes('.webm') || mimeLower.includes('webm')) {
-      targetExt = 'webm';
-    } else if (formatLower === 'flv' || urlLower.includes('.flv') || mimeLower.includes('flv')) {
-      targetExt = 'flv';
-    } else if (formatLower === 'mkv' || urlLower.includes('.mkv')) {
-      targetExt = 'mkv';
-    } else if (formatLower === 'mov' || urlLower.includes('.mov')) {
-      targetExt = 'mov';
-    } else if (formatLower === 'mp3' || urlLower.includes('.mp3') || mimeLower.includes('audio')) {
-      targetExt = 'mp3';
-    } else {
-      targetExt = 'mp4';
-    }
+    // Audio-only behålls som mp3, allt annat blir mp4-video
+    const isAudioOnly = (formatLower === 'mp3' || formatLower === 'm4a' || formatLower === 'wav' || formatLower === 'ogg' || formatLower === 'opus' || formatLower === 'flac')
+      || urlLower.includes('.mp3') || urlLower.endsWith('.m4a') || urlLower.endsWith('.wav') || mimeLower.startsWith('audio/');
+    let targetExt = isAudioOnly ? 'mp3' : 'mp4';
 
-    if (!name || name === 'videoplayback' || name.startsWith('video_') || name.startsWith('master') || name.startsWith('playlist') || name.startsWith('index')) {
+    if (!name || name === 'videoplayback' || name.startsWith('video_') || name.startsWith('master') || name.startsWith('playlist') || name.startsWith('index') || name.startsWith('chunk') || name.startsWith('frag')) {
       name = `video_${Date.now().toString().slice(-4)}`;
     }
 
-    if (name.toLowerCase().endsWith('.ts') || name.toLowerCase().endsWith('.m3u8')) {
-      name = name.substring(0, name.lastIndexOf('.'));
+    // Ta bort manifest/segment-endelser så det blir .mp4
+    if (/\.(ts|m3u8|m3u|mpd|m4s|fmp4|m2ts)$/i.test(name)) {
+      name = name.replace(/\.[^.]+$/, '');
     }
 
-    const knownMedia = ['.mp4', '.webm', '.flv', '.mkv', '.mov', '.avi', '.mp3', '.m4a', '.wav'];
+    // blob: har ingen filända – ge alltid .mp4 (video)
+    if (isBlob && !name.toLowerCase().endsWith('.mp4') && !isAudioOnly) {
+      name = name.replace(/\.[^.]+$/, '') + '.mp4';
+      if (!name.includes('.')) name += '.mp4';
+    }
+
+    const knownVideoExts = ['.mp4','.m4v','.webm','.flv','.f4v','.mov','.avi','.mkv','.ogv','.3gp','.3g2','.wmv','.av1','.hevc','.vob','.mpg','.mpeg'];
+    const knownMedia = [...knownVideoExts, '.mp3', '.m4a', '.wav', '.ogg', '.opus', '.flac', '.aac', '.wma'];
     const hasValidExt = knownMedia.some(ext => name.toLowerCase().endsWith(ext));
 
     if (!hasValidExt) {
       const lastDot = name.lastIndexOf('.');
-      if (lastDot > 0 && name.length - lastDot <= 5) {
+      if (lastDot > 0 && name.length - lastDot <= 6) {
         name = name.substring(0, lastDot);
       }
       name = `${name}.${targetExt}`;
+    } else {
+      // Behåll original videoformat (.avi/.mkv/.mov etc) – konvertera bara streaming-manifest till .mp4
+      if (/\.(m3u8|m3u|mpd|ts|m4s|fmp4|m2ts)$/i.test(name)) {
+        name = name.replace(/\.[^.]+$/, '.mp4');
+      }
     }
 
     return name;
@@ -214,8 +314,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         // Render global Active Downloads banner (visible from ANY window)
-        const activeDls = res.downloads.filter(dl => dl.status === 'downloading' || dl.status === 'merging');
-        const completedRecent = res.downloads.filter(dl => dl.status === 'completed');
+        const activeDls = res.downloads.filter(dl => dl.status === 'downloading' || dl.status === 'merging' || dl.status === 'paused');
+        const completedRecent = res.downloads.filter(dl => dl.status === 'completed' || dl.status === 'error');
 
         const showList = [...activeDls, ...completedRecent];
 
@@ -238,7 +338,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             card.className = 'active-dl-card';
             card.id = cardId;
             card.innerHTML = `
-              <div class="adl-title"></div>
+              <div class="adl-top-row"><div class="adl-title"></div><div class="adl-controls"></div></div>
               <div class="adl-progress-bar-bg"><div class="adl-progress-bar-fill"></div></div>
               <div class="adl-info"><span class="adl-percent"></span><span class="adl-segments"></span></div>
               <div class="adl-duration"></div>
@@ -247,26 +347,80 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
 
           card.querySelector('.adl-title').textContent = dl.filename || 'Video';
-          card.querySelector('.adl-progress-bar-fill').style.width = `${dl.percent || 0}%`;
+          const adlBar = card.querySelector('.adl-progress-bar-fill');
+          const adlPercentEl = card.querySelector('.adl-percent');
+          const adlSegEl = card.querySelector('.adl-segments');
+          const adlDurEl = card.querySelector('.adl-duration');
+          // bar width animates via CSS linear, set target immediately
+          adlBar.style.width = `${dl.percent || 0}%`;
+
+          // Controls (pause/resume + close) - rebuild each time
+          const ctrlBox = card.querySelector('.adl-controls');
+          ctrlBox.innerHTML = '';
+          if (dl.status === 'downloading') {
+            const pauseBtn = document.createElement('button');
+            pauseBtn.className = 'btn-adl btn-adl-pause';
+            pauseBtn.title = t('pause');
+            pauseBtn.textContent = '⏸';
+            pauseBtn.addEventListener('click', async () => {
+              await chrome.runtime.sendMessage({ type: 'PAUSE_DOWNLOAD', downloadId: dl.id });
+              checkOngoingDownloads();
+            });
+            ctrlBox.appendChild(pauseBtn);
+          } else if (dl.status === 'paused') {
+            const resumeBtn = document.createElement('button');
+            resumeBtn.className = 'btn-adl btn-adl-resume';
+            resumeBtn.title = t('resume');
+            resumeBtn.textContent = '▶';
+            resumeBtn.addEventListener('click', async () => {
+              await chrome.runtime.sendMessage({ type: 'RESUME_DOWNLOAD', downloadId: dl.id });
+              checkOngoingDownloads();
+            });
+            ctrlBox.appendChild(resumeBtn);
+          }
+          {
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'btn-adl btn-adl-close';
+            closeBtn.title = 'Stop';
+            closeBtn.textContent = '✕';
+            closeBtn.addEventListener('click', () => openConfirmModal(dl.id, dl.url));
+            ctrlBox.appendChild(closeBtn);
+          }
 
           if (dl.status === 'downloading') {
             let durationStr = '';
             if (dl.totalDurationFormatted) {
               durationStr = `${dl.downloadedDurationFormatted || '0s'} / ${dl.totalDurationFormatted}`;
             }
-            card.querySelector('.adl-percent').textContent = `${t('downloading')} ${dl.percent}%`;
-            card.querySelector('.adl-segments').textContent = `${dl.completed || 0}/${dl.total || '?'}`;
-            card.querySelector('.adl-duration').textContent = durationStr;
+            adlSegEl.textContent = `${dl.completed || 0}/${dl.total || '?'}`;
+            adlDurEl.textContent = durationStr;
+            animatePercentCounter(dl.id, dl.percent || 0, (cur) => {
+              adlPercentEl.textContent = `${t('downloading')} ${cur}%`;
+            });
+          } else if (dl.status === 'paused') {
+            let durationStr = '';
+            if (dl.totalDurationFormatted) {
+              durationStr = `${dl.downloadedDurationFormatted || '0s'} / ${dl.totalDurationFormatted}`;
+            }
+            adlSegEl.textContent = `${dl.completed || 0}/${dl.total || '?'}`;
+            adlDurEl.textContent = durationStr;
+            animatePercentCounter(dl.id, dl.percent || 0, (cur) => {
+              adlPercentEl.textContent = `${t('paused')} ${cur}%`;
+            });
           } else if (dl.status === 'merging') {
-            card.querySelector('.adl-percent').textContent = t('saving');
-            card.querySelector('.adl-segments').textContent = '100%';
-            card.querySelector('.adl-duration').textContent = t('mergingVideo');
-            card.querySelector('.adl-progress-bar-fill').style.width = '100%';
+            adlPercentEl.textContent = t('saving');
+            adlSegEl.textContent = '100%';
+            adlDurEl.textContent = t('mergingVideo');
+            adlBar.style.width = '100%';
           } else if (dl.status === 'completed') {
-            card.querySelector('.adl-percent').textContent = t('downloaded');
-            card.querySelector('.adl-segments').textContent = '✅';
-            card.querySelector('.adl-duration').textContent = dl.totalDurationFormatted || t('savedToComputer');
-            card.querySelector('.adl-progress-bar-fill').style.width = '100%';
+            adlPercentEl.textContent = t('downloaded');
+            adlSegEl.textContent = '✅';
+            adlDurEl.textContent = dl.totalDurationFormatted || t('savedToComputer');
+            adlBar.style.width = '100%';
+          } else if (dl.status === 'error') {
+            adlPercentEl.textContent = t('errorOccurred');
+            adlSegEl.textContent = '❌';
+            adlDurEl.textContent = dl.error || '';
           }
         });
 
@@ -290,21 +444,105 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (!progressBox) return;
 
+    function ensureCardControls(dl) {
+      let ctr = progressBox.querySelector('.progress-controls');
+      if (!ctr) {
+        ctr = document.createElement('div');
+        ctr.className = 'progress-controls';
+        progressBox.appendChild(ctr);
+      }
+      // Only show controls for active/paused/merging/error/completed? show for downloading/paused/merging
+      const showPause = dl.status === 'downloading' || dl.status === 'paused' || dl.status === 'merging';
+      const showClose = true; // always allow close after start
+      ctr.innerHTML = '';
+      if (showPause) {
+        if (dl.status === 'paused') {
+          const b = document.createElement('button');
+          b.className = 'btn-progress btn-resume';
+          b.textContent = t('resume');
+          b.addEventListener('click', async () => {
+            await chrome.runtime.sendMessage({ type: 'RESUME_DOWNLOAD', downloadId: dl.id });
+            checkOngoingDownloads();
+          });
+          ctr.appendChild(b);
+        } else if (dl.status === 'downloading') {
+          const b = document.createElement('button');
+          b.className = 'btn-progress btn-pause';
+          b.textContent = t('pause');
+          b.addEventListener('click', async () => {
+            await chrome.runtime.sendMessage({ type: 'PAUSE_DOWNLOAD', downloadId: dl.id });
+            checkOngoingDownloads();
+          });
+          ctr.appendChild(b);
+        } else if (dl.status === 'merging') {
+          const s = document.createElement('span');
+          s.style.cssText = 'font-size:0.7rem;color:#93c5fd;';
+          s.textContent = t('saving');
+          ctr.appendChild(s);
+        }
+      }
+      const spacer = document.createElement('span');
+      spacer.className = 'spacer';
+      ctr.appendChild(spacer);
+      if (showClose) {
+        const x = document.createElement('button');
+        x.className = 'btn-progress btn-stop';
+        x.title = 'Stop';
+        x.textContent = '✕';
+        x.addEventListener('click', () => openConfirmModal(dl.id, dl.url));
+        ctr.appendChild(x);
+      }
+    }
+
     if (dlState.status === 'downloading') {
       progressBox.classList.remove('hidden');
       downloadBtn.disabled = true;
       downloadBtn.textContent = t('downloading');
       progressBarFill.style.width = `${dlState.percent}%`;
-
-      // Visa nedladdad längd / total längd
-      let durationStr = '';
-      if (dlState.totalDurationFormatted) {
-        const loadedDur = dlState.downloadedDurationFormatted || '0s';
-        durationStr = ` | ${loadedDur} / ${dlState.totalDurationFormatted}`;
+      ensureCardControls(dlState);
+      const headerLeft = progressHeader.querySelector('span:first-child');
+      const headerRight = progressHeader.querySelector('span:last-child');
+      // init header if not yet animated
+      if (!progressHeader.dataset.animated) {
+        progressHeader.innerHTML = `<span></span><span>${dlState.completed}/${dlState.total}</span>`;
+        progressHeader.dataset.animated = '1';
+      } else {
+        progressHeader.querySelector('span:last-child').textContent = `${dlState.completed}/${dlState.total}`;
       }
-
-      progressHeader.innerHTML = `<span>${t('downloadedOf')}: ${dlState.percent}%${durationStr}</span><span>${dlState.completed}/${dlState.total}</span>`;
-      progressInfo.textContent = `${t('duration')}: ${dlState.totalDurationFormatted || t('unknownDuration')} (${dlState.percent}%)`;
+      animatePercentCounter(dlState.id + '_card', dlState.percent, (cur) => {
+        let durationStr = '';
+        if (dlState.totalDurationFormatted) {
+          const loadedDur = dlState.downloadedDurationFormatted || '0s';
+          durationStr = ` | ${loadedDur} / ${dlState.totalDurationFormatted}`;
+        }
+        const left = progressHeader.querySelector('span:first-child');
+        if (left) left.textContent = `${t('downloadedOf')}: ${cur}%${durationStr}`;
+        progressInfo.textContent = `${t('duration')}: ${dlState.totalDurationFormatted || t('unknownDuration')} (${cur}%)`;
+        progressBarFill.style.width = `${cur}%`;
+      });
+    } else if (dlState.status === 'paused') {
+      progressBox.classList.remove('hidden');
+      downloadBtn.disabled = true;
+      downloadBtn.textContent = t('paused');
+      progressBarFill.style.width = `${dlState.percent}%`;
+      ensureCardControls(dlState);
+      if (!progressHeader.dataset.animated) {
+        progressHeader.innerHTML = `<span></span><span>${dlState.completed}/${dlState.total}</span>`;
+        progressHeader.dataset.animated = '1';
+      } else {
+        progressHeader.querySelector('span:last-child').textContent = `${dlState.completed}/${dlState.total}`;
+      }
+      animatePercentCounter(dlState.id + '_card', dlState.percent, (cur) => {
+        let durationStr = '';
+        if (dlState.totalDurationFormatted) {
+          const loadedDur = dlState.downloadedDurationFormatted || '0s';
+          durationStr = ` | ${loadedDur} / ${dlState.totalDurationFormatted}`;
+        }
+        const left = progressHeader.querySelector('span:first-child');
+        if (left) left.textContent = `${t('paused')}: ${cur}%${durationStr}`;
+        progressInfo.textContent = `${t('paused')} - ${cur}%`;
+        progressBarFill.style.width = `${cur}%`;
+      });
     } else if (dlState.status === 'merging') {
       progressBox.classList.remove('hidden');
       downloadBtn.disabled = true;
@@ -312,6 +550,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       progressBarFill.style.width = `100%`;
       progressHeader.innerHTML = `<span>${t('saving')}</span><span>100%</span>`;
       progressInfo.textContent = t('mergingVideo');
+      ensureCardControls(dlState);
     } else if (dlState.status === 'completed') {
       progressBox.classList.remove('hidden');
       downloadBtn.disabled = false;
@@ -319,12 +558,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       progressBarFill.style.width = `100%`;
       progressHeader.innerHTML = `<span>${t('downloaded')}</span><span>100%</span>`;
       progressInfo.textContent = t('savedToComputer');
+      // allow closing completed entry
+      ensureCardControls({ ...dlState, status: 'completed' });
     } else if (dlState.status === 'error') {
       progressBox.classList.remove('hidden');
       downloadBtn.disabled = false;
       downloadBtn.textContent = t('tryAgain');
       progressHeader.innerHTML = `<span style="color:#ef4444;">${t('errorOccurred')}</span>`;
       progressInfo.textContent = dlState.error || t('errorOccurred');
+      ensureCardControls(dlState);
     }
   }
 
@@ -333,12 +575,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     stopCurrentPreview();
 
     let filtered = allMedia.filter(item => {
-      if (currentFilter === 'video' && !['MP4', 'WEBM', 'FLV', 'MKV', 'MOV', 'AVI'].includes(item.format)) {
-        return false;
-      }
-      if (currentFilter === 'stream' && !['M3U8', 'TS'].includes(item.format)) {
-        return false;
-      }
+      const STREAM_SET = new Set(['M3U8','M3U','MPD','TS','M2TS','M4S','FMP4']);
+      if (currentFilter === 'video' && STREAM_SET.has(item.format)) return false;
+      if (currentFilter === 'stream' && !STREAM_SET.has(item.format)) return false;
 
       if (currentSearch) {
         const matchTitle = item.filename.toLowerCase().includes(currentSearch);
@@ -363,9 +602,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       card.dataset.url = item.url;
 
       const safeDownloadName = getSafeVideoFilename(item.filename, item.url, item.format, item.contentType);
-      const isHls = item.format === 'M3U8' || item.url.toLowerCase().includes('.m3u8');
-      const displayFormat = isHls ? 'M3U8' : (item.format || 'MP4');
-      const badgeClass = isHls ? 'badge-m3u8' : getBadgeClass(item.format);
+      const urlLower = item.url.toLowerCase();
+      const isHls = item.format === 'M3U8' || item.format === 'MPD' || item.format === 'M3U' || urlLower.includes('.m3u8') || urlLower.includes('.mpd') || urlLower.includes('.m3u');
+      const isStream = isHls || ['TS','M4S','FMP4','M2TS'].includes(item.format);
+      const displayFormat = isHls ? (item.format === 'MPD' ? 'MPD' : 'M3U8') : (item.format || 'MP4');
+      const badgeClass = isHls ? 'badge-m3u8' : isStream ? 'badge-m3u8' : getBadgeClass(item.format);
 
       const durationHtml = item.duration ? `<span class="media-duration-tag">⏱️ ${item.duration}</span>` : '';
 
@@ -417,13 +658,77 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         previewContainer.classList.remove('hidden');
         previewContainer.innerHTML = `
-          <video class="preview-video" controls autoplay playsinline>
-            <source src="${item.url}">
-            ${t('formatNotSupportedPreview')}
-          </video>
+          <div class="preview-wrapper" style="position: relative; width: 100%;">
+            <video class="preview-video" controls autoplay playsinline preload="auto" tabindex="0">
+              <source src="${item.url}">
+              ${t('formatNotSupportedPreview')}
+            </video>
+            <div class="preview-osd hidden"></div>
+          </div>
         `;
 
         const videoEl = previewContainer.querySelector('video');
+        const osdEl = previewContainer.querySelector('.preview-osd');
+        let seekState = { delta: 0, timer: null, baseTime: 0 };
+
+        function showPreviewOsd(icon, text, subtext) {
+          if (!osdEl) return;
+          osdEl.innerHTML = `<span>${icon} ${text}</span>${subtext ? `<small>${subtext}</small>` : ''}`;
+          osdEl.classList.remove('hidden');
+          osdEl.style.opacity = '1';
+          if (osdEl._timer) clearTimeout(osdEl._timer);
+          osdEl._timer = setTimeout(() => {
+            osdEl.style.opacity = '0';
+            setTimeout(() => osdEl.classList.add('hidden'), 200);
+          }, 700);
+        }
+
+        function smoothSeekPreview(deltaSec) {
+          if (!videoEl || !isFinite(videoEl.duration)) {
+            try { videoEl.currentTime += deltaSec; } catch(e) {}
+            return;
+          }
+
+          if (seekState.timer) {
+            clearTimeout(seekState.timer);
+            seekState.delta += deltaSec;
+          } else {
+            seekState.delta = deltaSec;
+            seekState.baseTime = videoEl.currentTime;
+          }
+
+          const target = Math.max(0, Math.min(videoEl.duration, seekState.baseTime + seekState.delta));
+          const isFwd = seekState.delta > 0;
+          showPreviewOsd(isFwd ? '⏩' : '⏪', `${isFwd ? '+' : ''}${Math.round(seekState.delta)}s`, `${Math.floor(target/60)}:${Math.floor(target%60).toString().padStart(2,'0')}`);
+
+          seekState.timer = setTimeout(() => {
+            seekState.timer = null;
+            const finalTime = Math.max(0, Math.min(videoEl.duration, seekState.baseTime + seekState.delta));
+            seekState.delta = 0;
+            if (typeof videoEl.fastSeek === 'function') {
+              try { videoEl.fastSeek(finalTime); return; } catch(e) {}
+            }
+            try { videoEl.currentTime = finalTime; } catch(e) {}
+          }, 75);
+        }
+
+        videoEl.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            e.stopPropagation();
+            const step = e.shiftKey ? 10 : (e.ctrlKey ? 30 : 5);
+            smoothSeekPreview(e.key === 'ArrowLeft' ? -step : step);
+          } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            const newVol = e.key === 'ArrowUp' ? Math.min(1, videoEl.volume + 0.05) : Math.max(0, videoEl.volume - 0.05);
+            videoEl.volume = newVol;
+            showPreviewOsd(newVol > 0 ? '🔊' : '🔇', `${Math.round(newVol * 100)}%`);
+          } else if (e.key === ' ') {
+            e.preventDefault();
+            if (videoEl.paused) videoEl.play(); else videoEl.pause();
+          }
+        });
+
         videoEl.onerror = () => {
           previewContainer.innerHTML = `
             <div class="preview-error">
@@ -435,6 +740,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         playBtn.textContent = t('stop');
         playBtn.classList.add('playing');
         currentlyPlayingCard = card;
+        setTimeout(() => videoEl.focus(), 100);
       });
 
       const copyBtn = card.querySelector('.btn-copy');
@@ -451,39 +757,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const downloadBtn = card.querySelector('.btn-download');
       downloadBtn.addEventListener('click', () => {
-        if (isHls) {
-          const downloadId = btoa(item.url).replace(/[^a-zA-Z0-9]/g, '').slice(0, 24);
-          
-          const progressBox = card.querySelector('.progress-box');
-          progressBox.classList.remove('hidden');
-          downloadBtn.disabled = true;
-          downloadBtn.textContent = t('downloading');
+        const downloadId = btoa(item.url).replace(/[^a-zA-Z0-9]/g, '').slice(0, 24);
+        const progressBox = card.querySelector('.progress-box');
+        progressBox.classList.remove('hidden');
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = t('downloading');
 
+        // Alla tillåtna källor går via offscreen så de sparas som video (.mp4) med paus/stopp + progress
+        const isDash = item.format === 'MPD' || item.url.toLowerCase().includes('.mpd');
+        if (isHls || isDash) {
           chrome.runtime.sendMessage({
             type: 'START_HLS_DOWNLOAD',
             downloadId: downloadId,
             url: item.url,
             filename: safeDownloadName
           });
-
-          if (!pollInterval) {
-            pollInterval = setInterval(checkOngoingDownloads, 500);
-          }
         } else {
-          // Direct download & log to history
+          // Direktfil / blob: – även dessa sparas som video via generisk pipeline (progress + paus)
           chrome.runtime.sendMessage({
-            type: 'LOG_DIRECT_DOWNLOAD',
-            filename: safeDownloadName,
+            type: 'START_GENERIC_DOWNLOAD',
+            downloadId: downloadId,
             url: item.url,
-            size: item.size || 'Direct',
-            duration: item.duration || ''
+            filename: safeDownloadName
           });
+        }
 
-          chrome.downloads.download({
-            url: item.url,
-            filename: safeDownloadName,
-            saveAs: true
-          });
+        if (!pollInterval) {
+          pollInterval = setInterval(checkOngoingDownloads, 120);
         }
       });
 
@@ -593,7 +893,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderHistory();
   });
 
-  pollInterval = setInterval(checkOngoingDownloads, 500);
+  pollInterval = setInterval(checkOngoingDownloads, 120);
 
   loadMedia();
 });

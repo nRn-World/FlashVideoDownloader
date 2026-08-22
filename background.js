@@ -4,16 +4,23 @@
 const tabMedia = new Map();
 const activeDownloads = new Map();
 
-// Media file extensions
+// Media file extensions - utökad för alla tillåtna videokällor (sparas alltid som video)
 const MEDIA_EXTENSIONS = [
-  'mp4', 'm4v', 'webm', 'flv', 'f4v', 'm3u8', 'ts', 'mov', 'avi', 'mkv', 'ogv',
-  '3gp', 'wmv', 'mp3', 'm4a', 'aac', 'wav', 'ogg', 'opus'
+  'mp4', 'm4v', 'm4s', 'fmp4', 'cmfv', 'cmfa',
+  'webm', 'flv', 'f4v',
+  'm3u8', 'm3u',
+  'mpd',
+  'ts', 'm2ts', 'mts',
+  'mov', 'avi', 'mkv', 'ogv', '3gp', '3g2', 'wmv', 'av1', 'hevc', 'vob',
+  'mp3', 'm4a', 'aac', 'wav', 'ogg', 'opus', 'flac', 'wma'
 ];
 
-// Media MIME types
+// Media MIME types - även generiska där filnamn indikerar video
 const MEDIA_MIME_TYPES = [
-  'video/', 'audio/', 'application/x-mpegurl', 'application/vnd.apple.mpegurl',
-  'application/dash+xml', 'application/vnd.ms-sstr+xml'
+  'video/', 'audio/',
+  'application/x-mpegurl', 'application/vnd.apple.mpegurl',
+  'application/dash+xml', 'application/vnd.ms-sstr+xml',
+  'application/octet-stream', 'binary/octet-stream'
 ];
 
 function formatBytes(bytes) {
@@ -25,6 +32,9 @@ function formatBytes(bytes) {
 
 function getFormat(url, contentType) {
   const urlLower = (url || '').toLowerCase();
+  // Prioritera streaming-manifest
+  if (urlLower.includes('.m3u8') || (contentType && contentType.includes('mpegurl'))) return 'M3U8';
+  if (urlLower.includes('.mpd') || (contentType && contentType.includes('dash+xml'))) return 'MPD';
   for (const ext of MEDIA_EXTENSIONS) {
     if (urlLower.includes('.' + ext)) return ext.toUpperCase();
   }
@@ -32,7 +42,10 @@ function getFormat(url, contentType) {
     if (contentType.includes('mp4')) return 'MP4';
     if (contentType.includes('webm')) return 'WEBM';
     if (contentType.includes('mpegurl') || contentType.includes('m3u8')) return 'M3U8';
+    if (contentType.includes('dash+xml')) return 'MPD';
     if (contentType.includes('flv')) return 'FLV';
+    if (contentType.includes('quicktime') || contentType.includes('mov')) return 'MOV';
+    if (contentType.includes('x-matroska') || contentType.includes('mkv')) return 'MKV';
     if (contentType.includes('mp3') || contentType.includes('mpeg')) return 'MP3';
     if (contentType.includes('ogg')) return 'OGG';
     if (contentType.includes('video/')) return 'MP4';
@@ -48,29 +61,41 @@ function getCleanFilename(url, headerFilename, contentType) {
   } else {
     try {
       const urlObj = new URL(url);
-      let rawFilename = urlObj.pathname.substring(urlObj.pathname.lastIndexOf('/') + 1);
+      // stöd även blob: URLs (hoppa över blob:-prefix)
+      let workUrl = url;
+      if (workUrl.startsWith('blob:')) workUrl = workUrl.slice(5);
+      const urlObj2 = new URL(workUrl);
+      let rawFilename = urlObj2.pathname.substring(urlObj2.pathname.lastIndexOf('/') + 1);
       if (rawFilename) baseName = decodeURIComponent(rawFilename.split('?')[0]);
     } catch (e) {}
   }
 
-  if (!baseName || baseName.length < 2 || baseName === 'videoplayback' || baseName.startsWith('segment') || baseName.startsWith('master') || baseName.startsWith('index') || baseName.startsWith('playlist')) {
+  if (!baseName || baseName.length < 2 || baseName === 'videoplayback' || baseName.startsWith('segment') || baseName.startsWith('master') || baseName.startsWith('index') || baseName.startsWith('playlist') || baseName.startsWith('chunk') || baseName.startsWith('frag')) {
     baseName = `video_${Date.now().toString().slice(-4)}`;
   }
 
   baseName = baseName.replace(/[/\\?%*:|"<>]/g, '_').trim();
-  baseName = baseName.replace(/\.(php|aspx|asp|jsp|html|htm|bin|do|cgi)$/i, '');
+  baseName = baseName.replace(/\.(php|aspx|asp|jsp|html|htm|bin|do|cgi|axd|mpd)$/i, '');
 
   const hasKnownMediaExt = MEDIA_EXTENSIONS.some(ext => baseName.toLowerCase().endsWith('.' + ext));
+  // Alla tillåtna källor sparas som video (.mp4) för maximal kompatibilitet, utom ren audio
   if (!hasKnownMediaExt) {
     const urlLower = (url || '').toLowerCase();
     const mimeLower = (contentType || '').toLowerCase();
-    let targetExt = 'mp4';
-    if (urlLower.includes('.webm') || mimeLower.includes('webm')) targetExt = 'webm';
-    else if (urlLower.includes('.flv') || mimeLower.includes('flv')) targetExt = 'flv';
-    else if (urlLower.includes('.mkv')) targetExt = 'mkv';
-    else if (urlLower.includes('.mov') || mimeLower.includes('quicktime')) targetExt = 'mov';
-    else if (urlLower.includes('.mp3') || mimeLower.includes('audio/mp3') || mimeLower.includes('audio/mpeg')) targetExt = 'mp3';
-    baseName = `${baseName}.${targetExt}`;
+    // behåll audio som mp3, annars alltid mp4
+    const isAudioOnly = mimeLower.includes('audio/') && !mimeLower.includes('video') && !urlLower.includes('.mp4') && !urlLower.includes('.m3u8') && !urlLower.includes('.mpd') && !urlLower.includes('video');
+    if (isAudioOnly) {
+      baseName = `${baseName}.mp3`;
+    } else {
+      baseName = `${baseName}.mp4`;
+    }
+  } else {
+    // Normalisera streaming-manifest till .mp4 så användaren får en spelbar video
+    if (baseName.toLowerCase().endsWith('.m3u8') || baseName.toLowerCase().endsWith('.m3u') || baseName.toLowerCase().endsWith('.mpd')) {
+      baseName = baseName.replace(/\.(m3u8|m3u|mpd)$/i, '.mp4');
+    } else if (baseName.toLowerCase().endsWith('.ts') || baseName.toLowerCase().endsWith('.m4s') || baseName.toLowerCase().endsWith('.fmp4')) {
+      baseName = baseName.replace(/\.(ts|m4s|fmp4)$/i, '.mp4');
+    }
   }
 
   return baseName;
@@ -88,12 +113,19 @@ function addMediaItem(tabId, item) {
 
 function updateBadge(tabId) {
   let activeDlCount = 0;
+  let pausedCount = 0;
   for (const dl of activeDownloads.values()) {
     if (dl.status === 'downloading' || dl.status === 'merging') activeDlCount++;
+    if (dl.status === 'paused') pausedCount++;
   }
   if (activeDlCount > 0) {
     chrome.action.setBadgeText({ text: '⚡' });
     chrome.action.setBadgeBackgroundColor({ color: '#10b981' });
+    return;
+  }
+  if (pausedCount > 0) {
+    chrome.action.setBadgeText({ text: '⏸' });
+    chrome.action.setBadgeBackgroundColor({ color: '#f59e0b' });
     return;
   }
   if (tabId) {
@@ -105,6 +137,8 @@ function updateBadge(tabId) {
     } else {
       chrome.action.setBadgeText({ tabId, text: '' });
     }
+  } else {
+    chrome.action.setBadgeText({ text: '' });
   }
 }
 
@@ -131,13 +165,20 @@ chrome.webRequest.onHeadersReceived.addListener(
       }
     }
 
-    const isMediaMime = MEDIA_MIME_TYPES.some(type => contentType.startsWith(type));
+    const isMediaMime = MEDIA_MIME_TYPES.some(type => {
+      if (type === 'application/octet-stream' || type === 'binary/octet-stream') {
+        // generisk binär räknas bara som media om filnamn/extension hintar video eller disposition finns
+        return contentType === type && (contentDispositionFilename || MEDIA_EXTENSIONS.some(ext => url.toLowerCase().includes('.'+ext)));
+      }
+      return contentType.startsWith(type);
+    });
     const urlLower = url.toLowerCase();
     const hasMediaExt = MEDIA_EXTENSIONS.some(ext => new RegExp(`\\.${ext}(\\?|#|$)`, 'i').test(urlLower));
+    const hasDispositionVideo = contentDispositionFilename && MEDIA_EXTENSIONS.some(ext => contentDispositionFilename.toLowerCase().endsWith('.'+ext));
 
-    if (contentLength > 0 && contentLength < 15000 && !urlLower.includes('.m3u8')) return;
+    if (contentLength > 0 && contentLength < 15000 && !urlLower.includes('.m3u8') && !urlLower.includes('.mpd')) return;
 
-    if (isMediaMime || hasMediaExt) {
+    if (isMediaMime || hasMediaExt || hasDispositionVideo) {
       addMediaItem(details.tabId, {
         url, filename: getCleanFilename(url, contentDispositionFilename, contentType),
         format: getFormat(url, contentType), size: formatBytes(contentLength),
@@ -197,9 +238,8 @@ async function purgeExpiredHistory() {
 }
 purgeExpiredHistory();
 
-// === HLS Download Trigger (delegates to offscreen.js) ===
+// === HLS / Generic Download Trigger (delegates to offscreen.js) ===
 async function startHlsDownload(downloadId, playlistUrl, filename) {
-  // Create initial state entry
   activeDownloads.set(downloadId, {
     id: downloadId, url: playlistUrl, filename: filename,
     status: 'downloading', completed: 0, total: 0, percent: 0,
@@ -208,15 +248,29 @@ async function startHlsDownload(downloadId, playlistUrl, filename) {
     error: null, totalBytes: 0
   });
   updateBadge();
-
-  // Ensure offscreen document exists
   await ensureOffscreenDocument();
-
-  // Delegate entire download pipeline to offscreen.js
   chrome.runtime.sendMessage({
     type: 'START_OFFSCREEN_HLS',
     downloadId: downloadId,
     url: playlistUrl,
+    filename: filename
+  });
+}
+
+async function startGenericDownload(downloadId, fileUrl, filename) {
+  activeDownloads.set(downloadId, {
+    id: downloadId, url: fileUrl, filename: filename,
+    status: 'downloading', completed: 0, total: 1, percent: 0,
+    totalDurationSec: 0, downloadedDurationSec: 0,
+    totalDurationFormatted: '', downloadedDurationFormatted: '',
+    error: null, totalBytes: 0
+  });
+  updateBadge();
+  await ensureOffscreenDocument();
+  chrome.runtime.sendMessage({
+    type: 'START_OFFSCREEN_GENERIC',
+    downloadId: downloadId,
+    url: fileUrl,
     filename: filename
   });
 }
@@ -251,9 +305,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ status: 'ok' });
     }
   }
-  // From popup: start HLS download
+  // From popup: start HLS / generic download (all tillåtna källor sparas som video)
   else if (message.type === 'START_HLS_DOWNLOAD') {
     startHlsDownload(message.downloadId, message.url, message.filename);
+    sendResponse({ status: 'started' });
+  }
+  else if (message.type === 'START_GENERIC_DOWNLOAD') {
+    startGenericDownload(message.downloadId, message.url, message.filename);
     sendResponse({ status: 'started' });
   }
   // From popup: get all download states
@@ -271,17 +329,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // From offscreen.js: progress update
   else if (message.type === 'OFFSCREEN_PROGRESS') {
     if (message.state && message.state.id) {
+      // cancelled from offscreen -> remove locally too
+      if (message.state.status === 'cancelled') {
+        activeDownloads.delete(message.state.id);
+        updateBadge();
+        sendResponse({ status: 'ok' });
+        return true;
+      }
       activeDownloads.set(message.state.id, message.state);
 
       // Update badge with percentage
       if (message.state.status === 'downloading' && message.state.percent) {
         chrome.action.setBadgeText({ text: `${message.state.percent}%` });
         chrome.action.setBadgeBackgroundColor({ color: '#3b82f6' });
+      } else if (message.state.status === 'paused') {
+        chrome.action.setBadgeText({ text: '⏸' });
+        chrome.action.setBadgeBackgroundColor({ color: '#f59e0b' });
       } else if (message.state.status === 'merging') {
         chrome.action.setBadgeText({ text: '💾' });
       } else if (message.state.status === 'completed') {
         chrome.action.setBadgeText({ text: '✅' });
-        setTimeout(() => chrome.action.setBadgeText({ text: '' }), 5000);
+        setTimeout(() => updateBadge(), 5000);
       } else if (message.state.status === 'error') {
         chrome.action.setBadgeText({ text: '❌' });
       }
@@ -295,6 +363,48 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       size: message.size || 'Stream', duration: message.duration || ''
     });
     sendResponse({ status: 'ok' });
+  }
+  // From popup: pause / resume / cancel HLS
+  else if (message.type === 'PAUSE_DOWNLOAD') {
+    const dl = activeDownloads.get(message.downloadId);
+    if (dl) {
+      dl.status = 'paused';
+      activeDownloads.set(message.downloadId, dl);
+      chrome.action.setBadgeText({ text: '⏸' });
+      chrome.action.setBadgeBackgroundColor({ color: '#f59e0b' });
+      ensureOffscreenDocument().then(() => {
+        chrome.runtime.sendMessage({ type: 'PAUSE_OFFSCREEN_HLS', downloadId: message.downloadId });
+      }).catch(() => {});
+    }
+    sendResponse({ status: 'paused' });
+  }
+  else if (message.type === 'RESUME_DOWNLOAD') {
+    const dl = activeDownloads.get(message.downloadId);
+    if (dl) {
+      dl.status = 'downloading';
+      activeDownloads.set(message.downloadId, dl);
+      chrome.action.setBadgeText({ text: `${dl.percent || 0}%` });
+      chrome.action.setBadgeBackgroundColor({ color: '#3b82f6' });
+      ensureOffscreenDocument().then(() => {
+        chrome.runtime.sendMessage({ type: 'RESUME_OFFSCREEN_HLS', downloadId: message.downloadId });
+      }).catch(() => {});
+    }
+    sendResponse({ status: 'resumed' });
+  }
+  else if (message.type === 'CANCEL_DOWNLOAD') {
+    const dl = activeDownloads.get(message.downloadId);
+    activeDownloads.delete(message.downloadId);
+    updateBadge();
+    ensureOffscreenDocument().then(() => {
+      chrome.runtime.sendMessage({ type: 'CANCEL_OFFSCREEN_HLS', downloadId: message.downloadId });
+    }).catch(() => {});
+    sendResponse({ status: 'cancelled' });
+  }
+  else if (message.type === 'REMOVE_DOWNLOAD_ENTRY') {
+    // Remove completed/error entry from active list (X on finished)
+    activeDownloads.delete(message.downloadId);
+    updateBadge();
+    sendResponse({ status: 'removed' });
   }
 
   return true;

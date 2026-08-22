@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Flash Video Downloader",
-  "version": "3.1",
-  "description": "Professional video downloader supporting MP4, WEBM, FLV, M3U8 HLS streams with live duration tracking & multi-language support.",
+  "version": "3.2",
+  "description": "Universal video downloader — MP4/WEBM/AVI/MKV/MOV/M3U8/MPD/TS + 20 formats, pause/resume/cancel, smooth 1-100% and blob support.",
   "permissions": [
     "activeTab",
     "scripting",

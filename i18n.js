@@ -36,7 +36,15 @@ const i18n = {
     mergingVideo: "Merging all parts into full MP4 video file...",
     savedToComputer: "Video saved to your computer.",
     unknownDuration: "Stream",
-    activeDownloads: "⚡ Active Downloads"
+    activeDownloads: "⚡ Active Downloads",
+    pause: "⏸ Pause",
+    resume: "▶ Resume",
+    cancel: "✕",
+    paused: "⏸ Paused",
+    confirmStopTitle: "Stop download?",
+    confirmStopDesc: "Are you sure you want to stop the download? The progress will be lost and the video will be removed from the list.",
+    confirmYes: "Yes, stop",
+    confirmNo: "Cancel"
   },
   sv: {
     title: "Flash Video Downloader",
@@ -75,7 +83,15 @@ const i18n = {
     mergingVideo: "Sammanfogar alla delar till en komplett MP4-videofil...",
     savedToComputer: "Videon har sparats till din dator.",
     unknownDuration: "Ström",
-    activeDownloads: "⚡ Aktiva Nedladdningar"
+    activeDownloads: "⚡ Aktiva Nedladdningar",
+    pause: "⏸ Pausa",
+    resume: "▶ Fortsätt",
+    cancel: "✕",
+    paused: "⏸ Pausad",
+    confirmStopTitle: "Stoppa nedladdning?",
+    confirmStopDesc: "Är du säker att du vill stoppa nedladdningen? Framstegen går förlorade och videon tas bort från listan.",
+    confirmYes: "Ja, stoppa",
+    confirmNo: "Avbryt"
   },
   tr: {
     title: "Flash Video Downloader",
@@ -114,7 +130,15 @@ const i18n = {
     mergingVideo: "Tüm parçalar tam MP4 dosyasına birleştiriliyor...",
     savedToComputer: "Video bilgisayarınıza kaydedildi.",
     unknownDuration: "Yayın",
-    activeDownloads: "⚡ Aktif İndirmeler"
+    activeDownloads: "⚡ Aktif İndirmeler",
+    pause: "⏸ Duraklat",
+    resume: "▶ Devam et",
+    cancel: "✕",
+    paused: "⏸ Duraklatıldı",
+    confirmStopTitle: "İndirme durdurulsun mu?",
+    confirmStopDesc: "İndirmeyi durdurmak istediğinizden emin misiniz? İlerleme kaybolacak ve video listeden kaldırılacak.",
+    confirmYes: "Evet, durdur",
+    confirmNo: "İptal"
   },
   es: {
     title: "Flash Video Downloader",
@@ -153,7 +177,15 @@ const i18n = {
     mergingVideo: "Uniendo todas las partes en un archivo MP4...",
     savedToComputer: "Video guardado en su computadora.",
     unknownDuration: "Stream",
-    activeDownloads: "⚡ Descargas Activas"
+    activeDownloads: "⚡ Descargas Activas",
+    pause: "⏸ Pausar",
+    resume: "▶ Reanudar",
+    cancel: "✕",
+    paused: "⏸ En pausa",
+    confirmStopTitle: "¿Detener descarga?",
+    confirmStopDesc: "¿Seguro que quieres detener la descarga? El progreso se perderá y el vídeo se eliminará de la lista.",
+    confirmYes: "Sí, detener",
+    confirmNo: "Cancelar"
   },
   fr: {
     title: "Flash Video Downloader",
@@ -192,7 +224,15 @@ const i18n = {
     mergingVideo: "Fusion de toutes les parties en fichier MP4 complet...",
     savedToComputer: "Vidéo enregistrée sur votre ordinateur.",
     unknownDuration: "Flux",
-    activeDownloads: "⚡ Téléchargements Actifs"
+    activeDownloads: "⚡ Téléchargements Actifs",
+    pause: "⏸ Pause",
+    resume: "▶ Reprendre",
+    cancel: "✕",
+    paused: "⏸ En pause",
+    confirmStopTitle: "Arrêter le téléchargement ?",
+    confirmStopDesc: "Voulez-vous vraiment arrêter le téléchargement ? La progression sera perdue et la vidéo sera retirée de la liste.",
+    confirmYes: "Oui, arrêter",
+    confirmNo: "Annuler"
   },
   ar: {
     title: "Flash Video Downloader",
@@ -231,6 +271,14 @@ const i18n = {
     mergingVideo: "جارٍ دمج جميع الأجزاء في ملف MP4 كامل...",
     savedToComputer: "تم حفظ الفيديو على جهاز الكمبيوتر الخاص بك.",
     unknownDuration: "بث",
-    activeDownloads: "⚡ التنزيلات النشطة"
+    activeDownloads: "⚡ التنزيلات النشطة",
+    pause: "⏸ إيقاف مؤقت",
+    resume: "▶ متابعة",
+    cancel: "✕",
+    paused: "⏸ متوقف مؤقتاً",
+    confirmStopTitle: "إيقاف التنزيل؟",
+    confirmStopDesc: "هل أنت متأكد أنك تريد إيقاف التنزيل؟ سيتم فقدان التقدم وستتم إزالة الفيديو من القائمة.",
+    confirmYes: "نعم، أوقف",
+    confirmNo: "إلغاء"
   }
 };
