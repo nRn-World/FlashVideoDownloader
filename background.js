@@ -200,14 +200,22 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
 
 chrome.tabs.onRemoved.addListener((tabId) => tabMedia.delete(tabId));
 
-// === Offscreen Document Management ===
+// === Offscreen Document Management (defensive - fixes background.js:0 anonymous function on older Chrome) ===
 async function ensureOffscreenDocument() {
-  if (await chrome.offscreen.hasDocument()) return;
-  await chrome.offscreen.createDocument({
-    url: 'offscreen.html',
-    reasons: ['BLOBS'],
-    justification: 'Download HLS segments, merge into full video, and save to disk via DOM Blob/ObjectURL'
-  });
+  try {
+    if (!chrome.offscreen || typeof chrome.offscreen.hasDocument !== 'function') {
+      console.warn('[FVD] chrome.offscreen not available - requires Chrome 109+');
+      return;
+    }
+    if (await chrome.offscreen.hasDocument()) return;
+    await chrome.offscreen.createDocument({
+      url: 'offscreen.html',
+      reasons: ['BLOBS'],
+      justification: 'Download HLS segments, merge into full video, and save to disk via DOM Blob/ObjectURL'
+    });
+  } catch (e) {
+    console.warn('[FVD] ensureOffscreenDocument failed:', e && e.message ? e.message : e);
+  }
 }
 
 // === Download History ===
@@ -234,45 +242,79 @@ async function purgeExpiredHistory() {
       const cleaned = data.downloadHistory.filter(h => h.timestamp > Date.now() - 86400000);
       await chrome.storage.local.set({ downloadHistory: cleaned });
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn('[FVD] purgeExpiredHistory:', e && e.message ? e.message : e);
+  }
 }
-purgeExpiredHistory();
+// Don't throw at top-level - catches background.js:0 error
+try { purgeExpiredHistory(); } catch(e) {}
+self.addEventListener('error', (e) => console.error('[FVD background error]', e && e.message ? e.message : e));
+self.addEventListener('unhandledrejection', (e) => console.error('[FVD unhandled]', e && e.reason ? e.reason : e));
 
 // === HLS / Generic Download Trigger (delegates to offscreen.js) ===
 async function startHlsDownload(downloadId, playlistUrl, filename) {
-  activeDownloads.set(downloadId, {
-    id: downloadId, url: playlistUrl, filename: filename,
-    status: 'downloading', completed: 0, total: 0, percent: 0,
-    totalDurationSec: 0, downloadedDurationSec: 0,
-    totalDurationFormatted: '', downloadedDurationFormatted: '',
-    error: null, totalBytes: 0
-  });
-  updateBadge();
-  await ensureOffscreenDocument();
-  chrome.runtime.sendMessage({
-    type: 'START_OFFSCREEN_HLS',
-    downloadId: downloadId,
-    url: playlistUrl,
-    filename: filename
-  });
+  try {
+    activeDownloads.set(downloadId, {
+      id: downloadId, url: playlistUrl, filename: filename,
+      status: 'downloading', completed: 0, total: 0, percent: 0,
+      totalDurationSec: 0, downloadedDurationSec: 0,
+      totalDurationFormatted: '', downloadedDurationFormatted: '',
+      error: null, totalBytes: 0
+    });
+    updateBadge();
+    await ensureOffscreenDocument();
+    try {
+      await chrome.runtime.sendMessage({
+        type: 'START_OFFSCREEN_HLS',
+        downloadId: downloadId,
+        url: playlistUrl,
+        filename: filename
+      });
+    } catch (e) {
+      // Fallback to direct download if offscreen not available
+      console.warn('[FVD] HLS offscreen failed, fallback:', e && e.message);
+      activeDownloads.set(downloadId, { ...activeDownloads.get(downloadId), status: 'error', error: 'Offscreen not available - update Chrome to 109+' });
+      updateBadge();
+    }
+  } catch (e) { console.error('[FVD] startHlsDownload', e); }
 }
 
 async function startGenericDownload(downloadId, fileUrl, filename) {
-  activeDownloads.set(downloadId, {
-    id: downloadId, url: fileUrl, filename: filename,
-    status: 'downloading', completed: 0, total: 1, percent: 0,
-    totalDurationSec: 0, downloadedDurationSec: 0,
-    totalDurationFormatted: '', downloadedDurationFormatted: '',
-    error: null, totalBytes: 0
-  });
-  updateBadge();
-  await ensureOffscreenDocument();
-  chrome.runtime.sendMessage({
-    type: 'START_OFFSCREEN_GENERIC',
-    downloadId: downloadId,
-    url: fileUrl,
-    filename: filename
-  });
+  try {
+    activeDownloads.set(downloadId, {
+      id: downloadId, url: fileUrl, filename: filename,
+      status: 'downloading', completed: 0, total: 1, percent: 0,
+      totalDurationSec: 0, downloadedDurationSec: 0,
+      totalDurationFormatted: '', downloadedDurationFormatted: '',
+      error: null, totalBytes: 0
+    });
+    updateBadge();
+    await ensureOffscreenDocument();
+    // Try offscreen generic pipeline, fallback to chrome.downloads if unavailable (e.g. Chrome <109)
+    let offscreenOk = false;
+    try {
+      if (chrome.offscreen && typeof chrome.offscreen.hasDocument === 'function') {
+        await chrome.runtime.sendMessage({
+          type: 'START_OFFSCREEN_GENERIC',
+          downloadId: downloadId,
+          url: fileUrl,
+          filename: filename
+        });
+        offscreenOk = true;
+      }
+    } catch (e) { console.warn('[FVD] generic offscreen failed:', e && e.message); }
+    if (!offscreenOk) {
+      // Fallback: direct download (still saves as video, but without pause/progress)
+      try {
+        await chrome.downloads.download({ url: fileUrl, filename: filename, saveAs: true });
+        activeDownloads.set(downloadId, { ...activeDownloads.get(downloadId), status: 'completed', percent: 100 });
+        saveDownloadToHistory({ filename, url: fileUrl, size: 'Direct', duration: '' });
+      } catch (dlErr) {
+        activeDownloads.set(downloadId, { ...activeDownloads.get(downloadId), status: 'error', error: dlErr && dlErr.message ? dlErr.message : 'Download failed' });
+      }
+      updateBadge();
+    }
+  } catch (e) { console.error('[FVD] startGenericDownload', e); }
 }
 
 // === Message Dispatcher ===
