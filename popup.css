@@ -239,6 +239,16 @@ body {
   border-radius: 3px;
   border: 1px solid rgba(56, 189, 248, 0.2);
 }
+.media-size-tag {
+  font-size: 0.68rem;
+  color: #a5b4fc;
+  font-weight: 600;
+  background: rgba(99, 102, 241, 0.12);
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  white-space: nowrap;
+}
 
 .media-url {
   font-size: 0.68rem;

@@ -96,10 +96,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Hjälpare för sortering: störst först
+  function formatBytesPopup(bytes) {
+    if (!bytes || isNaN(bytes) || bytes <= 0) return '';
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+  }
   function parseSizeToBytes(sizeStr) {
     if (!sizeStr || typeof sizeStr !== 'string') return 0;
     const s = sizeStr.trim().toLowerCase();
-    if (s === 'web source' || s === 'direct' || s === 'n/a' || s === '') return 0;
+    if (s === 'web source' || s === 'direct' || s === 'n/a' || s === '' || s === 'stream') return 0;
     const m = s.match(/([\d.,]+)\s*(bytes|kb|mb|gb|tb)?/);
     if (!m) return 0;
     const val = parseFloat(m[1].replace(',', '.'));
@@ -129,6 +135,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     const num = parseInt(s,10);
     return isNaN(num)?0:num;
+  }
+  function getDisplaySize(item) {
+    if (item.rawSize && item.rawSize > 0) return formatBytesPopup(item.rawSize);
+    if (item.size && !['Web source','Direct','N/A',''].includes(item.size)) return item.size;
+    if (item.totalBytes && item.totalBytes > 0) return formatBytesPopup(item.totalBytes);
+    return '';
   }
 
   function applyLanguage() {
@@ -428,8 +440,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (dl.totalDurationFormatted) {
               durationStr = `${dl.downloadedDurationFormatted || '0s'} / ${dl.totalDurationFormatted}`;
             }
+            const sz = dl.totalBytes ? formatBytesPopup(dl.totalBytes) : '';
             adlSegEl.textContent = `${dl.completed || 0}/${dl.total || '?'}`;
-            adlDurEl.textContent = durationStr;
+            adlDurEl.textContent = sz ? `📦 ${sz} • ${durationStr}` : durationStr;
             animatePercentCounter(dl.id, dl.percent || 0, (cur) => {
               adlPercentEl.textContent = `${t('downloading')} ${cur}%`;
             });
@@ -438,8 +451,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (dl.totalDurationFormatted) {
               durationStr = `${dl.downloadedDurationFormatted || '0s'} / ${dl.totalDurationFormatted}`;
             }
+            const sz = dl.totalBytes ? formatBytesPopup(dl.totalBytes) : '';
             adlSegEl.textContent = `${dl.completed || 0}/${dl.total || '?'}`;
-            adlDurEl.textContent = durationStr;
+            adlDurEl.textContent = sz ? `📦 ${sz} • ${durationStr}` : durationStr;
             animatePercentCounter(dl.id, dl.percent || 0, (cur) => {
               adlPercentEl.textContent = `${t('paused')} ${cur}%`;
             });
@@ -553,7 +567,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         const left = progressHeader.querySelector('span:first-child');
         if (left) left.textContent = `${t('downloadedOf')}: ${cur}%${durationStr}`;
-        progressInfo.textContent = `${t('duration')}: ${dlState.totalDurationFormatted || t('unknownDuration')} (${cur}%)`;
+        const sz = dlState.totalBytes ? formatBytesPopup(dlState.totalBytes) : (dlState.size || '');
+        const szPart = sz && sz !== 'Web source' ? `📦 ${sz} • ` : '';
+        progressInfo.textContent = `${szPart}${t('duration')}: ${dlState.totalDurationFormatted || t('unknownDuration')} (${cur}%)`;
         progressBarFill.style.width = `${cur}%`;
       });
     } else if (dlState.status === 'paused') {
@@ -576,7 +592,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         const left = progressHeader.querySelector('span:first-child');
         if (left) left.textContent = `${t('paused')}: ${cur}%${durationStr}`;
-        progressInfo.textContent = `${t('paused')} - ${cur}%`;
+        const sz = dlState.totalBytes ? formatBytesPopup(dlState.totalBytes) : (dlState.size || '');
+        const szPart = sz && sz !== 'Web source' ? `📦 ${sz} • ` : '';
+        progressInfo.textContent = `${szPart}${t('paused')} - ${cur}%`;
         progressBarFill.style.width = `${cur}%`;
       });
     } else if (dlState.status === 'merging') {
@@ -657,6 +675,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       const badgeClass = isHls ? 'badge-m3u8' : isStream ? 'badge-m3u8' : getBadgeClass(item.format);
 
       const durationHtml = item.duration ? `<span class="media-duration-tag">⏱️ ${item.duration}</span>` : '';
+      const sizeStr = getDisplaySize(item);
+      const sizeHtml = sizeStr ? `<span class="media-size-tag">📦 ${sizeStr}</span>` : '';
+      // Card-bottom visar nu både storlek och tid – t.ex. "📦 45.2 MB • ⏱️ 2:34"
+      let bottomInfo = '';
+      if (sizeStr && item.duration) bottomInfo = `📦 ${sizeStr} • ⏱️ ${item.duration}`;
+      else if (sizeStr) bottomInfo = `📦 ${sizeStr}`;
+      else if (item.duration) bottomInfo = `⏱️ ${item.duration}`;
+      else if (isHls) bottomInfo = t('fullStream');
+      else bottomInfo = t('readyToDownload');
+      // Progress-info visar också storlek om känd
+      const progressInfoText = sizeStr ? `${t('size')}: ${sizeStr} • ${t('duration')}: ${item.duration || t('unknownDuration')}` : `${t('duration')}: ${item.duration || t('unknownDuration')}`;
 
       card.innerHTML = `
         <div class="card-top">
@@ -664,6 +693,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <span class="media-title" title="${safeDownloadName}">${safeDownloadName}</span>
             <div class="media-meta-row">
               ${durationHtml}
+              ${sizeHtml}
               <span class="media-url" title="${item.url}">${item.url}</span>
             </div>
           </div>
@@ -682,11 +712,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="progress-bar-bg">
             <div class="progress-bar-fill"></div>
           </div>
-          <div class="progress-info">${t('duration')}: ${item.duration || t('unknownDuration')}</div>
+          <div class="progress-info">${progressInfoText}</div>
         </div>
 
         <div class="card-bottom">
-          <span class="media-size">${item.duration ? `${t('duration')}: ${item.duration}` : (isHls ? t('fullStream') : (item.size || t('readyToDownload')))}</span>
+          <span class="media-size" title="${bottomInfo}">${bottomInfo}</span>
           <div class="card-actions">
             <button class="btn-action btn-play" title="Preview">${t('play')}</button>
             <button class="btn-action btn-copy" data-url="${item.url}" title="Copy URL">${t('copy')}</button>
