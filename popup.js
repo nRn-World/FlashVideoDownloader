@@ -95,6 +95,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     return i18n['en'][key] || key;
   }
 
+  // Hjälpare för sortering: störst först
+  function parseSizeToBytes(sizeStr) {
+    if (!sizeStr || typeof sizeStr !== 'string') return 0;
+    const s = sizeStr.trim().toLowerCase();
+    if (s === 'web source' || s === 'direct' || s === 'n/a' || s === '') return 0;
+    const m = s.match(/([\d.,]+)\s*(bytes|kb|mb|gb|tb)?/);
+    if (!m) return 0;
+    const val = parseFloat(m[1].replace(',', '.'));
+    if (isNaN(val)) return 0;
+    const unit = (m[2] || 'bytes').toLowerCase();
+    const mult = { bytes: 1, kb: 1024, mb: 1024*1024, gb: 1024*1024*1024, tb: 1024*1024*1024*1024 }[unit] || 1;
+    return Math.round(val * mult);
+  }
+  function parseDurationToSec(durStr) {
+    if (!durStr || typeof durStr !== 'string') return 0;
+    const s = durStr.trim().toLowerCase();
+    // format: "1h 2m 3s" eller "2m 30s" eller "1:23" eller "01:02:03"
+    if (s.includes('h') || s.includes('m')) {
+      let sec = 0;
+      const h = s.match(/(\d+)\s*h/);
+      const m = s.match(/(\d+)\s*m/);
+      const secM = s.match(/(\d+)\s*s/);
+      if (h) sec += parseInt(h[1],10)*3600;
+      if (m) sec += parseInt(m[1],10)*60;
+      if (secM) sec += parseInt(secM[1],10);
+      return sec;
+    }
+    if (s.includes(':')) {
+      const parts = s.split(':').map(p=>parseInt(p,10)||0);
+      if (parts.length===3) return parts[0]*3600+parts[1]*60+parts[2];
+      if (parts.length===2) return parts[0]*60+parts[1];
+    }
+    const num = parseInt(s,10);
+    return isNaN(num)?0:num;
+  }
+
   function applyLanguage() {
     document.getElementById('txt-app-title').textContent = t('title');
     document.getElementById('txt-app-version').textContent = t('version');
@@ -593,6 +629,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       showEmptyState();
       return;
     }
+
+    // Störst fil först – fallande sort på faktisk storlek
+    filtered.sort((a, b) => {
+      const sizeA = (typeof a.rawSize === 'number' && a.rawSize > 0) ? a.rawSize : parseSizeToBytes(a.size);
+      const sizeB = (typeof b.rawSize === 'number' && b.rawSize > 0) ? b.rawSize : parseSizeToBytes(b.size);
+      // HLS/streams utan bytes hamnar efter direkta filer, men sortera dem på duration om det finns
+      if (sizeA !== sizeB) return sizeB - sizeA;
+      const durA = parseDurationToSec(a.duration);
+      const durB = parseDurationToSec(b.duration);
+      if (durA !== durB) return durB - durA;
+      return (b.discoveredAt || 0) - (a.discoveredAt || 0);
+    });
 
     emptyState.classList.add('hidden');
 
