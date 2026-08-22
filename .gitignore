@@ -2,5 +2,10 @@
 __pycache__/
 *.pyc
 
-# Local scripts
+# Local dev - not needed for end users
 generate_icons.py
+server.py
+test_player.html
+lib/
+__pycache__/
+*.pyc
