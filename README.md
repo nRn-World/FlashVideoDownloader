@@ -12,36 +12,36 @@
 </p>
 
 <p align="center">
-  <b>Snabb, modern och pålitlig videonedladdare för Chrome.</b><br/>
-  Fångar <code>MP4 · WEBM · FLV · MKV · MOV · AVI · M3U8 · MPD · TS · MP3</code> + 20 fler format — sparar allt som spelbar video med <b>paus / återuppta / avbryt</b>, <b>1-100% smooth progress</b> och global bakgrundsnedladdning.
+  <b>Fast, modern and reliable video downloader for Chrome.</b><br/>
+  Detects <code>MP4 · WEBM · FLV · MKV · MOV · AVI · M3U8 · MPD · TS · MP3</code> + 20 more formats — saves everything as playable video with <b>pause / resume / cancel</b>, <b>smooth 1-100% progress</b> and global background downloads.
 </p>
 
 ---
 
-## ✨ Vad är nytt i v3.2
+## ✨ What's new in v3.2
 
-| Feature | Före | Nu |
+| Feature | Before | Now |
 |---|---|---|
-| **Pausa / Återuppta** | — | `⏸ Pausa` / `▶ Fortsätt` på både kort och Active Downloads-banner, badge `⏸` |
-| **Avbryt med varning** | — | `✕` → modal <i>"Är du säker att du vill stoppa nedladdningen?"</i> → tar bort från listan |
-| **Smooth 1-100%** | hoppade 5-10% | Offscreen rapporterar varje heltals-procent direkt, popup tickar `1%` i taget, bar `0.35s linear` |
-| **Alla tillåtna källor som video** | HLS + enstaka MP4 | Generisk pipeline för **alla** tillåtna filer inkl. `.avi/.mkv/.mov/.webm/.flv/.ts/.m4s/.mpd` + `blob:` — sparas med korrekt MIME (`video/x-msvideo` för .avi etc.) |
+| **Pause / Resume** | — | `⏸ Pause` / `▶ Resume` on card + Active Downloads banner, badge `⏸` |
+| **Cancel with confirmation** | — | `✕` → modal <i>"Are you sure you want to stop the download?"</i> → removed from list |
+| **Smooth 1-100%** | jumped 5-10% | Offscreen pushes every integer percent instantly, popup ticks `1%` at a time, bar `0.35s linear` |
+| **Universal video pipeline** | HLS + single MP4 | Generic pipeline for **all allowed files** incl. `.avi/.mkv/.mov/.webm/.flv/.ts/.m4s/.mpd` + `blob:` — saved with correct MIME (`video/x-msvideo` for .avi etc.) |
 
-> **.avi?** Ja — detekteras via `webRequest` + DOM-scan, visas med `AVI`-badge och laddas ner som `.avi` (behåller AVI-container) via samma pausbara pipeline.
+> **.avi included?** Yes — detected via `webRequest` + DOM scan, shown with `AVI` badge and downloaded as `.avi` (keeps AVI container) through the same pausable pipeline. Largest file is sorted to the top.
 
 ---
 
 ## 🚀 Features
 
-- **🌐 Deep Sniffing** — `webRequest.onHeadersReceived` + `content.js` MutationObserver fångar nätverk + `<video>`, `<source>`, `<a href>`, `data-*`, `script`-inbäddade URL:er och `blob:`-källor.
-- **🎞️ Universal Video** — 25+ tillägg stöds, streaming-manifest (`m3u8/mpd/m3u/ts/m4s/fmp4`) konverteras till `.mp4`, vanliga videoformat behåller sin ändelse (`.avi` förblir `.avi`, `.mkv` förblir `.mkv`).
-- **⚡ Turbo HLS** — 20 parallella workers, `EXTINF`-duration summeras, `Blob` → `ObjectURL` → `a.download` utan storleksgräns (Offscreen Document).
-- **📊 Live Tracking** — total / nedladdad duration (`38m 12s → 12m 04s / 38m 12s`), bytes, segment `124/340`.
-- **⏯️ Full Kontroll** — Pausa/återuppta när som helst, avbryt med bekräftelse, badge visar `⚡ / 47% / ⏸ / ✅`.
-- **▶️ Preview** — Inbyggd spelare med OSD-seek (`←/→ 5s, Shift 10s, Ctrl 30s, J/L`) och volym.
-- **🌍 6 Språk** — EN/SV/TR/ES/FR/AR via `i18n.js` + `chrome.storage`.
-- **📜 Historik** — 50 senaste, auto-rens 24h (valbart), tid + storlek + duration.
-- **🔒 Respekt för skydd** — DRM/YouTube och andra skyddade tjänster kringgås inte (se Terms).
+- **🌐 Deep Sniffing** — `webRequest.onHeadersReceived` + `content.js` MutationObserver captures network + `<video>`, `<source>`, `<a href>`, `data-*`, embedded `script` URLs and `blob:` sources.
+- **🎞️ Universal Video** — 25+ extensions supported, streaming manifests (`m3u8/mpd/m3u/ts/m4s/fmp4`) converted to `.mp4`, regular video keeps its extension (`.avi` stays `.avi`, `.mkv` stays `.mkv`). Largest file is listed first (sorted by size → duration).
+- **⚡ Turbo HLS** — 20 parallel workers, `EXTINF` duration summed, `Blob` → `ObjectURL` → `a.download` with no size limit (Offscreen Document).
+- **📊 Live Tracking** — total / downloaded duration (`38m 12s → 12m 04s / 38m 12s`), bytes, segments `124/340`.
+- **⏯️ Full Control** — Pause/resume anytime, cancel with confirmation, badge shows `⚡ / 47% / ⏸ / ✅`.
+- **▶️ Preview** — Built-in player with OSD seek (`←/→ 5s, Shift 10s, Ctrl 30s, J/L`) and volume control.
+- **🌍 6 Languages** — EN/SV/TR/ES/FR/AR via `i18n.js` + `chrome.storage`.
+- **📜 History** — Last 50 downloads, auto-clean after 24h (optional), time + size + duration.
+- **🔒 Respect for protection** — DRM/YouTube and other protected services are not bypassed (see Terms).
 
 ---
 
@@ -51,63 +51,64 @@
 git clone https://github.com/nRn-World/FlashVideoDownloader.git
 ```
 
-1. Öppna `chrome://extensions/` → **Utvecklarläge** på.
-2. **Läs in okomprimerad** → välj mappen `Flash Video Downloader`.
-3. Fäst tillägget i verktygsfältet.
+1. Open `chrome://extensions/` → enable **Developer mode**.
+2. Click **Load unpacked** → select the folder `Flash Video Downloader`.
+3. Pin the extension to the toolbar.
 
-Uppdatera: `git pull` → klicka 🔄 **Uppdatera** på `chrome://extensions/`.
+Update: `git pull` → click 🔄 **Update** on `chrome://extensions/`.
 
 ---
 
-## 🎮 Användning
+## 🎮 Usage
 
-1. Spela upp videon på hemsidan (tillåten källa) — den dyker upp i popupen under `All / Video / Streams`.
-2. **Förhandsgranska** med `▶ Spela`, kopiera länk med `📋 Länk`.
-3. Klicka `⬇ Ladda ner` — kortet och bannern `⚡ Aktiva Nedladdningar` visar `12%`, `124/340`, `2m 03s / 38m 12s`.
-4. `⏸ Pausa` / `▶ Fortsätt` när du vill, `✕` för att avbryta (med varning).
-5. Vid `merging → ✅` sparas filen (t.ex. `myvideo.avi` eller `video_4821.mp4`) — syns i historiken under ⚙️.
+1. Play a video on any allowed site — it appears in the popup under `All / Video / Streams` (largest first).
+2. **Preview** with `▶ Play`, copy link with `📋 Copy`.
+3. Click `⬇ Download` — card and banner `⚡ Active Downloads` show `12%`, `124/340`, `2m 03s / 38m 12s`.
+4. Use `⏸ Pause` / `▶ Resume` anytime, `✕` to cancel (with confirmation).
+5. On `merging → ✅` the file is saved (e.g. `myvideo.avi` or `video_4821.mp4`) — appears in history under ⚙️.
 
 <details>
-<summary><b>Format som stöds</b></summary>
+<summary><b>Supported formats</b></summary>
 
-`mp4, m4v, m4s, fmp4, webm, flv, f4v, m3u8, m3u, mpd, ts, m2ts, mts, mov, avi, mkv, ogv, 3gp, 3g2, wmv, av1, hevc, vob, mpg/mpeg, mp3, m4a, aac, wav, ogg, opus, flac, wma` — plus `blob:`-videor från `<video>`-element.
+`mp4, m4v, m4s, fmp4, webm, flv, f4v, m3u8, m3u, mpd, ts, m2ts, mts, mov, avi, mkv, ogv, 3gp, 3g2, wmv, av1, hevc, vob, mpg/mpeg, mp3, m4a, aac, wav, ogg, opus, flac, wma` — plus `blob:` videos from `<video>` elements.
 
 </details>
 
 ---
 
-## 🛠️ Teknik
+## 🛠️ Tech Stack
 
 ```
 manifest v3 | background (service worker) | offscreen (BLOBS) | content script | popup
 webRequest + DOM-scan  →  tabMedia Map  →  popup render
 HLS:        offscreen 20 workers + EXTINF → Blob → ObjectURL
-Generic:    offscreen ReadableStream + Range-paus + fake 1-95% för okänd längd
-Progress:   varje heltals-% puschas direkt, popup animerar 1% tick (18-50ms/step), bar 0.35s linear
+Generic:    offscreen ReadableStream + pause + fake 1-95% for unknown length
+Progress:   every integer % pushed instantly, popup animates 1% tick (18-50ms/step), bar 0.35s linear
+Sort:       size (bytes) → duration → discoveredAt, largest first
 ```
 
-| Fil | Roll |
+| File | Role |
 |---|---|
-| `background.js` | sniff, badge, `activeDownloads` Map, `START_HLS/GENERIC_DOWNLOAD` |
-| `offscreen.js` | HLS + generisk fetch/stream med paus/cancel |
-| `content.js` | DOM-scan, `blob:`-stöd, smooth seek OSD |
-| `popup.js/.html/.css` | UI, paus/stopp-modal, smooth 1-100, filter, historik |
-| `i18n.js` | 6 språk |
+| `background.js` | sniffing, badge, `activeDownloads` Map, `START_HLS/GENERIC_DOWNLOAD` |
+| `offscreen.js` | HLS + generic fetch/stream with pause/cancel |
+| `content.js` | DOM scan, `blob:` support, smooth seek OSD |
+| `popup.js/.html/.css` | UI, pause/stop modal, smooth 1-100, filter, history, sorting |
+| `i18n.js` | 6 languages |
 
 ---
 
-## 📄 Licens
+## 📄 License
 
-**Educational & Non-Commercial Use License** — personligt/utbildning ok, kommersiell användning kräver tillstånd.
+**Educational & Non-Commercial Use License** — personal/educational use OK, commercial use requires permission.
 
-Kontakt: **bynrnworld@gmail.com**
+Contact: **bynrnworld@gmail.com**
 
 ---
 
 ## 🔄 Changelog
 
-- **v3.2** — Paus/återuppta + avbryt med varning, smooth 1-100% (ingen hopp), universell video-pipeline (alla tillåtna format inkl. `.avi` + `blob:`), bevarad originaländelse, MPD/DASH-detektering.
-- **v3.1** — Offscreen HLS-pipeline (fix tom fil), global Active Downloads-banner.
-- **v3.0 PRO** — Duration tracking, i18n, historik, preview.
+- **v3.2** — Pause/resume + cancel with confirmation, smooth 1-100% (no jumps), universal video pipeline (all allowed formats incl. `.avi` + `blob:`), keep original extension, MPD/DASH detection, largest file sorted first.
+- **v3.1** — Offscreen HLS pipeline (fix empty file), global Active Downloads banner.
+- **v3.0 PRO** — Duration tracking, i18n, history, preview.
 
-<p align="center">Skapad med ❤️ av <b>nRn World</b></p>
+<p align="center">Created with ❤️ by <b>nRn World</b></p>
