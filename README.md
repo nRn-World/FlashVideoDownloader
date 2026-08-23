@@ -112,3 +112,9 @@ Contact: **bynrnworld@gmail.com**
 - **v3.0 PRO** — Duration tracking, i18n, history, preview.
 
 <p align="center">Created with ❤️ by <b>nRn World</b></p>
+
+---
+
+☕ **Support development**: [Buy me a coffee 💜](https://ko-fi.com/nrnworld)
+
+Created by ❤️ © nRn World
