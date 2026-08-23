@@ -137,9 +137,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     return isNaN(num)?0:num;
   }
   function getDisplaySize(item) {
-    if (item.rawSize && item.rawSize > 0) return formatBytesPopup(item.rawSize);
-    if (item.size && !['Web source','Direct','N/A',''].includes(item.size)) return item.size;
-    if (item.totalBytes && item.totalBytes > 0) return formatBytesPopup(item.totalBytes);
+    // Never show size for streaming manifests - playlist size (e.g. 6.5KB) is not video size
+    const streamFmts = new Set(['M3U8','M3U','MPD','M4S','FMP4','TS','M2TS']);
+    if (item.format && streamFmts.has(item.format.toUpperCase())) return '';
+    // Validate: 21min video cannot be 6.5KB - hide implausible small sizes
+    let raw = 0;
+    if (item.rawSize && item.rawSize > 0) raw = item.rawSize;
+    else if (item.size && !['Web source','Direct','N/A','Stream',''].includes(item.size)) raw = parseSizeToBytes(item.size);
+    else if (item.totalBytes && item.totalBytes > 0) raw = item.totalBytes;
+    if (raw > 0) {
+      const durSec = parseDurationToSec(item.duration || '');
+      // If video is >2min but claimed size <100KB -> false (manifest/segment), hide
+      if (durSec > 120 && raw < 100 * 1024) return '';
+      // If size <15KB generally unreliable for video
+      if (raw < 15 * 1024) return '';
+      if (item.rawSize && item.rawSize > 0) return formatBytesPopup(item.rawSize);
+      if (item.size && !['Web source','Direct','N/A','Stream',''].includes(item.size)) return item.size;
+      if (item.totalBytes && item.totalBytes > 0) return formatBytesPopup(item.totalBytes);
+    }
     return '';
   }
 

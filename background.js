@@ -176,13 +176,20 @@ chrome.webRequest.onHeadersReceived.addListener(
     const hasMediaExt = MEDIA_EXTENSIONS.some(ext => new RegExp(`\\.${ext}(\\?|#|$)`, 'i').test(urlLower));
     const hasDispositionVideo = contentDispositionFilename && MEDIA_EXTENSIONS.some(ext => contentDispositionFilename.toLowerCase().endsWith('.'+ext));
 
-    if (contentLength > 0 && contentLength < 15000 && !urlLower.includes('.m3u8') && !urlLower.includes('.mpd')) return;
+    if (contentLength > 0 && contentLength < 15000 && !urlLower.includes('.m3u8') && !urlLower.includes('.mpd') && !urlLower.includes('.m3u')) return;
 
     if (isMediaMime || hasMediaExt || hasDispositionVideo) {
+      // Never show file size for streaming manifests - 6.5KB is the playlist, not the video (would be false info for a 21min video)
+      const isManifest = urlLower.includes('.m3u8') || urlLower.includes('.m3u') || urlLower.includes('.mpd') || urlLower.includes('.m4s') || urlLower.includes('.fmp4') || (contentType.includes('mpegurl') || contentType.includes('dash+xml'));
+      const format = getFormat(url, contentType);
+      const STREAM_FORMATS = new Set(['M3U8','M3U','MPD','M4S','FMP4','TS','M2TS']);
+      const isStreamFormat = STREAM_FORMATS.has(format);
+      const reliableSize = (!isManifest && !isStreamFormat && contentLength > 0) ? formatBytes(contentLength) : '';
+      const reliableRaw = (!isManifest && !isStreamFormat && contentLength > 0) ? contentLength : 0;
       addMediaItem(details.tabId, {
         url, filename: getCleanFilename(url, contentDispositionFilename, contentType),
-        format: getFormat(url, contentType), size: formatBytes(contentLength),
-        rawSize: contentLength, contentType, initiator: details.initiator || '',
+        format: format, size: reliableSize,
+        rawSize: reliableRaw, contentType, initiator: details.initiator || '',
         discoveredAt: Date.now()
       });
     }
