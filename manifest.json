@@ -1,8 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Flash Video Downloader",
+  "default_locale": "en",
+  "name": "__MSG_appName__",
+  "short_name": "__MSG_appShortName__",
   "version": "3.2.1",
-  "description": "Universal video downloader — MP4/WEBM/AVI/MKV/MOV/M3U8/MPD/TS + 20 formats, pause/resume/cancel, smooth 1-100% and blob support.",
+  "description": "__MSG_appDescription__",
+  "author": "nRn World",
   "permissions": [
     "activeTab",
     "scripting",
@@ -18,17 +21,9 @@
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "all_frames": true,
-      "run_at": "document_idle"
-    }
-  ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Flash Video Downloader",
+    "default_title": "__MSG_appName__",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -41,5 +36,8 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'"
   }
 }

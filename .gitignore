@@ -2,10 +2,12 @@
 __pycache__/
 *.pyc
 
-# Local dev - not needed for end users
+# Local dev only
 generate_icons.py
 server.py
 test_player.html
-lib/
-__pycache__/
-*.pyc
+temp_zip_check/
+
+# Release artifacts
+*.zip
+Flash Video Downloader.zip

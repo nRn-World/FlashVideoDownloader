@@ -1,0 +1,146 @@
+{
+  "appName": {
+    "message": "Flash Video Downloader"
+  },
+  "appShortName": {
+    "message": "FVD"
+  },
+  "appDescription": {
+    "message": "Hitta och ladda ner öppet tillgängliga videofiler (MP4, WEBM, M3U8) från aktiv flik. Kringgår inte DRM och stöder inte YouTube/Netflix."
+  },
+  "appVersion": {
+    "message": "v3.2.1"
+  },
+  "searchPlaceholder": {
+    "message": "Sök bland videor..."
+  },
+  "all": {
+    "message": "Alla"
+  },
+  "video": {
+    "message": "Video"
+  },
+  "stream": {
+    "message": "Strömmar"
+  },
+  "noVideosTitle": {
+    "message": "Inga videor upptäckta än"
+  },
+  "noVideosDesc": {
+    "message": "Starta videon på webbsidan så att nätverkssniffern fångar upp medieströmmen automatiskt!"
+  },
+  "loading": {
+    "message": "Sniffar webbsida och nätverk..."
+  },
+  "play": {
+    "message": "▶ Spela"
+  },
+  "stop": {
+    "message": "⏹ Stoppa"
+  },
+  "copy": {
+    "message": "📋 Länk"
+  },
+  "download": {
+    "message": "⬇ Ladda ner"
+  },
+  "downloading": {
+    "message": "⏳ Hämtar..."
+  },
+  "saving": {
+    "message": "💾 Sparar..."
+  },
+  "downloaded": {
+    "message": "✅ Nedladdad!"
+  },
+  "copied": {
+    "message": "✅ Klart!"
+  },
+  "tryAgain": {
+    "message": "⬇ Försök igen"
+  },
+  "errorOccurred": {
+    "message": "Ett fel uppstod"
+  },
+  "readyToDownload": {
+    "message": "Klar för nedladdning"
+  },
+  "fullStream": {
+    "message": "Full Längd (Ström)"
+  },
+  "formatNotSupportedPreview": {
+    "message": "⚠️ Detta format kan inte förhandsgranskas direkt, men sparas som komplett .mp4!"
+  },
+  "footerText": {
+    "message": "Fångar MP4, WEBM, FLV, M3U8 & fler"
+  },
+  "settingsTitle": {
+    "message": "Inställningar & Historik"
+  },
+  "language": {
+    "message": "Språk"
+  },
+  "downloadHistory": {
+    "message": "Nedladdningshistorik"
+  },
+  "noHistory": {
+    "message": "Ingen tidigare nedladdning"
+  },
+  "autoDelete24h": {
+    "message": "Radera historik automatiskt efter 24 timmar"
+  },
+  "clearHistory": {
+    "message": "Rensa historik"
+  },
+  "historyCleared": {
+    "message": "Historik rensad"
+  },
+  "back": {
+    "message": "← Tillbaka"
+  },
+  "duration": {
+    "message": "Längd"
+  },
+  "size": {
+    "message": "Storlek"
+  },
+  "downloadedOf": {
+    "message": "Nedladdat"
+  },
+  "mergingVideo": {
+    "message": "Sammanfogar alla delar till en komplett MP4-videofil..."
+  },
+  "savedToComputer": {
+    "message": "Videon har sparats till din dator."
+  },
+  "unknownDuration": {
+    "message": "Ström"
+  },
+  "activeDownloads": {
+    "message": "⚡ Aktiva Nedladdningar"
+  },
+  "pause": {
+    "message": "⏸ Pausa"
+  },
+  "resume": {
+    "message": "▶ Fortsätt"
+  },
+  "cancel": {
+    "message": "✕"
+  },
+  "paused": {
+    "message": "⏸ Pausad"
+  },
+  "confirmStopTitle": {
+    "message": "Avbryt nedladdning?"
+  },
+  "confirmStopDesc": {
+    "message": "Är du säker på att du vill avbryta nedladdningen? Framsteg kommer att förloras och videon kommer att tas bort från listan."
+  },
+  "confirmYes": {
+    "message": "Ja, avbryt"
+  },
+  "confirmNo": {
+    "message": "Avbryt"
+  }
+}

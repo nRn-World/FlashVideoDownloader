@@ -1,4 +1,4 @@
-// Flash Video Downloader - Popup Script (v3.0 PRO) with Duration Tracking, i18n & History Settings
+// Flash Video Downloader - Popup Script (v3.2.1)
 
 document.addEventListener('DOMContentLoaded', async () => {
   const mediaListContainer = document.getElementById('media-list');
@@ -19,6 +19,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const chkAutoDelete = document.getElementById('chk-auto-delete');
   const btnClearHistory = document.getElementById('btn-clear-history');
   const historyListContainer = document.getElementById('history-list');
+  const chkAskEachTime = document.getElementById('chk-ask-each-time');
+  const fixedLocationOptions = document.getElementById('fixed-location-options');
+  const btnPickFolder = document.getElementById('btn-pick-folder');
+  const txtSelectedFolder = document.getElementById('txt-selected-folder');
 
   let currentLang = 'en'; // Default English
   let allMedia = [];
@@ -29,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let pollInterval = null;
   let pendingCancel = null; // { id, url }
   const confirmModal = document.getElementById('confirm-stop-modal');
+  const appFooter = document.getElementById('app-footer');
   const txtConfirmTitle = document.getElementById('txt-confirm-title');
   const txtConfirmDesc = document.getElementById('txt-confirm-desc');
   const btnConfirmYes = document.getElementById('btn-confirm-yes');
@@ -80,19 +85,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Hämta sparade inställningar
-  const stored = await chrome.storage.local.get(['appLanguage', 'autoDelete24h']);
-  if (stored.appLanguage && i18n[stored.appLanguage]) {
-    currentLang = stored.appLanguage;
-  }
+  // Hämta sparade inställningar (engelska + fråga varje gång tills användaren ändrar själv)
+  const stored = await chrome.storage.local.get(['appLanguage', 'autoDelete24h', 'useDefaultDownloadFolder', 'useCustomDirectory', 'customDirectoryName']);
+  currentLang = (stored.appLanguage && i18n[stored.appLanguage]) ? stored.appLanguage : 'en';
   selectLanguage.value = currentLang;
   chkAutoDelete.checked = stored.autoDelete24h !== false;
+  const hasSavedFolder = stored.useDefaultDownloadFolder === true && stored.useCustomDirectory === true;
+  chkAskEachTime.checked = !hasSavedFolder;
+  updateSelectedFolderLabel(hasSavedFolder ? (stored.customDirectoryName || '') : '');
+
+  function updateSelectedFolderLabel(name) {
+    if (!txtSelectedFolder) return;
+    txtSelectedFolder.textContent = name ? t('selectedFolder').replace('{name}', name) : t('noFolderSelected');
+  }
+
+  function updateFolderOptionsVisibility() {
+    const askEachTime = chkAskEachTime.checked;
+    fixedLocationOptions.classList.toggle('hidden', askEachTime);
+  }
+  updateFolderOptionsVisibility();
 
   function t(key) {
     if (i18n[currentLang] && i18n[currentLang][key]) {
       return i18n[currentLang][key];
     }
     return i18n['en'][key] || key;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   // Hjälpare för sortering: störst först
@@ -158,9 +185,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     return '';
   }
 
+  function updateVersionLabels() {
+    const version = chrome.runtime.getManifest().version;
+    const label = 'v' + version;
+    const headerVersion = document.getElementById('txt-app-version');
+    const footerVersion = document.getElementById('txt-footer-version');
+    const settingsVersion = document.getElementById('txt-settings-version');
+    if (headerVersion) headerVersion.textContent = label;
+    if (footerVersion) footerVersion.textContent = label;
+    if (settingsVersion) settingsVersion.textContent = label;
+  }
+
   function applyLanguage() {
     document.getElementById('txt-app-title').textContent = t('title');
-    document.getElementById('txt-app-version').textContent = t('version');
+    updateVersionLabels();
     searchInput.placeholder = t('searchPlaceholder');
     document.getElementById('tab-all-text').textContent = t('all');
     document.getElementById('tab-video-text').textContent = t('video');
@@ -170,18 +208,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('txt-loading').textContent = t('loading');
     document.getElementById('txt-footer').textContent = t('footerText');
     document.getElementById('txt-lang-title').textContent = t('language');
+    document.getElementById('txt-download-title').textContent = t('downloadLocation');
+    document.getElementById('txt-ask-each-time').textContent = t('askEachTime');
+    if (btnPickFolder) btnPickFolder.textContent = t('pickFolderBtn');
+    chrome.storage.local.get(['customDirectoryName']).then(data => {
+      updateSelectedFolderLabel(data.customDirectoryName || '');
+    });
     document.getElementById('txt-history-title').textContent = t('downloadHistory');
     document.getElementById('txt-auto-delete').textContent = t('autoDelete24h');
     document.getElementById('txt-active-downloads').textContent = t('activeDownloads');
     btnClearHistory.textContent = t('clearHistory');
     btnBackMain.textContent = t('back');
+    const txtSupportTitle = document.getElementById('txt-support-title');
+    const txtSupportDesc = document.getElementById('txt-support-desc');
+    const txtSupportBtn = document.getElementById('txt-support-btn');
+    if (txtSupportTitle) txtSupportTitle.textContent = t('supportTitle');
+    if (txtSupportDesc) txtSupportDesc.textContent = t('supportDesc');
+    if (txtSupportBtn) txtSupportBtn.textContent = t('supportBtn');
+    const txtCreditsCreated = document.getElementById('txt-credits-created');
+    const btnCopyEmail = document.getElementById('btn-copy-email');
+    if (txtCreditsCreated) txtCreditsCreated.textContent = t('creditsCreated');
+    if (btnCopyEmail) btnCopyEmail.title = t('copyEmail');
+    if (btnCopyEmail) btnCopyEmail.setAttribute('aria-label', t('copyEmail'));
     if (txtConfirmTitle) txtConfirmTitle.textContent = t('confirmStopTitle');
     if (txtConfirmDesc) txtConfirmDesc.textContent = t('confirmStopDesc');
     if (btnConfirmYes) btnConfirmYes.textContent = t('confirmYes');
     if (btnConfirmNo) btnConfirmNo.textContent = t('confirmNo');
 
-    renderList();
+    if (viewSettings.classList.contains('hidden')) {
+      renderList();
+    }
     renderHistory();
+  }
+
+  function openSettingsView() {
+    viewMain.classList.add('hidden');
+    viewSettings.classList.remove('hidden');
+    btnSettingsToggle.classList.add('active');
+    if (appFooter) appFooter.classList.add('hidden');
+    renderHistory();
+  }
+
+  function openMainView() {
+    viewSettings.classList.add('hidden');
+    viewMain.classList.remove('hidden');
+    btnSettingsToggle.classList.remove('active');
+    if (appFooter) appFooter.classList.remove('hidden');
   }
 
   function openConfirmModal(downloadId, url) {
@@ -190,12 +262,86 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (txtConfirmDesc) txtConfirmDesc.textContent = t('confirmStopDesc');
     confirmModal.classList.remove('hidden');
   }
+
   function closeConfirmModal() {
     confirmModal.classList.add('hidden');
     pendingCancel = null;
   }
   if (btnConfirmNo) btnConfirmNo.addEventListener('click', closeConfirmModal);
   if (confirmModal) confirmModal.addEventListener('click', (e) => { if (e.target === confirmModal) closeConfirmModal(); });
+
+  const activeDownloadsList = document.getElementById('active-downloads-list');
+  if (activeDownloadsList && !activeDownloadsList.dataset.controlsBound) {
+    activeDownloadsList.dataset.controlsBound = '1';
+    activeDownloadsList.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn-adl-pause, .btn-adl-resume, .btn-adl-close');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const card = btn.closest('.active-dl-card');
+      if (!card || !card.dataset.dlId) return;
+      try {
+        if (btn.classList.contains('btn-adl-pause')) {
+          await chrome.runtime.sendMessage({ type: 'PAUSE_DOWNLOAD', downloadId: card.dataset.dlId });
+        } else if (btn.classList.contains('btn-adl-resume')) {
+          await chrome.runtime.sendMessage({ type: 'RESUME_DOWNLOAD', downloadId: card.dataset.dlId });
+        } else if (btn.classList.contains('btn-adl-close')) {
+          openConfirmModal(card.dataset.dlId, card.dataset.dlUrl || '');
+        }
+      } catch (err) {}
+      setTimeout(checkOngoingDownloads, 80);
+    });
+  }
+
+  if (mediaListContainer && !mediaListContainer.dataset.progressBound) {
+    mediaListContainer.dataset.progressBound = '1';
+    mediaListContainer.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn-pause, .btn-resume, .btn-stop');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const card = btn.closest('.media-card');
+      if (!card || !card.dataset.dlId) return;
+      try {
+        if (btn.classList.contains('btn-pause')) {
+          await chrome.runtime.sendMessage({ type: 'PAUSE_DOWNLOAD', downloadId: card.dataset.dlId });
+        } else if (btn.classList.contains('btn-resume')) {
+          await chrome.runtime.sendMessage({ type: 'RESUME_DOWNLOAD', downloadId: card.dataset.dlId });
+        } else if (btn.classList.contains('btn-stop')) {
+          openConfirmModal(card.dataset.dlId, card.dataset.url || '');
+        }
+      } catch (err) {}
+      setTimeout(checkOngoingDownloads, 80);
+    });
+  }
+
+  function renderActiveDownloadControls(ctrlBox, dl) {
+    const statusKey = (dl.status === 'downloading' || dl.status === 'paused') ? dl.status : 'idle';
+    if (ctrlBox.dataset.dlStatus === statusKey && ctrlBox.childElementCount > 0) return;
+    ctrlBox.dataset.dlStatus = statusKey;
+    ctrlBox.innerHTML = '';
+    if (dl.status === 'downloading') {
+      const pauseBtn = document.createElement('button');
+      pauseBtn.className = 'btn-adl btn-adl-pause';
+      pauseBtn.title = t('pause');
+      pauseBtn.textContent = '⏸';
+      ctrlBox.appendChild(pauseBtn);
+    } else if (dl.status === 'paused') {
+      const resumeBtn = document.createElement('button');
+      resumeBtn.className = 'btn-adl btn-adl-resume';
+      resumeBtn.title = t('resume');
+      resumeBtn.textContent = '▶';
+      ctrlBox.appendChild(resumeBtn);
+    }
+    if (dl.status === 'downloading' || dl.status === 'paused' || dl.status === 'merging') {
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'btn-adl btn-adl-close';
+      closeBtn.title = t('cancel');
+      closeBtn.textContent = '✕';
+      ctrlBox.appendChild(closeBtn);
+    }
+  }
+
   if (btnConfirmYes) btnConfirmYes.addEventListener('click', async () => {
     if (!pendingCancel) return;
     const { id, url } = pendingCancel;
@@ -225,17 +371,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   applyLanguage();
 
+  let canLoadMedia = false;
+
   // Hämta aktiv flik
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.id) {
-    showEmptyState('Could not identify active tab.');
-    return;
+    showEmptyState(t('errorOccurred'));
+  } else {
+    activeTabId = tab.id;
+    if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://')) {
+      showEmptyState(t('internalPageBlocked'));
+    } else {
+      try {
+        const blockCheck = await chrome.runtime.sendMessage({ type: 'IS_URL_BLOCKED', url: tab.url });
+        if (blockCheck && blockCheck.blocked) {
+          showEmptyState(t('blockedSite'));
+        } else {
+          canLoadMedia = true;
+        }
+      } catch (e) {
+        canLoadMedia = true;
+      }
+    }
   }
-  activeTabId = tab.id;
 
-  if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://')) {
-    showEmptyState('Extensions cannot run on internal browser pages. Open a regular website!');
-    return;
+  async function ensureContentScript(tabId) {
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId, allFrames: false },
+        files: ['blocked-hosts.js', 'content.js']
+      });
+    } catch (e) {
+      console.warn('[FVD] Content script injection:', e);
+    }
   }
 
   function getSafeVideoFilename(originalFilename, url, format, contentType) {
@@ -251,7 +419,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Audio-only behålls som mp3, allt annat blir mp4-video
     const isAudioOnly = (formatLower === 'mp3' || formatLower === 'm4a' || formatLower === 'wav' || formatLower === 'ogg' || formatLower === 'opus' || formatLower === 'flac')
-      || urlLower.includes('.mp3') || urlLower.endsWith('.m4a') || urlLower.endsWith('.wav') || mimeLower.startsWith('audio/');
+      || urlLower.includes('.mp3') || urlLower.endsWith('.m4a') || urlLower.endsWith('.wav')
+      || (mimeLower.startsWith('audio/') && !mimeLower.startsWith('video/'));
     let targetExt = isAudioOnly ? 'mp3' : 'mp4';
 
     if (!name || name === 'videoplayback' || name.startsWith('video_') || name.startsWith('master') || name.startsWith('playlist') || name.startsWith('index') || name.startsWith('chunk') || name.startsWith('frag')) {
@@ -289,41 +458,168 @@ document.addEventListener('DOMContentLoaded', async () => {
     return name;
   }
 
-  // Ladda videor från nätverket och sidan
-  async function loadMedia() {
+  function isSegmentLikeItem(item) {
+    const u = (item.url || '').toLowerCase();
+    return /\.(ts|m4s|fmp4|cmfv|cmfa)(\?|#|$)/i.test(u);
+  }
+
+  function itemByteSize(item) {
+    if (typeof item.rawSize === 'number' && item.rawSize > 0) return item.rawSize;
+    return parseSizeToBytes(item.size);
+  }
+
+  function pickBestMediaCandidates(items, maxCount) {
+    const sorted = [...items].sort((a, b) => itemByteSize(b) - itemByteSize(a));
+    const stream = sorted.find(i => /\.(m3u8|m3u|mpd)(\?|#|$)/i.test(i.url));
+    const blob = sorted.find(i => (i.url || '').startsWith('blob:'));
+    const file = sorted.find(i => /\.(mp4|webm|mov|mkv)(\?|#|$)/i.test(i.url));
+    const picked = [];
+    if (blob) picked.push(blob);
+    else if (stream) picked.push(stream);
+    else if (file) picked.push(file);
+    else if (sorted[0]) picked.push(sorted[0]);
+    for (const item of sorted) {
+      if (picked.length >= maxCount) break;
+      if (!picked.some(p => p.url === item.url)) picked.push(item);
+    }
+    return picked.slice(0, maxCount);
+  }
+
+  function filterToVisiblePageMedia(items, domResponse) {
+    let filtered = items.filter(i => !isSegmentLikeItem(i));
+    if (!domResponse) return pickBestMediaCandidates(filtered, 3);
+
+    const visibleCount = domResponse.visibleVideoCount || 0;
+    const visibleUrls = new Set(domResponse.visibleUrls || []);
+
+    if (visibleCount === 0 && visibleUrls.size === 0) {
+      return pickBestMediaCandidates(filtered, 3);
+    }
+
+    if (visibleUrls.size > 0) {
+      const direct = filtered.filter(item => visibleUrls.has(item.url));
+      if (direct.length > 0) {
+        filtered = direct;
+      }
+    }
+
+    if (visibleCount === 1) {
+      const blobItem = filtered.find(i => (i.url || '').startsWith('blob:'));
+      if (blobItem) return [blobItem];
+      const stream = filtered.find(i => /\.(m3u8|m3u|mpd)(\?|#|$)/i.test(i.url));
+      if (stream) return [stream];
+      const files = filtered.filter(i => /\.(mp4|webm|mov|mkv)(\?|#|$)/i.test(i.url));
+      if (files.length) return pickBestMediaCandidates(files, 1);
+      return pickBestMediaCandidates(filtered, 1);
+    }
+
+    if (filtered.length > visibleCount * 2) {
+      return pickBestMediaCandidates(filtered, visibleCount);
+    }
+
+    return filtered;
+  }
+
+  async function resolveActiveTab() {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab || !tab.id) return null;
+      activeTabId = tab.id;
+      return tab;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function isTabBlocked(tab) {
+    if (!tab || !tab.url) return true;
+    if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://')) {
+      return true;
+    }
+    try {
+      const blockCheck = await chrome.runtime.sendMessage({ type: 'IS_URL_BLOCKED', url: tab.url });
+      return !!(blockCheck && blockCheck.blocked);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function mergeDomItems(items, domItems) {
+    const byUrl = new Map(items.map(i => [i.url, i]));
+    domItems.forEach(domItem => {
+      const existing = byUrl.get(domItem.url);
+      if (existing) {
+        if (domItem.duration) existing.duration = domItem.duration;
+        if (domItem.filename) existing.filename = domItem.filename;
+        existing.fromVisibleDom = true;
+      } else {
+        const added = {
+          url: domItem.url,
+          filename: domItem.filename,
+          format: domItem.format,
+          duration: domItem.duration || '',
+          size: 'Web source',
+          rawSize: 0,
+          discoveredAt: Date.now(),
+          fromVisibleDom: true
+        };
+        items.push(added);
+        byUrl.set(domItem.url, added);
+      }
+    });
+    return items;
+  }
+
+  async function fetchMediaForTab({ refresh = false } = {}) {
+    const tab = await resolveActiveTab();
+    if (!tab || !tab.id) {
+      loadingState.classList.add('hidden');
+      showEmptyState(t('errorOccurred'));
+      return;
+    }
+
+    if (await isTabBlocked(tab)) {
+      loadingState.classList.add('hidden');
+      const blockedMsg = (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://'))
+        ? t('internalPageBlocked')
+        : t('blockedSite');
+      showEmptyState(blockedMsg);
+      allMedia = [];
+      countAll.textContent = '0';
+      return;
+    }
+
     loadingState.classList.remove('hidden');
     emptyState.classList.add('hidden');
     mediaListContainer.innerHTML = '';
+    stopCurrentPreview();
+
+    if (refresh) {
+      btnRefresh.disabled = true;
+      btnRefresh.classList.add('spinning');
+    }
 
     try {
+      const msgType = refresh ? 'REFRESH_MEDIA' : 'GET_MEDIA';
       const bgResponse = await chrome.runtime.sendMessage({
-        type: 'GET_MEDIA',
+        type: msgType,
         tabId: activeTabId
       });
 
       let items = (bgResponse && bgResponse.media) ? bgResponse.media : [];
+      let domResponse = null;
 
       try {
-        const domResponse = await chrome.tabs.sendMessage(activeTabId, { type: 'SCAN_PAGE' });
+        await ensureContentScript(activeTabId);
+        domResponse = await chrome.tabs.sendMessage(activeTabId, { type: 'SCAN_PAGE' });
         if (domResponse && Array.isArray(domResponse.items)) {
-          const existingUrls = new Set(items.map(i => i.url));
-          domResponse.items.forEach(domItem => {
-            if (!existingUrls.has(domItem.url)) {
-              items.push({
-                url: domItem.url,
-                filename: domItem.filename,
-                format: domItem.format,
-                duration: domItem.duration || '',
-                size: 'Web source',
-                rawSize: 0,
-                discoveredAt: Date.now()
-              });
-              existingUrls.add(domItem.url);
-            }
-          });
+          items = mergeDomItems(items, domResponse.items);
         }
-      } catch (domErr) {}
+      } catch (domErr) {
+        console.warn('[FVD] DOM scan failed:', domErr);
+      }
 
+      items = filterToVisiblePageMedia(items, domResponse);
       allMedia = items;
       renderList();
       checkOngoingDownloads();
@@ -332,7 +628,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       showEmptyState(t('errorOccurred'));
     } finally {
       loadingState.classList.add('hidden');
+      if (refresh) {
+        btnRefresh.disabled = false;
+        btnRefresh.classList.remove('spinning');
+      }
     }
+  }
+
+  // Ladda videor från nätverket och sidan
+  async function loadMedia() {
+    await fetchMediaForTab({ refresh: false });
   }
 
   function getBadgeClass(format) {
@@ -410,45 +715,16 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
 
           card.querySelector('.adl-title').textContent = dl.filename || 'Video';
+          card.dataset.dlId = dl.id;
+          card.dataset.dlUrl = dl.url || '';
           const adlBar = card.querySelector('.adl-progress-bar-fill');
           const adlPercentEl = card.querySelector('.adl-percent');
           const adlSegEl = card.querySelector('.adl-segments');
           const adlDurEl = card.querySelector('.adl-duration');
-          // bar width animates via CSS linear, set target immediately
           adlBar.style.width = `${dl.percent || 0}%`;
 
-          // Controls (pause/resume + close) - rebuild each time
           const ctrlBox = card.querySelector('.adl-controls');
-          ctrlBox.innerHTML = '';
-          if (dl.status === 'downloading') {
-            const pauseBtn = document.createElement('button');
-            pauseBtn.className = 'btn-adl btn-adl-pause';
-            pauseBtn.title = t('pause');
-            pauseBtn.textContent = '⏸';
-            pauseBtn.addEventListener('click', async () => {
-              await chrome.runtime.sendMessage({ type: 'PAUSE_DOWNLOAD', downloadId: dl.id });
-              checkOngoingDownloads();
-            });
-            ctrlBox.appendChild(pauseBtn);
-          } else if (dl.status === 'paused') {
-            const resumeBtn = document.createElement('button');
-            resumeBtn.className = 'btn-adl btn-adl-resume';
-            resumeBtn.title = t('resume');
-            resumeBtn.textContent = '▶';
-            resumeBtn.addEventListener('click', async () => {
-              await chrome.runtime.sendMessage({ type: 'RESUME_DOWNLOAD', downloadId: dl.id });
-              checkOngoingDownloads();
-            });
-            ctrlBox.appendChild(resumeBtn);
-          }
-          {
-            const closeBtn = document.createElement('button');
-            closeBtn.className = 'btn-adl btn-adl-close';
-            closeBtn.title = 'Stop';
-            closeBtn.textContent = '✕';
-            closeBtn.addEventListener('click', () => openConfirmModal(dl.id, dl.url));
-            ctrlBox.appendChild(closeBtn);
-          }
+          renderActiveDownloadControls(ctrlBox, dl);
 
           if (dl.status === 'downloading') {
             let durationStr = '';
@@ -516,28 +792,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         ctr.className = 'progress-controls';
         progressBox.appendChild(ctr);
       }
-      // Only show controls for active/paused/merging/error/completed? show for downloading/paused/merging
+      const statusKey = dl.status || 'idle';
+      if (ctr.dataset.dlStatus === statusKey && ctr.childElementCount > 0) return;
+      ctr.dataset.dlStatus = statusKey;
       const showPause = dl.status === 'downloading' || dl.status === 'paused' || dl.status === 'merging';
-      const showClose = true; // always allow close after start
       ctr.innerHTML = '';
       if (showPause) {
         if (dl.status === 'paused') {
           const b = document.createElement('button');
           b.className = 'btn-progress btn-resume';
           b.textContent = t('resume');
-          b.addEventListener('click', async () => {
-            await chrome.runtime.sendMessage({ type: 'RESUME_DOWNLOAD', downloadId: dl.id });
-            checkOngoingDownloads();
-          });
           ctr.appendChild(b);
         } else if (dl.status === 'downloading') {
           const b = document.createElement('button');
           b.className = 'btn-progress btn-pause';
           b.textContent = t('pause');
-          b.addEventListener('click', async () => {
-            await chrome.runtime.sendMessage({ type: 'PAUSE_DOWNLOAD', downloadId: dl.id });
-            checkOngoingDownloads();
-          });
           ctr.appendChild(b);
         } else if (dl.status === 'merging') {
           const s = document.createElement('span');
@@ -549,15 +818,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       const spacer = document.createElement('span');
       spacer.className = 'spacer';
       ctr.appendChild(spacer);
-      if (showClose) {
+      if (showPause || dl.status === 'downloading' || dl.status === 'paused' || dl.status === 'merging') {
         const x = document.createElement('button');
         x.className = 'btn-progress btn-stop';
-        x.title = 'Stop';
+        x.title = t('cancel');
         x.textContent = '✕';
-        x.addEventListener('click', () => openConfirmModal(dl.id, dl.url));
         ctr.appendChild(x);
       }
     }
+
+    if (dlState.id) card.dataset.dlId = dlState.id;
 
     if (dlState.status === 'downloading') {
       progressBox.classList.remove('hidden');
@@ -684,9 +954,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const safeDownloadName = getSafeVideoFilename(item.filename, item.url, item.format, item.contentType);
       const urlLower = item.url.toLowerCase();
-      const isHls = item.format === 'M3U8' || item.format === 'MPD' || item.format === 'M3U' || urlLower.includes('.m3u8') || urlLower.includes('.mpd') || urlLower.includes('.m3u');
-      const isStream = isHls || ['TS','M4S','FMP4','M2TS'].includes(item.format);
-      const displayFormat = isHls ? (item.format === 'MPD' ? 'MPD' : 'M3U8') : (item.format || 'MP4');
+      const isDash = item.format === 'MPD' || urlLower.includes('.mpd');
+      const isHls = !isDash && (item.format === 'M3U8' || item.format === 'M3U' || urlLower.includes('.m3u8') || urlLower.includes('.m3u'));
+      const isStream = isHls || isDash || ['TS','M4S','FMP4','M2TS'].includes(item.format);
+      const displayFormat = isDash ? 'MPD' : (isHls ? 'M3U8' : (item.format || 'MP4'));
       const badgeClass = isHls ? 'badge-m3u8' : isStream ? 'badge-m3u8' : getBadgeClass(item.format);
 
       const durationHtml = item.duration ? `<span class="media-duration-tag">⏱️ ${item.duration}</span>` : '';
@@ -700,16 +971,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       else if (isHls) bottomInfo = t('fullStream');
       else bottomInfo = t('readyToDownload');
       // Progress-info visar också storlek om känd
+      const safeUrl = escapeHtml(item.url);
+      const safeTitle = escapeHtml(safeDownloadName);
       const progressInfoText = sizeStr ? `${t('size')}: ${sizeStr} • ${t('duration')}: ${item.duration || t('unknownDuration')}` : `${t('duration')}: ${item.duration || t('unknownDuration')}`;
 
       card.innerHTML = `
         <div class="card-top">
           <div class="title-container">
-            <span class="media-title" title="${safeDownloadName}">${safeDownloadName}</span>
+            <span class="media-title" title="${safeTitle}">${safeTitle}</span>
             <div class="media-meta-row">
               ${durationHtml}
               ${sizeHtml}
-              <span class="media-url" title="${item.url}">${item.url}</span>
+              <span class="media-url" title="${safeUrl}">${safeUrl}</span>
             </div>
           </div>
           <span class="badge ${badgeClass}">${displayFormat}</span>
@@ -749,11 +1022,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (isCurrentlyThisCard) return;
 
+        const previewUrl = escapeHtml(item.url);
         previewContainer.classList.remove('hidden');
         previewContainer.innerHTML = `
           <div class="preview-wrapper" style="position: relative; width: 100%;">
             <video class="preview-video" controls autoplay playsinline preload="auto" tabindex="0">
-              <source src="${item.url}">
+              <source src="${previewUrl}">
               ${t('formatNotSupportedPreview')}
             </video>
             <div class="preview-osd hidden"></div>
@@ -850,18 +1124,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const downloadBtn = card.querySelector('.btn-download');
       downloadBtn.addEventListener('click', () => {
+        const urlLowerDl = item.url.toLowerCase();
+        const isDashOnly = item.format === 'MPD' || urlLowerDl.includes('.mpd');
+        if (isDashOnly) {
+          const progressBox = card.querySelector('.progress-box');
+          progressBox.classList.remove('hidden');
+          downloadBtn.textContent = t('download');
+          const progressHeader = card.querySelector('.progress-header');
+          const progressInfo = card.querySelector('.progress-info');
+          progressHeader.innerHTML = `<span style="color:#f59e0b;">MPD / DASH</span><span>—</span>`;
+          progressInfo.textContent = t('dashNotSupported');
+          return;
+        }
+
         const downloadId = btoa(item.url).replace(/[^a-zA-Z0-9]/g, '').slice(0, 24);
         const progressBox = card.querySelector('.progress-box');
         progressBox.classList.remove('hidden');
         downloadBtn.disabled = true;
         downloadBtn.textContent = t('downloading');
 
-        // Alla tillåtna källor går via offscreen så de sparas som video (.mp4) med paus/stopp + progress
-        const isDash = item.format === 'MPD' || item.url.toLowerCase().includes('.mpd');
-        if (isHls || isDash) {
+        if (isHls) {
           chrome.runtime.sendMessage({
             type: 'START_HLS_DOWNLOAD',
             downloadId: downloadId,
+            url: item.url,
+            filename: safeDownloadName
+          });
+        } else if (item.url.startsWith('blob:')) {
+          chrome.runtime.sendMessage({
+            type: 'START_BLOB_DOWNLOAD',
+            downloadId: downloadId,
+            tabId: activeTabId,
             url: item.url,
             filename: safeDownloadName
           });
@@ -906,10 +1199,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const dateStr = new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(h.timestamp).toLocaleDateString();
       const div = document.createElement('div');
       div.className = 'history-item';
+      const safeName = escapeHtml(h.filename);
+      const safeSize = escapeHtml(h.size);
+      const safeDur = h.duration && h.duration !== 'N/A' ? escapeHtml(h.duration) : '';
       div.innerHTML = `
-        <div class="history-title" title="${h.filename}">${h.filename}</div>
+        <div class="history-title" title="${safeName}">${safeName}</div>
         <div class="history-meta">
-          <span>${h.size} ${h.duration && h.duration !== 'N/A' ? `• ⏱️ ${h.duration}` : ''}</span>
+          <span>${safeSize}${safeDur ? ` • ⏱️ ${safeDur}` : ''}</span>
           <span>${dateStr}</span>
         </div>
       `;
@@ -920,10 +1216,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   function showEmptyState(customMessage) {
     mediaListContainer.innerHTML = '';
     emptyState.classList.remove('hidden');
+    loadingState.classList.add('hidden');
     if (customMessage) {
       emptyState.querySelector('h3').textContent = customMessage;
+      emptyState.querySelector('p').textContent = t('noVideosDesc');
     } else {
       emptyState.querySelector('h3').textContent = t('noVideosTitle');
+      emptyState.querySelector('p').textContent = t('noVideosDesc');
     }
   }
 
@@ -942,8 +1241,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  btnRefresh.addEventListener('click', () => {
-    loadMedia();
+  btnRefresh.addEventListener('click', async () => {
+    if (viewMain.classList.contains('hidden')) {
+      openMainView();
+    }
+    await fetchMediaForTab({ refresh: true });
   });
 
   btnClear.addEventListener('click', async () => {
@@ -957,15 +1259,41 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Settings view toggle
   btnSettingsToggle.addEventListener('click', () => {
-    viewMain.classList.add('hidden');
-    viewSettings.classList.remove('hidden');
-    renderHistory();
+    openSettingsView();
   });
 
   btnBackMain.addEventListener('click', () => {
-    viewSettings.classList.add('hidden');
-    viewMain.classList.remove('hidden');
+    openMainView();
   });
+
+  const btnCopyEmail = document.getElementById('btn-copy-email');
+  const CREDITS_EMAIL = 'bynrnworld@gmail.com';
+  if (btnCopyEmail) {
+    btnCopyEmail.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(CREDITS_EMAIL);
+        btnCopyEmail.classList.add('copied');
+        btnCopyEmail.title = t('emailCopied');
+        setTimeout(() => {
+          btnCopyEmail.classList.remove('copied');
+          btnCopyEmail.title = t('copyEmail');
+          btnCopyEmail.setAttribute('aria-label', t('copyEmail'));
+        }, 1600);
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = CREDITS_EMAIL;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          btnCopyEmail.classList.add('copied');
+        } catch (err) {}
+        document.body.removeChild(ta);
+      }
+    });
+  }
 
   // Language switch
   selectLanguage.addEventListener('change', async (e) => {
@@ -977,8 +1305,57 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Auto-delete toggle
   chkAutoDelete.addEventListener('change', async (e) => {
     await chrome.storage.local.set({ autoDelete24h: e.target.checked });
+    if (e.target.checked) {
+      try {
+        await chrome.runtime.sendMessage({ type: 'PURGE_HISTORY' });
+      } catch (err) {}
+    }
     renderHistory();
   });
+
+  chkAskEachTime.addEventListener('change', async (e) => {
+    const askEachTime = e.target.checked;
+    if (askEachTime) {
+      await chrome.storage.local.set({
+        useDefaultDownloadFolder: false,
+        useCustomDirectory: false,
+        customDirectoryName: ''
+      });
+      updateSelectedFolderLabel('');
+    }
+    updateFolderOptionsVisibility();
+  });
+
+  if (btnPickFolder) {
+    btnPickFolder.addEventListener('click', async () => {
+      if (typeof window.showDirectoryPicker !== 'function') {
+        alert(t('folderPickerUnsupported'));
+        return;
+      }
+      try {
+        const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        await fvdSaveDirectoryHandle(handle);
+        await chrome.storage.local.set({
+          useDefaultDownloadFolder: true,
+          useCustomDirectory: true,
+          customDirectoryName: handle.name
+        });
+        chkAskEachTime.checked = false;
+        updateFolderOptionsVisibility();
+        updateSelectedFolderLabel(handle.name);
+      } catch (err) {
+        if (err && err.name === 'AbortError') {
+          const data = await chrome.storage.local.get(['useCustomDirectory']);
+          if (data.useCustomDirectory !== true) {
+            chkAskEachTime.checked = true;
+            updateFolderOptionsVisibility();
+          }
+        } else {
+          console.warn('[FVD] Folder picker:', err);
+        }
+      }
+    });
+  }
 
   // Clear history
   btnClearHistory.addEventListener('click', async () => {
@@ -988,5 +1365,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   pollInterval = setInterval(checkOngoingDownloads, 120);
 
-  loadMedia();
+  if (canLoadMedia) {
+    loadMedia();
+  } else {
+    loadingState.classList.add('hidden');
+  }
 });

@@ -1,0 +1,146 @@
+{
+  "appName": {
+    "message": "Flash Video Downloader"
+  },
+  "appShortName": {
+    "message": "FVD"
+  },
+  "appDescription": {
+    "message": "Detect and download openly accessible video files (MP4, WEBM, M3U8) from the current tab. Does not bypass DRM or support YouTube/Netflix."
+  },
+  "appVersion": {
+    "message": "v3.2.1"
+  },
+  "searchPlaceholder": {
+    "message": "Search detected videos..."
+  },
+  "all": {
+    "message": "All"
+  },
+  "video": {
+    "message": "Video"
+  },
+  "stream": {
+    "message": "Streams"
+  },
+  "noVideosTitle": {
+    "message": "No videos detected yet"
+  },
+  "noVideosDesc": {
+    "message": "Start playing the video on the web page to capture the stream automatically!"
+  },
+  "loading": {
+    "message": "Sniffing web page and network..."
+  },
+  "play": {
+    "message": "▶ Play"
+  },
+  "stop": {
+    "message": "⏹ Stop"
+  },
+  "copy": {
+    "message": "📋 Copy"
+  },
+  "download": {
+    "message": "⬇ Download"
+  },
+  "downloading": {
+    "message": "⏳ Downloading..."
+  },
+  "saving": {
+    "message": "💾 Saving..."
+  },
+  "downloaded": {
+    "message": "✅ Downloaded!"
+  },
+  "copied": {
+    "message": "✅ Copied!"
+  },
+  "tryAgain": {
+    "message": "⬇ Retry"
+  },
+  "errorOccurred": {
+    "message": "An error occurred"
+  },
+  "readyToDownload": {
+    "message": "Ready to download"
+  },
+  "fullStream": {
+    "message": "Full Length (Stream)"
+  },
+  "formatNotSupportedPreview": {
+    "message": "⚠️ This stream format cannot be previewed in browser, but will download as a full .mp4!"
+  },
+  "footerText": {
+    "message": "Captures MP4, WEBM, FLV, M3U8 & more"
+  },
+  "settingsTitle": {
+    "message": "Settings & History"
+  },
+  "language": {
+    "message": "Language"
+  },
+  "downloadHistory": {
+    "message": "Download History"
+  },
+  "noHistory": {
+    "message": "No recent downloads"
+  },
+  "autoDelete24h": {
+    "message": "Auto-delete history after 24 hours"
+  },
+  "clearHistory": {
+    "message": "Clear History"
+  },
+  "historyCleared": {
+    "message": "History cleared"
+  },
+  "back": {
+    "message": "← Back"
+  },
+  "duration": {
+    "message": "Duration"
+  },
+  "size": {
+    "message": "Size"
+  },
+  "downloadedOf": {
+    "message": "Downloaded"
+  },
+  "mergingVideo": {
+    "message": "Merging all parts into full MP4 video file..."
+  },
+  "savedToComputer": {
+    "message": "Video saved to your computer."
+  },
+  "unknownDuration": {
+    "message": "Stream"
+  },
+  "activeDownloads": {
+    "message": "⚡ Active Downloads"
+  },
+  "pause": {
+    "message": "⏸ Pause"
+  },
+  "resume": {
+    "message": "▶ Resume"
+  },
+  "cancel": {
+    "message": "✕"
+  },
+  "paused": {
+    "message": "⏸ Paused"
+  },
+  "confirmStopTitle": {
+    "message": "Stop download?"
+  },
+  "confirmStopDesc": {
+    "message": "Are you sure you want to stop the download? The progress will be lost and the video will be removed from the list."
+  },
+  "confirmYes": {
+    "message": "Yes, stop"
+  },
+  "confirmNo": {
+    "message": "Cancel"
+  }
+}

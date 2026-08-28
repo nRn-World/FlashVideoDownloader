@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Flash Video Downloader</title>
   <link rel="stylesheet" href="popup.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="app-container">
@@ -14,7 +13,7 @@
         <img src="icons/icon32.png" alt="FVD" class="logo-img" />
         <div class="brand-text">
           <h1 id="txt-app-title">Flash Video Downloader</h1>
-          <span class="version" id="txt-app-version">v3.0 PRO</span>
+          <span class="version" id="txt-app-version">v3.2.1</span>
         </div>
       </div>
       <div class="header-actions">
@@ -41,8 +40,8 @@
         <input type="text" id="search-input" placeholder="Search detected videos..." />
         <div class="category-tabs">
           <button class="tab-btn active" data-filter="all"><span id="tab-all-text">All</span> (<span id="count-all">0</span>)</button>
-          <button class="tab-btn" data-filter="video" id="tab-video-text">Video</button>
-          <button class="tab-btn" data-filter="stream" id="tab-stream-text">Streams</button>
+          <button class="tab-btn" data-filter="video"><span id="tab-video-text">Video</span></button>
+          <button class="tab-btn" data-filter="stream"><span id="tab-stream-text">Streams</span></button>
         </div>
       </div>
 
@@ -70,6 +69,18 @@
     <!-- Settings & History View -->
     <div id="view-settings" class="view-panel hidden">
       <div class="settings-container">
+        <div class="settings-section">
+          <h3 id="txt-download-title">Download location</h3>
+          <label class="toggle-control">
+            <input type="checkbox" id="chk-ask-each-time" checked />
+            <span class="toggle-label" id="txt-ask-each-time">Ask where to save each video</span>
+          </label>
+          <div id="fixed-location-options" class="folder-options hidden">
+            <button type="button" id="btn-pick-folder" class="btn-secondary-action">📁 Choose folder on computer</button>
+            <p class="settings-hint" id="txt-selected-folder">No folder selected</p>
+          </div>
+        </div>
+
         <div class="settings-section">
           <h3 id="txt-lang-title">Language</h3>
           <div class="select-wrapper">
@@ -100,6 +111,37 @@
           </div>
         </div>
 
+        <div class="support-section">
+          <div class="support-card">
+            <div class="support-icon-wrap">
+              <img src="icons/kofi-coffee.png" alt="" class="support-coffee-icon" width="72" height="72" />
+            </div>
+            <div class="support-content">
+              <h3 class="support-title" id="txt-support-title">☕ THE WALL OF FAME</h3>
+              <p class="support-desc" id="txt-support-desc">Support the development of Flash Video Downloader by buying me a coffee. Your contribution helps keep this extension free and continuously improving!</p>
+              <a href="https://ko-fi.com/nrnworld" target="_blank" rel="noopener noreferrer" class="support-kofi-btn" id="btn-kofi">
+                <img src="icons/kofi-coffee.png" alt="" class="support-btn-icon" width="18" height="18" />
+                <span id="txt-support-btn">Click here to buy me a coffee</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-credits">
+          <p class="credits-app-name">FlashVideoDownloader</p>
+          <p class="credits-created" id="txt-credits-created">Created 2026 by nRn World</p>
+          <div class="credits-email-row">
+            <span class="credits-email" id="txt-credits-email">bynrnworld@gmail.com</span>
+            <button type="button" class="btn-copy-email" id="btn-copy-email" title="Copy email" aria-label="Copy email">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <p class="credits-version" id="txt-settings-version">v3.2.1</p>
+        </div>
+
         <div class="settings-footer-btn">
           <button id="btn-back-main" class="btn-primary-action">← Back to Videos</button>
         </div>
@@ -107,8 +149,9 @@
     </div>
 
     <!-- Footer -->
-    <footer class="app-footer">
+    <footer class="app-footer" id="app-footer">
       <span id="txt-footer">Captures MP4, WEBM, FLV, M3U8 & more</span>
+      <span id="txt-footer-version" class="footer-version">v3.2.1</span>
     </footer>
   </div>
 
@@ -124,6 +167,7 @@
     </div>
   </div>
 
+  <script src="storage-handles.js"></script>
   <script src="i18n.js"></script>
   <script src="popup.js"></script>
 </body>
