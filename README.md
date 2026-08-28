@@ -184,7 +184,5 @@ GitHub: [nRn-World/FlashVideoDownloader](https://github.com/nRn-World/FlashVideo
 ---
 
 <p align="center">
-  <strong>FlashVideoDownloader</strong><br/>
-  Created 2026 by nRn World<br/>
-  <sub>Free to use · Respect copyright on the content you download</sub>
+  Created by ❤️ © nRn World
 </p>
