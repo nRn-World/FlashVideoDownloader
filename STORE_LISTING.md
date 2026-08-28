@@ -6,10 +6,11 @@ Kör `create_zip.bat` eller packa manuellt (exkludera `server.py`, `test_player.
 
 ## 2. Integritetspolicy (OBLIGATORISKT)
 
-Publicera `privacy.html` på en publik URL, t.ex.:
+Integritetspolicyn publiceras automatiskt via **GitHub Actions** (`.github/workflows/deploy-pages.yml`) till:
 
-- GitHub Pages: `https://<username>.github.io/FlashVideoDownloader/privacy.html`
-- Egen webbplats
+`https://nrn-world.github.io/FlashVideoDownloader/privacy.html`
+
+Efter push till `main`: öppna **Actions** → vänta tills *Deploy GitHub Pages* är grön. Under **Settings → Pages** ska källan vara **GitHub Actions**.
 
 Klistra in URL:en i Developer Dashboard → **Privacy practices → Privacy policy**.
 
@@ -71,10 +72,19 @@ Important:
 
 ## 6. Skärmdumpar (krävs)
 
-Ladda upp minst 1 skärmdump (1280×800 eller 640×400):
-1. Popup med detekterade videor
-2. Nedladdning pågår (progress bar)
-3. Inställningar/historik
+Kör `create_zip.bat` – skapar även butiks-skärmdumpar i `Screenshots/store/`.
+
+**Chrome Web Store storlekar:**
+- **1280×800** (rekommenderas) – `*-1280x800.png`
+- **640×400** (alternativ) – `*-640x400.png`
+
+Ladda upp minst 1 skärmdump (helst alla tre 1280×800):
+1. `01-main-popup-1280x800.png` – detekterade videor
+2. `02-download-progress-1280x800.png` – nedladdning pågår
+3. `03-settings-1280x800.png` – inställningar
+
+**Integritetspolicy-URL (efter GitHub Pages):**
+`https://nrn-world.github.io/FlashVideoDownloader/privacy.html`
 
 ## 7. Checklista före submit
 
