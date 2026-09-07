@@ -6,10 +6,10 @@
     "message": "FVD"
   },
   "appDescription": {
-    "message": "Hitta och ladda ner öppet tillgängliga videofiler (MP4, WEBM, M3U8) från aktiv flik. Kringgår inte DRM och stöder inte YouTube/Netflix."
+    "message": "Hitta och ladda ner öppna videor (MP4, WEBM, M3U8) på aktiv flik. Kringgår inte DRM-skydd."
   },
   "appVersion": {
-    "message": "v3.2.1"
+    "message": "v3.2.3"
   },
   "searchPlaceholder": {
     "message": "Sök bland videor..."

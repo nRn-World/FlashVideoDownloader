@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentFilter = 'all';
   let currentSearch = '';
   let activeTabId = null;
+  let activeTabUrl = null;
   let currentlyPlayingCard = null;
   let pollInterval = null;
   let pendingCancel = null; // { id, url }
@@ -86,12 +87,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Hämta sparade inställningar (engelska + fråga varje gång tills användaren ändrar själv)
-  const stored = await chrome.storage.local.get(['appLanguage', 'autoDelete24h', 'useDefaultDownloadFolder', 'useCustomDirectory', 'customDirectoryName']);
+  const stored = await chrome.storage.local.get(['appLanguage', 'autoDelete24h', 'useDefaultDownloadFolder', 'useCustomDirectory', 'customDirectoryName', 'askSaveEachTime']);
   currentLang = (stored.appLanguage && i18n[stored.appLanguage]) ? stored.appLanguage : 'en';
-  selectLanguage.value = currentLang;
-  chkAutoDelete.checked = stored.autoDelete24h !== false;
+  if (selectLanguage) selectLanguage.value = currentLang;
+  if (chkAutoDelete) chkAutoDelete.checked = stored.autoDelete24h !== false;
   const hasSavedFolder = stored.useDefaultDownloadFolder === true && stored.useCustomDirectory === true;
-  chkAskEachTime.checked = !hasSavedFolder;
+  if (chkAskEachTime) chkAskEachTime.checked = stored.askSaveEachTime === true && !hasSavedFolder;
   updateSelectedFolderLabel(hasSavedFolder ? (stored.customDirectoryName || '') : '');
 
   function updateSelectedFolderLabel(name) {
@@ -100,8 +101,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function updateFolderOptionsVisibility() {
-    const askEachTime = chkAskEachTime.checked;
-    fixedLocationOptions.classList.toggle('hidden', askEachTime);
+    if (!fixedLocationOptions || !chkAskEachTime) return;
+    fixedLocationOptions.classList.toggle('hidden', chkAskEachTime.checked);
   }
   updateFolderOptionsVisibility();
 
@@ -110,6 +111,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       return i18n[currentLang][key];
     }
     return i18n['en'][key] || key;
+  }
+
+  function isRestrictedTabUrl(url) {
+    if (!url || typeof url !== 'string') return true;
+    return url.startsWith('chrome://') ||
+      url.startsWith('chrome-extension://') ||
+      url.startsWith('edge://') ||
+      url.startsWith('about:');
   }
 
   function escapeHtml(str) {
@@ -379,7 +388,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     showEmptyState(t('errorOccurred'));
   } else {
     activeTabId = tab.id;
-    if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://')) {
+    activeTabUrl = tab.url || null;
+    if (isRestrictedTabUrl(tab.url)) {
       showEmptyState(t('internalPageBlocked'));
     } else {
       try {
@@ -398,7 +408,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function ensureContentScript(tabId) {
     try {
       await chrome.scripting.executeScript({
-        target: { tabId, allFrames: false },
+        target: { tabId, allFrames: true },
         files: ['blocked-hosts.js', 'content.js']
       });
     } catch (e) {
@@ -525,6 +535,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab || !tab.id) return null;
       activeTabId = tab.id;
+      activeTabUrl = tab.url || null;
       return tab;
     } catch (e) {
       return null;
@@ -533,9 +544,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function isTabBlocked(tab) {
     if (!tab || !tab.url) return true;
-    if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://')) {
-      return true;
-    }
+    if (isRestrictedTabUrl(tab.url)) return true;
     try {
       const blockCheck = await chrome.runtime.sendMessage({ type: 'IS_URL_BLOCKED', url: tab.url });
       return !!(blockCheck && blockCheck.blocked);
@@ -580,9 +589,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (await isTabBlocked(tab)) {
       loadingState.classList.add('hidden');
-      const blockedMsg = (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://'))
-        ? t('internalPageBlocked')
-        : t('blockedSite');
+      const blockedMsg = isRestrictedTabUrl(tab.url) ? t('internalPageBlocked') : t('blockedSite');
       showEmptyState(blockedMsg);
       allMedia = [];
       countAll.textContent = '0';
@@ -829,68 +836,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (dlState.id) card.dataset.dlId = dlState.id;
 
-    if (dlState.status === 'downloading') {
-      progressBox.classList.remove('hidden');
+    // Progress lives only in "Active Downloads" while running — hide per-card bar
+    if (dlState.status === 'downloading' || dlState.status === 'paused' || dlState.status === 'merging') {
+      progressBox.classList.add('hidden');
       downloadBtn.disabled = true;
-      downloadBtn.textContent = t('downloading');
-      progressBarFill.style.width = `${dlState.percent}%`;
-      ensureCardControls(dlState);
-      const headerLeft = progressHeader.querySelector('span:first-child');
-      const headerRight = progressHeader.querySelector('span:last-child');
-      // init header if not yet animated
-      if (!progressHeader.dataset.animated) {
-        progressHeader.innerHTML = `<span></span><span>${dlState.completed}/${dlState.total}</span>`;
-        progressHeader.dataset.animated = '1';
-      } else {
-        progressHeader.querySelector('span:last-child').textContent = `${dlState.completed}/${dlState.total}`;
-      }
-      animatePercentCounter(dlState.id + '_card', dlState.percent, (cur) => {
-        let durationStr = '';
-        if (dlState.totalDurationFormatted) {
-          const loadedDur = dlState.downloadedDurationFormatted || '0s';
-          durationStr = ` | ${loadedDur} / ${dlState.totalDurationFormatted}`;
-        }
-        const left = progressHeader.querySelector('span:first-child');
-        if (left) left.textContent = `${t('downloadedOf')}: ${cur}%${durationStr}`;
-        const sz = dlState.totalBytes ? formatBytesPopup(dlState.totalBytes) : (dlState.size || '');
-        const szPart = sz && sz !== 'Web source' ? `📦 ${sz} • ` : '';
-        progressInfo.textContent = `${szPart}${t('duration')}: ${dlState.totalDurationFormatted || t('unknownDuration')} (${cur}%)`;
-        progressBarFill.style.width = `${cur}%`;
-      });
-    } else if (dlState.status === 'paused') {
-      progressBox.classList.remove('hidden');
-      downloadBtn.disabled = true;
-      downloadBtn.textContent = t('paused');
-      progressBarFill.style.width = `${dlState.percent}%`;
-      ensureCardControls(dlState);
-      if (!progressHeader.dataset.animated) {
-        progressHeader.innerHTML = `<span></span><span>${dlState.completed}/${dlState.total}</span>`;
-        progressHeader.dataset.animated = '1';
-      } else {
-        progressHeader.querySelector('span:last-child').textContent = `${dlState.completed}/${dlState.total}`;
-      }
-      animatePercentCounter(dlState.id + '_card', dlState.percent, (cur) => {
-        let durationStr = '';
-        if (dlState.totalDurationFormatted) {
-          const loadedDur = dlState.downloadedDurationFormatted || '0s';
-          durationStr = ` | ${loadedDur} / ${dlState.totalDurationFormatted}`;
-        }
-        const left = progressHeader.querySelector('span:first-child');
-        if (left) left.textContent = `${t('paused')}: ${cur}%${durationStr}`;
-        const sz = dlState.totalBytes ? formatBytesPopup(dlState.totalBytes) : (dlState.size || '');
-        const szPart = sz && sz !== 'Web source' ? `📦 ${sz} • ` : '';
-        progressInfo.textContent = `${szPart}${t('paused')} - ${cur}%`;
-        progressBarFill.style.width = `${cur}%`;
-      });
-    } else if (dlState.status === 'merging') {
-      progressBox.classList.remove('hidden');
-      downloadBtn.disabled = true;
-      downloadBtn.textContent = t('saving');
-      progressBarFill.style.width = `100%`;
-      progressHeader.innerHTML = `<span>${t('saving')}</span><span>100%</span>`;
-      progressInfo.textContent = t('mergingVideo');
-      ensureCardControls(dlState);
-    } else if (dlState.status === 'completed') {
+      if (dlState.status === 'downloading') downloadBtn.textContent = t('downloading');
+      else if (dlState.status === 'paused') downloadBtn.textContent = t('paused');
+      else downloadBtn.textContent = t('saving');
+      return;
+    }
+
+    if (dlState.status === 'completed') {
       progressBox.classList.remove('hidden');
       downloadBtn.disabled = false;
       downloadBtn.textContent = t('downloaded');
@@ -1126,30 +1082,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       downloadBtn.addEventListener('click', () => {
         const urlLowerDl = item.url.toLowerCase();
         const isDashOnly = item.format === 'MPD' || urlLowerDl.includes('.mpd');
-        if (isDashOnly) {
-          const progressBox = card.querySelector('.progress-box');
-          progressBox.classList.remove('hidden');
-          downloadBtn.textContent = t('download');
-          const progressHeader = card.querySelector('.progress-header');
-          const progressInfo = card.querySelector('.progress-info');
-          progressHeader.innerHTML = `<span style="color:#f59e0b;">MPD / DASH</span><span>—</span>`;
-          progressInfo.textContent = t('dashNotSupported');
-          return;
-        }
 
         const downloadId = btoa(item.url).replace(/[^a-zA-Z0-9]/g, '').slice(0, 24);
         const progressBox = card.querySelector('.progress-box');
-        progressBox.classList.remove('hidden');
+        // Keep per-card progress hidden — Active Downloads banner shows progress
+        if (progressBox) progressBox.classList.add('hidden');
         downloadBtn.disabled = true;
         downloadBtn.textContent = t('downloading');
 
-        if (isHls) {
-          chrome.runtime.sendMessage({
-            type: 'START_HLS_DOWNLOAD',
-            downloadId: downloadId,
-            url: item.url,
-            filename: safeDownloadName
-          });
+        const pageReferer = item.initiator || activeTabUrl || null;
+        const common = {
+          downloadId,
+          url: item.url,
+          filename: safeDownloadName,
+          pageUrl: activeTabUrl || null,
+          pageReferer,
+          tabId: activeTabId
+        };
+
+        if (isDashOnly) {
+          chrome.runtime.sendMessage({ type: 'START_DASH_DOWNLOAD', ...common });
+        } else if (isHls) {
+          chrome.runtime.sendMessage({ type: 'START_HLS_DOWNLOAD', ...common });
         } else if (item.url.startsWith('blob:')) {
           chrome.runtime.sendMessage({
             type: 'START_BLOB_DOWNLOAD',
@@ -1159,13 +1113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             filename: safeDownloadName
           });
         } else {
-          // Direktfil / blob: – även dessa sparas som video via generisk pipeline (progress + paus)
-          chrome.runtime.sendMessage({
-            type: 'START_GENERIC_DOWNLOAD',
-            downloadId: downloadId,
-            url: item.url,
-            filename: safeDownloadName
-          });
+          chrome.runtime.sendMessage({ type: 'START_GENERIC_DOWNLOAD', ...common });
         }
 
         if (!pollInterval) {
@@ -1317,11 +1265,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const askEachTime = e.target.checked;
     if (askEachTime) {
       await chrome.storage.local.set({
+        askSaveEachTime: true,
         useDefaultDownloadFolder: false,
         useCustomDirectory: false,
         customDirectoryName: ''
       });
       updateSelectedFolderLabel('');
+    } else {
+      await chrome.storage.local.set({ askSaveEachTime: false });
     }
     updateFolderOptionsVisibility();
   });
@@ -1336,6 +1287,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
         await fvdSaveDirectoryHandle(handle);
         await chrome.storage.local.set({
+          askSaveEachTime: false,
           useDefaultDownloadFolder: true,
           useCustomDirectory: true,
           customDirectoryName: handle.name

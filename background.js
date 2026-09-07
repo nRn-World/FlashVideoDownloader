@@ -6,9 +6,14 @@ importScripts('blocked-hosts.js');
 const tabMedia = new Map();
 const activeDownloads = new Map();
 const cleanupScheduled = new Set();
+const chromeDownloadMap = new Map(); // chrome.downloads id -> extension download id
 
 function urlHasExt(urlLower, ext) {
-  return new RegExp(`\\.${ext.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\?|#|$)`, 'i').test(urlLower);
+  // Allow trailing slash after extension (common on KVS tube sites: .../720p.mp4/)
+  return new RegExp(
+    `\\.${ext.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\/*(?:\\?|#|$)|\\/+)`,
+    'i'
+  ).test(urlLower);
 }
 
 // Media file extensions - utökad för alla tillåtna videokällor (sparas alltid som video)
@@ -69,12 +74,14 @@ function getCleanFilename(url, headerFilename, contentType) {
     try {
       const workUrl = url.startsWith('blob:') ? url.slice(5) : url;
       const urlObj = new URL(workUrl);
-      let rawFilename = urlObj.pathname.substring(urlObj.pathname.lastIndexOf('/') + 1);
+      // Strip trailing slashes so .../720p.mp4/ still yields 720p.mp4
+      const path = urlObj.pathname.replace(/\/+$/, '');
+      let rawFilename = path.substring(path.lastIndexOf('/') + 1);
       if (rawFilename) baseName = decodeURIComponent(rawFilename.split('?')[0]);
     } catch (e) {}
   }
 
-  if (!baseName || baseName.length < 2 || baseName === 'videoplayback' || baseName.startsWith('segment') || baseName.startsWith('master') || baseName.startsWith('index') || baseName.startsWith('playlist') || baseName.startsWith('chunk') || baseName.startsWith('frag')) {
+  if (!baseName || baseName.length < 2 || baseName === 'videoplayback' || baseName.startsWith('segment') || baseName.startsWith('master') || baseName.startsWith('index') || baseName.startsWith('playlist') || baseName.startsWith('chunk') || baseName.startsWith('frag') || baseName === 'get_file') {
     baseName = `video_${Date.now().toString().slice(-4)}`;
   }
 
@@ -105,16 +112,30 @@ function getCleanFilename(url, headerFilename, contentType) {
   return baseName;
 }
 
+function isTubeCmsVideoUrl(url) {
+  const u = (url || '').toLowerCase();
+  // Kernel Video Sharing / similar adult CMS delivery paths
+  if (/\/get_file\//i.test(u)) return true;
+  if (/\/video[_-]?file\//i.test(u)) return true;
+  if (/\/contents\/videos?\//i.test(u) && /\.(mp4|webm|m3u8|mov)/i.test(u)) return true;
+  return false;
+}
+
 function isStreamingSegmentUrl(url) {
   const u = (url || '').toLowerCase();
-  if (/\.(ts|m4s|fmp4|cmfv|cmfa|vtt|srt)(\?|#|$)/i.test(u)) return true;
+  if (/\.(ts|m4s|fmp4|cmfv|cmfa|vtt|srt)(?:\/*(?:\?|#|$)|\/+)/i.test(u)) return true;
   if (/\/(segment|segments|chunk|chunks|frag|fragment)(\/|[_-]|\d)/i.test(u)) return true;
   return false;
 }
 
 function isPreviewMediaUrl(url) {
   const u = (url || '').toLowerCase();
-  return /(thumb|thumbnail|preview|poster|sprite|placeholder|avatar|favicon|logo|icon|banner|small|tiny|mini)/i.test(u);
+  // Real video files from tube CMS / quality variants are not previews
+  if (isTubeCmsVideoUrl(u)) return false;
+  if (/\b(240p|360p|480p|720p|1080p|1440p|2160p|4k)\b/i.test(u)) return false;
+  if (urlHasExt(u, 'm3u8') || urlHasExt(u, 'mpd')) return false;
+  // Match preview tokens as path/query parts — avoid over-matching (e.g. bare "icon")
+  return /(?:^|[\/_\-.?&=])(thumbnails?|preview|poster|sprite|placeholder|avatar|favicon|banner)(?:[\/_\-.?&=]|$)/i.test(u);
 }
 
 function addMediaItem(tabId, item) {
@@ -152,7 +173,7 @@ async function restoreActiveDownloads() {
       if (!dl || !dl.id) continue;
       if (dl.status === 'downloading' || dl.status === 'paused' || dl.status === 'merging') {
         dl.status = 'error';
-        dl.error = 'Nedladdningen avbröts (tillägget startades om). Försök igen.';
+        dl.error = 'Download interrupted (extension restarted). Please try again.';
       }
       activeDownloads.set(dl.id, dl);
     }
@@ -217,19 +238,20 @@ chrome.webRequest.onHeadersReceived.addListener(
     const isMediaMime = MEDIA_MIME_TYPES.some(type => {
       if (type === 'application/octet-stream' || type === 'binary/octet-stream') {
         // generisk binär räknas bara som media om filnamn/extension hintar video eller disposition finns
-        return contentType === type && (contentDispositionFilename || MEDIA_EXTENSIONS.some(ext => url.toLowerCase().includes('.'+ext)));
+        return contentType === type && (contentDispositionFilename || MEDIA_EXTENSIONS.some(ext => url.toLowerCase().includes('.'+ext)) || isTubeCmsVideoUrl(url));
       }
       return contentType.startsWith(type);
     });
     const urlLower = url.toLowerCase();
-    const hasMediaExt = MEDIA_EXTENSIONS.some(ext => new RegExp(`\\.${ext}(\\?|#|$)`, 'i').test(urlLower));
+    const hasMediaExt = MEDIA_EXTENSIONS.some(ext => urlHasExt(urlLower, ext));
     const hasDispositionVideo = contentDispositionFilename && MEDIA_EXTENSIONS.some(ext => contentDispositionFilename.toLowerCase().endsWith('.'+ext));
+    const looksLikeTubeVideo = isTubeCmsVideoUrl(url);
 
-    if (contentLength > 0 && contentLength < 15000 && !urlLower.includes('.m3u8') && !urlLower.includes('.mpd') && !urlLower.includes('.m3u')) return;
+    if (contentLength > 0 && contentLength < 15000 && !urlLower.includes('.m3u8') && !urlLower.includes('.mpd') && !urlLower.includes('.m3u') && !looksLikeTubeVideo) return;
 
     if (isStreamingSegmentUrl(url) || isPreviewMediaUrl(url)) return;
 
-    if (isMediaMime || hasMediaExt || hasDispositionVideo) {
+    if (isMediaMime || hasMediaExt || hasDispositionVideo || looksLikeTubeVideo) {
       // Never show file size for streaming manifests - 6.5KB is the playlist, not the video (would be false info for a 21min video)
       const isManifest = urlLower.includes('.m3u8') || urlLower.includes('.m3u') || urlLower.includes('.mpd') || urlLower.includes('.m4s') || urlLower.includes('.fmp4') || (contentType.includes('mpegurl') || contentType.includes('dash+xml'));
       const format = getFormat(url, contentType);
@@ -310,8 +332,107 @@ function sanitizeHistoryUrl(url) {
 }
 
 async function shouldPromptForSave() {
-  const data = await chrome.storage.local.get(['useDefaultDownloadFolder', 'useCustomDirectory']);
-  return !(data.useDefaultDownloadFolder === true && data.useCustomDirectory === true);
+  try {
+    if (!chrome.storage || !chrome.storage.local) return false;
+    const data = await chrome.storage.local.get(['askSaveEachTime', 'useDefaultDownloadFolder', 'useCustomDirectory']);
+    if (data.useDefaultDownloadFolder === true && data.useCustomDirectory === true) {
+      return false;
+    }
+    return data.askSaveEachTime === true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function emitDownloadProgress(dl) {
+  if (!dl) return;
+  chrome.runtime.sendMessage({ type: 'OFFSCREEN_PROGRESS', state: { ...dl } }).catch(() => {});
+}
+
+function scheduleDownloadCleanup(extId) {
+  if (cleanupScheduled.has(extId)) return;
+  cleanupScheduled.add(extId);
+  setTimeout(() => {
+    cleanupScheduled.delete(extId);
+    const cur = activeDownloads.get(extId);
+    if (cur && (cur.status === 'completed' || cur.status === 'error')) {
+      activeDownloads.delete(extId);
+      persistActiveDownloads();
+      updateBadge();
+    }
+  }, 45000);
+}
+
+function completeTrackedDownload(extId) {
+  const dl = activeDownloads.get(extId);
+  if (!dl) return;
+  dl.status = 'completed';
+  dl.percent = 100;
+  activeDownloads.set(extId, dl);
+  persistActiveDownloads();
+  emitDownloadProgress(dl);
+  Promise.resolve(
+    saveDownloadToHistory({
+      filename: dl.filename,
+      url: dl.url,
+      size: dl.size || 'Direct',
+      duration: dl.duration || ''
+    })
+  ).catch((e) => console.warn('[FVD] history save:', e && e.message ? e.message : e));
+  updateBadge();
+  scheduleDownloadCleanup(extId);
+}
+
+function failTrackedDownload(extId, message) {
+  const dl = activeDownloads.get(extId);
+  if (!dl) return;
+  dl.status = 'error';
+  dl.error = message || 'Download failed';
+  activeDownloads.set(extId, dl);
+  persistActiveDownloads();
+  emitDownloadProgress(dl);
+  updateBadge();
+  scheduleDownloadCleanup(extId);
+}
+
+chrome.downloads.onChanged.addListener((delta) => {
+  const extId = chromeDownloadMap.get(delta.id);
+  if (!extId) return;
+  const dl = activeDownloads.get(extId);
+  if (!dl) return;
+
+  if (delta.bytesReceived && delta.totalBytes) {
+    const received = delta.bytesReceived.current || 0;
+    const total = delta.totalBytes.current || 0;
+    if (total > 0) {
+      dl.percent = Math.min(99, Math.round((received / total) * 100));
+      dl.totalBytes = received;
+      activeDownloads.set(extId, dl);
+      emitDownloadProgress(dl);
+    }
+  }
+
+  if (delta.state && delta.state.current === 'complete') {
+    chromeDownloadMap.delete(delta.id);
+    completeTrackedDownload(extId);
+  } else if (delta.error) {
+    chromeDownloadMap.delete(delta.id);
+    failTrackedDownload(extId, delta.error.current || 'Download failed');
+  } else if (delta.state && delta.state.current === 'interrupted') {
+    chromeDownloadMap.delete(delta.id);
+    failTrackedDownload(extId, 'Download interrupted');
+  }
+});
+
+async function ensureContentScript(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['blocked-hosts.js', 'content.js']
+    });
+  } catch (e) {
+    console.warn('[FVD] ensureContentScript:', e && e.message ? e.message : e);
+  }
 }
 
 async function saveFileViaDownloads(blobUrl, filename) {
@@ -334,6 +455,7 @@ async function saveUrlViaDownloads(fileUrl, filename) {
 
 async function saveDownloadToHistory(item) {
   try {
+    if (!chrome.storage || !chrome.storage.local) return;
     const data = await chrome.storage.local.get(['downloadHistory', 'autoDelete24h']);
     let history = data.downloadHistory || [];
     const autoDelete = data.autoDelete24h !== false;
@@ -349,7 +471,7 @@ async function saveDownloadToHistory(item) {
     });
     if (history.length > 50) history = history.slice(0, 50);
     await chrome.storage.local.set({ downloadHistory: history });
-  } catch (e) { console.error('Failed to save history:', e); }
+  } catch (e) { console.warn('[FVD] Failed to save history:', e && e.message ? e.message : e); }
 }
 
 async function purgeExpiredHistory() {
@@ -370,6 +492,7 @@ chrome.runtime.onInstalled.addListener((details) => {
     chrome.storage.local.set({
       useDefaultDownloadFolder: false,
       useCustomDirectory: false,
+      askSaveEachTime: false,
       autoDelete24h: true
     });
   }
@@ -379,7 +502,7 @@ self.addEventListener('error', (e) => console.error('[FVD background error]', e 
 self.addEventListener('unhandledrejection', (e) => console.error('[FVD unhandled]', e && e.reason ? e.reason : e));
 
 // === HLS / Generic Download Trigger (delegates to offscreen.js) ===
-async function startHlsDownload(downloadId, playlistUrl, filename) {
+async function startHlsDownload(downloadId, playlistUrl, filename, pageReferer) {
   try {
     activeDownloads.set(downloadId, {
       id: downloadId, url: playlistUrl, filename: filename,
@@ -396,7 +519,8 @@ async function startHlsDownload(downloadId, playlistUrl, filename) {
         type: 'START_OFFSCREEN_HLS',
         downloadId: downloadId,
         url: playlistUrl,
-        filename: filename
+        filename: filename,
+        pageReferer: pageReferer || null
       });
     } catch (e) {
       // Fallback to direct download if offscreen not available
@@ -407,91 +531,141 @@ async function startHlsDownload(downloadId, playlistUrl, filename) {
   } catch (e) { console.error('[FVD] startHlsDownload', e); }
 }
 
-async function startBlobDownload(downloadId, tabId, blobUrl, filename) {
+async function startDashDownload(downloadId, mpdUrl, filename, pageReferer) {
   try {
     activeDownloads.set(downloadId, {
-      id: downloadId, url: blobUrl, filename: filename,
-      status: 'downloading', completed: 0, total: 1, percent: 0,
+      id: downloadId, url: mpdUrl, filename: filename,
+      status: 'downloading', completed: 0, total: 0, percent: 0,
       totalDurationSec: 0, downloadedDurationSec: 0,
       totalDurationFormatted: '', downloadedDurationFormatted: '',
       error: null, totalBytes: 0
     });
     updateBadge();
     persistActiveDownloads();
-
-    let blobResponse;
-    try {
-      blobResponse = await chrome.tabs.sendMessage(tabId, { type: 'FETCH_BLOB', url: blobUrl });
-    } catch (e) {
-      throw new Error('Kunde inte läsa blob-video från sidan. Ladda om sidan och försök igen.');
-    }
-    if (!blobResponse || blobResponse.error) {
-      throw new Error(blobResponse && blobResponse.error ? blobResponse.error : 'Blob-hämtning misslyckades');
-    }
-    if (!blobResponse.buffer) {
-      throw new Error('Tom blob-data – videon kanske inte är redo än');
-    }
-
     await ensureOffscreenDocument();
-    await chrome.runtime.sendMessage({
-      type: 'START_OFFSCREEN_BUFFER',
-      downloadId: downloadId,
-      filename: filename,
-      buffer: blobResponse.buffer
+    try {
+      await chrome.runtime.sendMessage({
+        type: 'START_OFFSCREEN_DASH',
+        downloadId,
+        url: mpdUrl,
+        filename,
+        pageReferer: pageReferer || null
+      });
+    } catch (e) {
+      console.warn('[FVD] DASH offscreen failed:', e && e.message);
+      activeDownloads.set(downloadId, {
+        ...activeDownloads.get(downloadId),
+        status: 'error',
+        error: 'Offscreen not available - update Chrome to 109+'
+      });
+      updateBadge();
+    }
+  } catch (e) { console.error('[FVD] startDashDownload', e); }
+}
+
+async function startBlobDownload(downloadId, tabId, blobUrl, filename) {
+  const dlState = {
+    id: downloadId, url: blobUrl, filename: filename,
+    status: 'downloading', completed: 0, total: 1, percent: 0,
+    totalDurationSec: 0, downloadedDurationSec: 0,
+    totalDurationFormatted: '', downloadedDurationFormatted: '',
+    error: null, totalBytes: 0
+  };
+  activeDownloads.set(downloadId, dlState);
+  updateBadge();
+  persistActiveDownloads();
+
+  try {
+    await ensureContentScript(tabId);
+    const blobResponse = await chrome.tabs.sendMessage(tabId, {
+      type: 'DOWNLOAD_BLOB',
+      url: blobUrl,
+      filename: filename
     });
+
+    if (blobResponse && blobResponse.ok) {
+      dlState.status = 'completed';
+      dlState.percent = 100;
+      dlState.totalBytes = blobResponse.size || 0;
+      activeDownloads.set(downloadId, dlState);
+      persistActiveDownloads();
+      emitDownloadProgress(dlState);
+      saveDownloadToHistory({
+        filename,
+        url: blobUrl,
+        size: blobResponse.size ? formatBytes(blobResponse.size) : 'Blob',
+        duration: ''
+      });
+      updateBadge();
+      scheduleDownloadCleanup(downloadId);
+      return;
+    }
+
+    const errMsg = blobResponse && blobResponse.error ? blobResponse.error : 'Blob download failed';
+    throw new Error(errMsg);
   } catch (e) {
     console.error('[FVD] startBlobDownload', e);
-    activeDownloads.set(downloadId, {
-      ...(activeDownloads.get(downloadId) || { id: downloadId, url: blobUrl, filename }),
-      status: 'error',
-      error: e && e.message ? e.message : 'Blob-nedladdning misslyckades'
-    });
-    updateBadge();
-    persistActiveDownloads();
+    failTrackedDownload(downloadId, e && e.message ? e.message : 'Blob download failed');
   }
 }
 
-async function startGenericDownload(downloadId, fileUrl, filename) {
+async function startGenericDownload(downloadId, fileUrl, filename, pageReferer) {
   if (fileUrl && fileUrl.startsWith('blob:')) {
     console.warn('[FVD] blob: URL must use START_BLOB_DOWNLOAD');
     return;
   }
+
+  const dlState = {
+    id: downloadId, url: fileUrl, filename: filename,
+    status: 'downloading', completed: 0, total: 1, percent: 5,
+    totalDurationSec: 0, downloadedDurationSec: 0,
+    totalDurationFormatted: '', downloadedDurationFormatted: '',
+    error: null, totalBytes: 0
+  };
+  activeDownloads.set(downloadId, dlState);
+  updateBadge();
+  persistActiveDownloads();
+
   try {
-    activeDownloads.set(downloadId, {
-      id: downloadId, url: fileUrl, filename: filename,
-      status: 'downloading', completed: 0, total: 1, percent: 0,
-      totalDurationSec: 0, downloadedDurationSec: 0,
-      totalDurationFormatted: '', downloadedDurationFormatted: '',
-      error: null, totalBytes: 0
-    });
-    updateBadge();
+    const chromeDlId = await saveUrlViaDownloads(fileUrl, filename);
+    chromeDownloadMap.set(chromeDlId, downloadId);
+    dlState.percent = 15;
+    activeDownloads.set(downloadId, dlState);
     persistActiveDownloads();
-    await ensureOffscreenDocument();
-    // Try offscreen generic pipeline, fallback to chrome.downloads if unavailable (e.g. Chrome <109)
-    let offscreenOk = false;
+    emitDownloadProgress(dlState);
+  } catch (primaryErr) {
+    console.warn('[FVD] chrome.downloads failed, trying offscreen fetch:', primaryErr && primaryErr.message);
     try {
-      if (chrome.offscreen && typeof chrome.offscreen.hasDocument === 'function') {
-        await chrome.runtime.sendMessage({
-          type: 'START_OFFSCREEN_GENERIC',
-          downloadId: downloadId,
-          url: fileUrl,
-          filename: filename
-        });
-        offscreenOk = true;
-      }
-    } catch (e) { console.warn('[FVD] generic offscreen failed:', e && e.message); }
-    if (!offscreenOk) {
-      // Fallback: direct download (still saves as video, but without pause/progress)
-      try {
-        await saveUrlViaDownloads(fileUrl, filename);
-        activeDownloads.set(downloadId, { ...activeDownloads.get(downloadId), status: 'completed', percent: 100 });
-        saveDownloadToHistory({ filename, url: fileUrl, size: 'Direct', duration: '' });
-      } catch (dlErr) {
-        activeDownloads.set(downloadId, { ...activeDownloads.get(downloadId), status: 'error', error: dlErr && dlErr.message ? dlErr.message : 'Download failed' });
-      }
-      updateBadge();
+      await ensureOffscreenDocument();
+      await chrome.runtime.sendMessage({
+        type: 'START_OFFSCREEN_GENERIC',
+        downloadId: downloadId,
+        url: fileUrl,
+        filename: filename,
+        pageReferer: pageReferer || null
+      });
+    } catch (fallbackErr) {
+      failTrackedDownload(
+        downloadId,
+        (primaryErr && primaryErr.message) || (fallbackErr && fallbackErr.message) || 'Download failed'
+      );
     }
-  } catch (e) { console.error('[FVD] startGenericDownload', e); }
+  }
+}
+
+function resolvePageReferer(message) {
+  if (message.pageReferer) return message.pageReferer;
+  if (message.pageUrl) return message.pageUrl;
+  if (message.referer) return message.referer;
+  // Fall back to sniffed initiator for this media URL on the tab
+  try {
+    if (message.tabId != null && message.url) {
+      const mediaMap = tabMedia.get(message.tabId);
+      const item = mediaMap && mediaMap.get(message.url);
+      if (item && item.initiator) return item.initiator;
+    }
+  } catch (e) {}
+  return null;
 }
 
 // === Message Dispatcher ===
@@ -551,13 +725,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ status: 'ok' });
     }
   }
-  // From popup: start HLS / generic download (all tillåtna källor sparas som video)
+  // From popup: start HLS / DASH / generic download
   else if (message.type === 'START_HLS_DOWNLOAD') {
     if (fvdIsBlockedUrl(message.url)) {
       sendResponse({ status: 'blocked' });
       return true;
     }
-    startHlsDownload(message.downloadId, message.url, message.filename);
+    startHlsDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message));
+    sendResponse({ status: 'started' });
+  }
+  else if (message.type === 'START_DASH_DOWNLOAD') {
+    if (fvdIsBlockedUrl(message.url)) {
+      sendResponse({ status: 'blocked' });
+      return true;
+    }
+    startDashDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message));
     sendResponse({ status: 'started' });
   }
   else if (message.type === 'START_GENERIC_DOWNLOAD') {
@@ -565,7 +747,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ status: 'blocked' });
       return true;
     }
-    startGenericDownload(message.downloadId, message.url, message.filename);
+    startGenericDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message));
     sendResponse({ status: 'started' });
   }
   else if (message.type === 'START_BLOB_DOWNLOAD') {

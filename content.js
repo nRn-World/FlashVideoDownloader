@@ -141,6 +141,36 @@
       })();
       return true;
     }
+    if (req && req.type === 'DOWNLOAD_BLOB') {
+      (async () => {
+        try {
+          if (!req.url || !req.url.startsWith('blob:')) {
+            sendResponse({ error: 'Invalid blob URL' });
+            return;
+          }
+          const res = await fetch(req.url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const blob = await res.blob();
+          if (!blob || blob.size === 0) throw new Error('Empty blob');
+
+          const filename = (req.filename || 'video.mp4').replace(/[/\\?%*:|"<>]/g, '_');
+          const objUrl = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = objUrl;
+          anchor.download = filename;
+          anchor.rel = 'noopener';
+          anchor.style.display = 'none';
+          document.documentElement.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+          setTimeout(() => URL.revokeObjectURL(objUrl), 120000);
+          sendResponse({ ok: true, size: blob.size });
+        } catch (e) {
+          sendResponse({ error: e && e.message ? e.message : 'Blob download failed' });
+        }
+      })();
+      return true;
+    }
     return true;
   });
 })();

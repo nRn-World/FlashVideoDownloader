@@ -6,10 +6,10 @@
     "message": "FVD"
   },
   "appDescription": {
-    "message": "Detect and download openly accessible video files (MP4, WEBM, M3U8) from the current tab. Does not bypass DRM or support YouTube/Netflix."
+    "message": "Detect and download open videos (MP4, WEBM, M3U8) from the active tab. Does not bypass DRM protection."
   },
   "appVersion": {
-    "message": "v3.2.1"
+    "message": "v3.2.3"
   },
   "searchPlaceholder": {
     "message": "Search detected videos..."
