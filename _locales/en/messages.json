@@ -9,7 +9,7 @@
     "message": "Detect and download open videos (MP4, WEBM, M3U8) from the active tab. Does not bypass DRM protection."
   },
   "appVersion": {
-    "message": "v3.2.3"
+    "message": "v3.2.5"
   },
   "searchPlaceholder": {
     "message": "Search detected videos..."

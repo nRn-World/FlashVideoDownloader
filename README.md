@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg"><img src="https://img.shields.io/badge/Download-Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=0B57D0" alt="Download on Chrome Web Store" /></a>
-  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.2.1-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.2.1" /></a>
+  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.2.5-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.2.5" /></a>
   <a href="https://developer.chrome.com/docs/extensions/mv3/"><img src="https://img.shields.io/badge/Manifest-V3-FF6D00?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=E65100" alt="Manifest V3" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-00BFA5?style=for-the-badge&logo=creativecommons&logoColor=white&labelColor=00897B" alt="License CC BY-NC 4.0" /></a>
   <a href="https://ko-fi.com/nrnworld"><img src="https://img.shields.io/badge/Support-Buy%20me%20a%20coffee-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white&labelColor=D32F2F" alt="Support on Ko-fi" /></a>
@@ -192,6 +192,10 @@ Chrome Web Store: [Flash Video Downloader](https://chromewebstore.google.com/det
 
 | Version | Highlights |
 |---|---|
+| **3.2.5** | Better detection for tube/CMS URLs (`.mp4/`, `/get_file/`), iframe scan, less aggressive preview filter |
+| **3.2.4** | Stronger HLS/DASH downloads: page Referer retries, lower parallelism, segment repair, MPD support |
+| **3.2.3** | Fix post-download crash (`chrome.storage`), save HLS/blob via offscreen `chrome.downloads` |
+| **3.2.2** | Direct `chrome.downloads` for MP4/WEBM, safer defaults for store review, blob via content script |
 | **3.2.1** | Chrome Web Store readiness, DRM blocklist, visible-video filtering, folder picker, CC BY-NC license |
 | **3.2.0** | Pause/resume/cancel, smooth progress, universal download pipeline, blob support |
 | **3.1.0** | Offscreen HLS engine, global active-downloads banner |

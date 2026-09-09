@@ -1,4 +1,4 @@
-// Flash Video Downloader - Popup Script (v3.2.1)
+// Flash Video Downloader - Popup Script (v3.2.5)
 
 document.addEventListener('DOMContentLoaded', async () => {
   const mediaListContainer = document.getElementById('media-list');
