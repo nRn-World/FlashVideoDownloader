@@ -10,6 +10,7 @@
 </p>
 
 <p align="center">
+  <a href="https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg"><img src="https://img.shields.io/badge/Download-Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Download on Chrome Web Store" /></a>
   <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/version-3.2.1-blue?style=for-the-badge" alt="Version 3.2.1" /></a>
   <a href="https://developer.chrome.com/docs/extensions/mv3/"><img src="https://img.shields.io/badge/Manifest-V3-4285F4?style=for-the-badge" alt="Manifest V3" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey?style=for-the-badge" alt="License CC BY-NC 4.0" /></a>
@@ -65,6 +66,20 @@ The extension focuses on **visible page videos**, offers **pause / resume / canc
 | **Languages** | English, Svenska, Türkçe, Español, Français, العربية |
 | **History** | Last 50 downloads with optional 24-hour auto-cleanup |
 | **Privacy** | On-demand content script injection · no keyboard capture · blocked-host list |
+
+---
+
+## Download
+
+Get the extension from the Chrome Web Store:
+
+**[⬇ Download Flash Video Downloader](https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg)**
+
+https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg
+
+1. Open the link
+2. Click **Add to Chrome**
+3. Pin **Flash Video Downloader** to your toolbar
 
 ---
 
@@ -168,7 +183,8 @@ This project is licensed under the **Creative Commons Attribution-NonCommercial 
 
 **nRn World**  
 Email: [bynrnworld@gmail.com](mailto:bynrnworld@gmail.com)  
-GitHub: [nRn-World/FlashVideoDownloader](https://github.com/nRn-World/FlashVideoDownloader)
+GitHub: [nRn-World/FlashVideoDownloader](https://github.com/nRn-World/FlashVideoDownloader)  
+Chrome Web Store: [Flash Video Downloader](https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg)
 
 ---
 
