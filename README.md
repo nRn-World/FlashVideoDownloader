@@ -205,6 +205,7 @@ Chrome Web Store: [Flash Video Downloader](https://chromewebstore.google.com/det
 
 | Version | Highlights |
 |---|---|
+| **3.3.2** | Fix popup/service-worker message warning that showed as an error in chrome://extensions |
 | **3.3.1** | Freemium: Free 1 download/hour; Pro lifetime via Ko-fi (EUR 10.99). Official key `FVD-PRO-K7M2-9QX4`. Store package. |
 | **3.3.0** | Freemium model: Free tier + Pro upgrade ($5.99 lifetime). Pro: 3+ concurrent, batch, unlimited history, export, templates |
 | **3.2.5** | Better detection for tube/CMS URLs (`.mp4/`, `/get_file/`), iframe scan, less aggressive preview filter |

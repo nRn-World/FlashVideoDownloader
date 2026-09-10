@@ -1,4 +1,4 @@
-// Flash Video Downloader - Background Service Worker (v3.3.1)
+// Flash Video Downloader - Background Service Worker (v3.3.2)
 // HLS downloads are delegated to offscreen.js which has full DOM/Blob/ObjectURL access.
 
 importScripts('blocked-hosts.js');
@@ -800,21 +800,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           discoveredAt: Date.now()
         });
       });
-      sendResponse({ status: 'ok' });
     }
+    sendResponse({ status: 'ok' });
   }
-  // From popup: clear media list
   else if (message.type === 'CLEAR_MEDIA') {
     if (message.tabId) {
       tabMedia.set(message.tabId, new Map());
       updateBadge(message.tabId);
-      sendResponse({ status: 'ok' });
     }
+    sendResponse({ status: 'ok' });
   }
   else if (message.type === 'START_HLS_DOWNLOAD') {
     if (fvdIsBlockedUrl(message.url)) {
       sendResponse({ status: 'blocked' });
-      return true;
+      return;
     }
     startHlsDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message))
       .then((result) => sendResponse(result || { status: 'started' }))
@@ -824,7 +823,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   else if (message.type === 'START_DASH_DOWNLOAD') {
     if (fvdIsBlockedUrl(message.url)) {
       sendResponse({ status: 'blocked' });
-      return true;
+      return;
     }
     startDashDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message))
       .then((result) => sendResponse(result || { status: 'started' }))
@@ -834,7 +833,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   else if (message.type === 'START_GENERIC_DOWNLOAD') {
     if (fvdIsBlockedUrl(message.url)) {
       sendResponse({ status: 'blocked' });
-      return true;
+      return;
     }
     startGenericDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message))
       .then((result) => sendResponse(result || { status: 'started' }))
@@ -844,7 +843,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   else if (message.type === 'START_BLOB_DOWNLOAD') {
     if (fvdIsBlockedUrl(message.url)) {
       sendResponse({ status: 'blocked' });
-      return true;
+      return;
     }
     startBlobDownload(message.downloadId, message.tabId, message.url, message.filename)
       .then((result) => sendResponse(result || { status: 'started' }))
@@ -873,7 +872,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         clearDownloadControlFlag(message.state.id);
         updateBadge();
         sendResponse({ status: 'ok' });
-        return true;
+        return;
       }
       activeDownloads.set(message.state.id, message.state);
       persistActiveDownloads();
@@ -976,6 +975,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     updateBadge();
     sendResponse({ status: 'removed' });
   }
-
-  return true;
 });

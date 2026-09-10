@@ -1,4 +1,4 @@
-# Chrome Web Store – Publiceringsguide (v3.3.1)
+# Chrome Web Store – Publiceringsguide (v3.3.2)
 
 GitHub ska **inte** pushas förrän du uttryckligen ber om det. ZIP:en räcker för uppladdning.
 
@@ -152,7 +152,7 @@ Promo (valfritt):
 - [ ] Store-texten nämner 1/timme, EUR 10.99, Ko-fi, ingen YouTube/DRM
 - [ ] Inga påståenden om batch, filnamnsmallar eller kvalitetsväljare (de är inte med i denna version)
 - [ ] EU trader-deklaration ifylld om du säljer i EU
-- [ ] Version 3.3.1 i manifest
+- [ ] Version 3.3.2 i manifest
 
 ## 9. Kontakt
 

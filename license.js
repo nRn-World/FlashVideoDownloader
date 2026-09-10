@@ -1,4 +1,4 @@
-// Flash Video Downloader - License & Pro Feature Manager (v3.3.1)
+// Flash Video Downloader - License & Pro Feature Manager (v3.3.2)
 
 const LICENSE_STORAGE_KEY = 'fvd_pro_license';
 const PRO_STATUS_KEY = 'fvd_pro_status';
