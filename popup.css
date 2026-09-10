@@ -1117,3 +1117,306 @@ body {
 }
 .btn-modal-danger:hover { background: linear-gradient(135deg, #f87171, #ef4444); }
 
+.btn-modal-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
+}
+.btn-modal-primary:hover { background: linear-gradient(135deg, #5a6fd9, #6a4391); }
+
+/* Pro Section Styles */
+.pro-section {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.pro-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.pro-badge-large {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pro-badge-large[data-pro="false"], .pro-badge-large:not([data-pro]) {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.pro-badge-large[data-pro="true"] {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border: 1px solid rgba(102, 126, 234, 0.4);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+}
+
+.pro-header h3 {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.pro-description {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.pro-features-list {
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+}
+
+.pro-features-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.pro-feature-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.pro-price-tag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  margin: 16px 0;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pro-price {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #667eea;
+  line-height: 1;
+}
+
+.pro-price-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.pro-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.pro-buy-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+}
+
+.pro-buy-btn:hover {
+  background: linear-gradient(135deg, #5a6fd9, #6a4391) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.45);
+}
+
+.pro-activated-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+}
+
+.pro-check {
+  font-size: 1.2rem;
+  color: var(--success-color);
+}
+
+.pro-activated-badge span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--success-color);
+}
+
+.pro-thank-you {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.pro-license-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.pro-license-info code {
+  font-family: 'Courier New', monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #93c5fd;
+}
+
+/* License Entry Modal */
+.license-entry-group {
+  margin: 12px 0;
+}
+
+.license-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.license-input:focus {
+  outline: none;
+  border-color: #667eea;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.license-input::placeholder {
+  color: var(--text-muted);
+  font-family: 'Courier New', monospace;
+}
+
+.license-entry-help {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.license-entry-help code {
+  background: rgba(102, 126, 234, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #93c5fd;
+  font-family: 'Courier New', monospace;
+}
+
+/* History Limit Notice */
+.history-limit-notice {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: #93c5fd;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Upgrade Modal Styles */
+.upgrade-modal-box {
+  max-width: 360px;
+}
+
+.upgrade-icon {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.upgrade-title {
+  font-size: 1.1rem;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.upgrade-reason {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.upgrade-features-list {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin: 16px 0;
+}
+
+.upgrade-feature-item {
+  padding: 6px 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.upgrade-price {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 16px 0;
+}
+
+.upgrade-price .price-amount {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #667eea;
+  line-height: 1;
+}
+
+.upgrade-price .price-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Pro Badge in Header (optional) */
+.pro-badge-header {
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 8px;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+}
+

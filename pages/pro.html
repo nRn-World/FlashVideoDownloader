@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flash Video Downloader Pro</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+      color: #fff;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+    
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+    }
+    
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    
+    .header .subtitle {
+      font-size: 1.2rem;
+      opacity: 0.95;
+    }
+    
+    .pricing-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 50px 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      margin-bottom: 40px;
+      color: #1e293b;
+    }
+    
+    .price-tag {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .price-amount {
+      font-size: 4rem;
+      font-weight: 700;
+      color: #667eea;
+      line-height: 1;
+    }
+    
+    .price-label {
+      font-size: 1rem;
+      color: #64748b;
+      margin-top: 10px;
+      display: block;
+    }
+    
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin: 40px 0;
+    }
+    
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    
+    .feature-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    
+    .feature-text h3 {
+      font-size: 1.1rem;
+      margin-bottom: 5px;
+      color: #1e293b;
+    }
+    
+    .feature-text p {
+      font-size: 0.9rem;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    
+    .comparison-table {
+      margin: 40px 0;
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 30px;
+    }
+    
+    .comparison-table h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #1e293b;
+    }
+    
+    .comparison-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      padding: 15px 0;
+      border-bottom: 1px solid #e2e8f0;
+      align-items: center;
+    }
+    
+    .comparison-row:last-child {
+      border-bottom: none;
+    }
+    
+    .comparison-row.header {
+      font-weight: 700;
+      color: #475569;
+      border-bottom: 2px solid #cbd5e1;
+    }
+    
+    .comparison-cell {
+      text-align: center;
+    }
+    
+    .comparison-cell:first-child {
+      text-align: left;
+      font-weight: 500;
+    }
+    
+    .check {
+      color: #10b981;
+      font-size: 1.3rem;
+    }
+    
+    .cross {
+      color: #ef4444;
+      font-size: 1.3rem;
+    }
+    
+    .cta-section {
+      text-align: center;
+      margin: 40px 0;
+    }
+    
+    .btn-buy-pro {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 18px 50px;
+      border-radius: 50px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-decoration: none;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .btn-buy-pro:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+    }
+    
+    .activation-section {
+      background: #f1f5f9;
+      border-radius: 12px;
+      padding: 30px;
+      margin-top: 40px;
+    }
+    
+    .activation-section h3 {
+      margin-bottom: 20px;
+      color: #1e293b;
+    }
+    
+    .license-input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .license-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: 'Courier New', monospace;
+      text-transform: uppercase;
+    }
+    
+    .btn-activate {
+      padding: 12px 30px;
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .btn-activate:hover {
+      background: #059669;
+    }
+    
+    .activation-help {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-top: 10px;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 60px;
+      opacity: 0.9;
+    }
+    
+    .footer a {
+      color: white;
+      text-decoration: none;
+      margin: 0 15px;
+    }
+    
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="../icons/icon128.png" alt="FVD Pro" class="logo">
+      <h1>Flash Video Downloader Pro</h1>
+      <p class="subtitle">Unlock powerful features for serious video downloading</p>
+    </div>
+    
+    <div class="pricing-card">
+      <div class="price-tag">
+        <div class="price-amount">$5.99</div>
+        <span class="price-label">One-time payment • Lifetime access</span>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-text">
+            <h3>Concurrent Downloads</h3>
+            <p>Download 3+ videos simultaneously instead of one at a time</p>
+          </div>
+        </div>
+        
+        <div class="feature-item">
+          <div class="feature-icon">📦</div>
+          <div class="feature-text">
+            <h3>Batch Download All</h3>
+            <p>One click to download all detected videos on the page</p>
+          </div>
+        </div>
+        
+        <div class="feature-item">
+          <div class="feature-icon">📜</div>
+          <div class="feature-text">
+            <h3>Unlimited History</h3>
+            <p>Keep unlimited download history + export to CSV/JSON</p>
+          </div>
+        </div>
+        
+        <div class="feature-item">
+          <div class="feature-icon">✏️</div>
+          <div class="feature-text">
+            <h3>Filename Templates</h3>
+            <p>Customize filenames with title, site, date variables</p>
+          </div>
+        </div>
+        
+        <div class="feature-item">
+          <div class="feature-icon">🎬</div>
+          <div class="feature-text">
+            <h3>Quality Picker</h3>
+            <p>Choose your preferred quality for HLS streams</p>
+          </div>
+        </div>
+        
+        <div class="feature-item">
+          <div class="feature-icon">✨</div>
+          <div class="feature-text">
+            <h3>No Upgrade Prompts</h3>
+            <p>Enjoy a clean interface with Pro badge</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="comparison-table">
+        <h2>Free vs Pro Comparison</h2>
+        
+        <div class="comparison-row header">
+          <div class="comparison-cell">Feature</div>
+          <div class="comparison-cell">Free</div>
+          <div class="comparison-cell">Pro</div>
+        </div>
+        
+        <div class="comparison-row">
+          <div class="comparison-cell">Video detection & preview</div>
+          <div class="comparison-cell"><span class="check">✓</span></div>
+          <div class="comparison-cell"><span class="check">✓</span></div>
+        </div>
+        
+        <div class="comparison-row">
+          <div class="comparison-cell">Single video download</div>
+          <div class="comparison-cell"><span class="check">✓</span></div>
+          <div class="comparison-cell"><span class="check">✓</span></div>
+        </div>
+        
+        <div class="comparison-row">
+          <div class="comparison-cell">Concurrent downloads</div>
+          <div class="comparison-cell">1</div>
+          <div class="comparison-cell">3+</div>
+        </div>
+        
+        <div class="comparison-row">
+          <div class="comparison-cell">Batch download all</div>
+          <div class="comparison-cell"><span class="cross">✗</span></div>
+          <div class="comparison-cell"><span class="check">✓</span></div>
+        </div>
+        
+        <div class="comparison-row">
+          <div class="comparison-cell">Download history</div>
+          <div class="comparison-cell">Last 10</div>
+          <div class="comparison-cell">Unlimited</div>
+        </div>
+        
+        <div class="comparison-row">
+          <div class="comparison-cell">Export history</div>
+          <div class="comparison-cell"><span class="cross">✗</span></div>
+          <div class="comparison-cell"><span class="check">✓</span></div>
+        </div>
+        
+        <div class="comparison-row">
+          <div class="comparison-cell">Filename templates</div>
+          <div class="comparison-cell"><span class="cross">✗</span></div>
+          <div class="comparison-cell"><span class="check">✓</span></div>
+        </div>
+        
+        <div class="comparison-row">
+          <div class="comparison-cell">Quality picker (HLS)</div>
+          <div class="comparison-cell"><span class="cross">✗</span></div>
+          <div class="comparison-cell"><span class="check">✓</span></div>
+        </div>
+      </div>
+      
+      <div class="cta-section">
+        <a href="#" id="btn-buy-now" class="btn-buy-pro">Buy Pro for $5.99</a>
+        <p style="margin-top: 15px; color: #64748b; font-size: 0.9rem;">
+          Secure payment via Lemon Squeezy • Instant activation
+        </p>
+      </div>
+      
+      <div class="activation-section">
+        <h3>Already purchased? Activate your license:</h3>
+        <div class="license-input-group">
+          <input 
+            type="text" 
+            id="license-key-input" 
+            class="license-input" 
+            placeholder="FVD-PRO-XXXX-YYYY"
+            maxlength="19"
+          >
+          <button id="btn-activate-license" class="btn-activate">Activate</button>
+        </div>
+        <p class="activation-help">
+          Your license key was sent to your email after purchase. 
+          <br>For testing: use <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">FVD-PRO-TEST-0000</code>
+        </p>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <a href="https://github.com/nRn-World/FlashVideoDownloader">GitHub</a>
+      <a href="https://nrn-world.github.io/FlashVideoDownloader/privacy.html">Privacy Policy</a>
+      <a href="mailto:bynrnworld@gmail.com">Support</a>
+    </div>
+  </div>
+  
+  <script>
+    // Simple activation handler
+    document.getElementById('btn-activate-license').addEventListener('click', async () => {
+      const input = document.getElementById('license-key-input');
+      const key = input.value.trim();
+      
+      if (!key) {
+        alert('Please enter a license key');
+        return;
+      }
+      
+      // This would normally communicate with the extension
+      // For standalone page, show instructions to activate in extension
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        try {
+          const response = await chrome.runtime.sendMessage({
+            type: 'ACTIVATE_LICENSE',
+            key: key
+          });
+          
+          if (response && response.success) {
+            alert('✅ Pro license activated successfully!');
+            input.value = '';
+          } else {
+            alert('❌ ' + (response.error || 'Activation failed'));
+          }
+        } catch (e) {
+          alert('Please activate your license in the extension settings.');
+        }
+      } else {
+        alert('Please open the extension and go to Settings → Pro to activate your license.');
+      }
+    });
+    
+    // Buy button - would open checkout URL
+    document.getElementById('btn-buy-now').addEventListener('click', (e) => {
+      e.preventDefault();
+      // Placeholder - replace with actual checkout URL
+      alert('Checkout integration coming soon!\n\nFor testing, use license key: FVD-PRO-TEST-0000');
+    });
+    
+    // Format license key input
+    document.getElementById('license-key-input').addEventListener('input', (e) => {
+      let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (value.length > 0) {
+        const parts = [];
+        parts.push('FVD');
+        parts.push('PRO');
+        if (value.length > 0) parts.push(value.substring(0, 4));
+        if (value.length > 4) parts.push(value.substring(4, 8));
+        e.target.value = parts.join('-');
+      }
+    });
+  </script>
+</body>
+</html>

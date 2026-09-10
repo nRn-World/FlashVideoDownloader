@@ -11,10 +11,10 @@
 
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg"><img src="https://img.shields.io/badge/Download-Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=0B57D0" alt="Download on Chrome Web Store" /></a>
-  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.2.5-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.2.5" /></a>
+  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.3.0-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.3.0" /></a>
   <a href="https://developer.chrome.com/docs/extensions/mv3/"><img src="https://img.shields.io/badge/Manifest-V3-FF6D00?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=E65100" alt="Manifest V3" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-00BFA5?style=for-the-badge&logo=creativecommons&logoColor=white&labelColor=00897B" alt="License CC BY-NC 4.0" /></a>
-  <a href="https://ko-fi.com/nrnworld"><img src="https://img.shields.io/badge/Support-Buy%20me%20a%20coffee-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white&labelColor=D32F2F" alt="Support on Ko-fi" /></a>
+  <a href="https://nrn-world.github.io/FlashVideoDownloader/pages/pro.html"><img src="https://img.shields.io/badge/Upgrade-Pro%20for%20%245.99-764ba2?style=for-the-badge&logo=star&logoColor=white&labelColor=667eea" alt="Upgrade to Pro" /></a>
 </p>
 
 ---
@@ -26,6 +26,26 @@
 The extension focuses on **visible page videos**, offers **pause / resume / cancel** during downloads, lets you choose **where files are saved**, and ships with **6 languages** out of the box.
 
 > **Important:** This extension does not bypass DRM. Sites such as YouTube, Netflix, Twitch, Disney+, and Spotify are blocked by design for Chrome Web Store compliance.
+
+### 💎 Free & Pro Tiers
+
+Flash Video Downloader is **free to use** with core features included. Upgrade to **Pro** ($5.99 one-time) to unlock power-user features:
+
+**Free Tier:**
+- ✅ Detect and preview videos on any page
+- ✅ Download 1 video at a time
+- ✅ Pause, resume, and cancel downloads
+- ✅ Last 10 download history
+- ✅ All languages and settings
+
+**Pro Tier** ($5.99 one-time):
+- ⚡ **3+ concurrent downloads** (instead of 1)
+- 📦 **Batch download all** detected videos
+- 📜 **Unlimited history** + export to CSV/JSON
+- ✏️ **Custom filename templates** (title, site, date)
+- 🎬 **HLS quality picker** (choose your preferred resolution)
+
+[**Upgrade to Pro →**](https://nrn-world.github.io/FlashVideoDownloader/pages/pro.html)
 
 ---
 
@@ -62,9 +82,13 @@ The extension focuses on **visible page videos**, offers **pause / resume / canc
 | **Formats** | MP4, WEBM, FLV, MKV, MOV, AVI, M3U8, MPD, TS, MP3, and more |
 | **HLS / streams** | Offscreen pipeline merges segments into a playable file (TS → MP4 remux via mux.js) |
 | **Download control** | Pause, resume, cancel, and global active-download banner |
+| **Concurrent downloads** | 1 active download (Free) · 3+ concurrent downloads (Pro) |
+| **Batch download** | Download all detected videos at once (Pro only) |
 | **Save location** | Ask each time, or save all videos to a folder you pick on your computer |
 | **Languages** | English, Svenska, Türkçe, Español, Français, العربية |
-| **History** | Last 50 downloads with optional 24-hour auto-cleanup |
+| **History** | Last 10 downloads (Free) · Unlimited + export CSV/JSON (Pro) |
+| **Filename templates** | Custom templates with variables (Pro only) |
+| **Quality picker** | Choose HLS stream quality (Pro only) |
 | **Privacy** | On-demand content script injection · no keyboard capture · blocked-host list |
 
 ---
@@ -140,14 +164,17 @@ Then click **Reload** on the extension card in `chrome://extensions/`.
 | File | Purpose |
 |---|---|
 | `manifest.json` | MV3 manifest, permissions, CSP, locales |
-| `background.js` | Network sniffing, download state, offscreen orchestration |
+| `background.js` | Network sniffing, download state, offscreen orchestration, license handling |
 | `offscreen.js` | HLS/generic download engine, blob merge, file delivery |
 | `content.js` | Visible video DOM scan (on-demand injection) |
-| `popup.js` / `.html` / `.css` | UI, settings, history, progress, i18n |
+| `popup.js` / `.html` / `.css` | UI, settings, history, progress, i18n, Pro upgrade |
+| `license.js` | Pro license validation and activation (client-side + sync) |
+| `pro-gates.js` | Free vs Pro feature gates and upgrade prompts |
 | `blocked-hosts.js` | DRM / policy-restricted platform blocklist |
 | `storage-handles.js` | File System Access directory handle persistence |
-| `i18n.js` | In-extension translations |
+| `i18n.js` | In-extension translations (6 languages) |
 | `privacy.html` | Privacy policy for Chrome Web Store |
+| `pages/pro.html` | Pro upgrade landing page with feature comparison |
 
 ---
 
@@ -163,9 +190,9 @@ This packages the extension for manual upload or Chrome Web Store submission. Pu
 
 ## Support the project
 
-If Flash Video Downloader helps you, consider supporting development:
+If Flash Video Downloader helps you, support development by upgrading to Pro or buying a coffee:
 
-**[Buy me a coffee on Ko-fi](https://ko-fi.com/nrnworld)**
+**[⭐ Upgrade to Pro for $5.99](https://nrn-world.github.io/FlashVideoDownloader/pages/pro.html)** · **[Buy me a coffee on Ko-fi](https://ko-fi.com/nrnworld)**
 
 ---
 
@@ -192,6 +219,7 @@ Chrome Web Store: [Flash Video Downloader](https://chromewebstore.google.com/det
 
 | Version | Highlights |
 |---|---|
+| **3.3.0** | 🎉 **Freemium model:** Free tier (1 download, last 10 history) + Pro tier ($5.99 one-time: 3+ concurrent, batch download, unlimited history, templates, quality picker). License activation via settings. |
 | **3.2.5** | Better detection for tube/CMS URLs (`.mp4/`, `/get_file/`), iframe scan, less aggressive preview filter |
 | **3.2.4** | Stronger HLS/DASH downloads: page Referer retries, lower parallelism, segment repair, MPD support |
 | **3.2.3** | Fix post-download crash (`chrome.storage`), save HLS/blob via offscreen `chrome.downloads` |

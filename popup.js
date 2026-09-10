@@ -24,6 +24,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnPickFolder = document.getElementById('btn-pick-folder');
   const txtSelectedFolder = document.getElementById('txt-selected-folder');
 
+  // Pro elements
+  const proBadgeStatus = document.getElementById('pro-badge-status');
+  const proFeaturesFree = document.getElementById('pro-features-free');
+  const proActivated = document.getElementById('pro-activated');
+  const btnBuyPro = document.getElementById('btn-buy-pro');
+  const btnEnterLicense = document.getElementById('btn-enter-license');
+  const btnDeactivateLicense = document.getElementById('btn-deactivate-license');
+  const licenseKeyDisplay = document.getElementById('license-key-display');
+  const licenseEntryModal = document.getElementById('license-entry-modal');
+  const btnLicenseCancel = document.getElementById('btn-license-cancel');
+  const btnLicenseActivate = document.getElementById('btn-license-activate');
+  const licenseKeyEntry = document.getElementById('license-key-entry');
+  const historyLimitNotice = document.getElementById('history-limit-notice');
+
   let currentLang = 'en'; // Default English
   let allMedia = [];
   let currentFilter = 'all';
@@ -33,6 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentlyPlayingCard = null;
   let pollInterval = null;
   let pendingCancel = null; // { id, url }
+  let isProUser = false;
   const confirmModal = document.getElementById('confirm-stop-modal');
   const appFooter = document.getElementById('app-footer');
   const txtConfirmTitle = document.getElementById('txt-confirm-title');
@@ -205,6 +220,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (settingsVersion) settingsVersion.textContent = label;
   }
 
+  async function updateProUI() {
+    const status = await checkLicenseStatus();
+    isProUser = status.isPro;
+    
+    if (isProUser) {
+      proBadgeStatus.textContent = 'PRO';
+      proBadgeStatus.setAttribute('data-pro', 'true');
+      proFeaturesFree.classList.add('hidden');
+      proActivated.classList.remove('hidden');
+      
+      if (status.status && status.status.key) {
+        const key = status.status.key;
+        const masked = key.substring(0, 8) + '-****-****';
+        licenseKeyDisplay.textContent = masked;
+      }
+      
+      document.getElementById('txt-pro-active').textContent = t('proActive');
+      document.getElementById('txt-pro-thank-you').textContent = t('proThankYou');
+      document.getElementById('txt-license-key').textContent = t('licenseKey');
+      document.getElementById('txt-deactivate').textContent = t('deactivate');
+    } else {
+      proBadgeStatus.textContent = 'FREE';
+      proBadgeStatus.setAttribute('data-pro', 'false');
+      proFeaturesFree.classList.remove('hidden');
+      proActivated.classList.add('hidden');
+    }
+    
+    // Update history limit notice
+    renderHistory();
+  }
+
   function applyLanguage() {
     document.getElementById('txt-app-title').textContent = t('title');
     updateVersionLabels();
@@ -243,11 +289,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (txtConfirmDesc) txtConfirmDesc.textContent = t('confirmStopDesc');
     if (btnConfirmYes) btnConfirmYes.textContent = t('confirmYes');
     if (btnConfirmNo) btnConfirmNo.textContent = t('confirmNo');
+    
+    // Pro strings
+    document.getElementById('txt-pro-title').textContent = t('proTitle');
+    document.getElementById('txt-pro-description').textContent = t('proDescription');
+    document.getElementById('txt-pro-feature-concurrent').textContent = t('proFeatureConcurrent');
+    document.getElementById('txt-pro-feature-batch').textContent = t('proFeatureBatch');
+    document.getElementById('txt-pro-feature-history').textContent = t('proFeatureHistory');
+    document.getElementById('txt-pro-feature-template').textContent = t('proFeatureTemplate');
+    document.getElementById('txt-pro-feature-quality').textContent = t('proFeatureQuality');
+    document.getElementById('txt-pro-price').textContent = t('proPrice');
+    document.getElementById('txt-pro-price-label').textContent = t('proPriceLabel');
+    document.getElementById('txt-buy-pro').textContent = t('buyPro');
+    document.getElementById('txt-enter-license').textContent = t('enterLicense');
+    document.getElementById('txt-history-limit').textContent = t('historyLimit');
+    document.getElementById('txt-license-entry-title').textContent = t('licenseEntryTitle');
+    document.getElementById('txt-license-entry-desc').textContent = t('licenseEntryDesc');
+    document.getElementById('txt-license-help').innerHTML = t('licenseHelp') + '<code>FVD-PRO-TEST-0000</code>';
 
     if (viewSettings.classList.contains('hidden')) {
       renderList();
     }
-    renderHistory();
+    updateProUI();
   }
 
   function openSettingsView() {
@@ -1079,7 +1142,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       const downloadBtn = card.querySelector('.btn-download');
-      downloadBtn.addEventListener('click', () => {
+      downloadBtn.addEventListener('click', async () => {
+        // Check concurrent download limit
+        const dlRes = await chrome.runtime.sendMessage({ type: 'GET_ALL_DOWNLOADS' });
+        const activeCount = dlRes && dlRes.downloads ? 
+          dlRes.downloads.filter(d => d.status === 'downloading' || d.status === 'paused' || d.status === 'merging').length : 0;
+        
+        const gateResult = await canStartNewDownload(activeCount);
+        if (!gateResult.allowed) {
+          showUpgradeModal(gateResult.reason, 'concurrent_downloads');
+          return;
+        }
+        
         const urlLowerDl = item.url.toLowerCase();
         const isDashOnly = item.format === 'MPD' || urlLowerDl.includes('.mpd');
 
@@ -1135,11 +1209,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
       history = history.filter(h => h.timestamp > oneDayAgo);
     }
+    
+    // Apply Pro limits
+    const limit = await getHistoryLimit();
+    const showLimitNotice = !isProUser && history.length >= 10;
+    
+    if (history.length > limit) {
+      history = history.slice(0, limit);
+    }
 
     historyListContainer.innerHTML = '';
 
     if (history.length === 0) {
       historyListContainer.innerHTML = `<div style="text-align:center; padding:15px; color:#64748b; font-size:0.75rem;">${t('noHistory')}</div>`;
+      if (historyLimitNotice) historyLimitNotice.classList.add('hidden');
       return;
     }
 
@@ -1159,6 +1242,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       `;
       historyListContainer.appendChild(div);
     });
+    
+    // Show limit notice if needed
+    if (showLimitNotice && historyLimitNotice) {
+      historyLimitNotice.classList.remove('hidden');
+      document.getElementById('txt-history-limit').textContent = t('historyLimit');
+    } else if (historyLimitNotice) {
+      historyLimitNotice.classList.add('hidden');
+    }
   }
 
   function showEmptyState(customMessage) {
@@ -1315,6 +1406,99 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderHistory();
   });
 
+  // Pro button handlers
+  if (btnBuyPro) {
+    btnBuyPro.addEventListener('click', () => {
+      // Placeholder checkout URL - replace with actual Lemon Squeezy/Stripe link
+      const checkoutUrl = 'https://nrn-world.github.io/FlashVideoDownloader/pages/pro.html';
+      chrome.tabs.create({ url: checkoutUrl });
+    });
+  }
+
+  if (btnEnterLicense) {
+    btnEnterLicense.addEventListener('click', () => {
+      licenseEntryModal.classList.remove('hidden');
+      setTimeout(() => licenseKeyEntry.focus(), 100);
+    });
+  }
+
+  if (btnLicenseCancel) {
+    btnLicenseCancel.addEventListener('click', () => {
+      licenseEntryModal.classList.add('hidden');
+      licenseKeyEntry.value = '';
+    });
+  }
+
+  if (licenseEntryModal) {
+    licenseEntryModal.addEventListener('click', (e) => {
+      if (e.target === licenseEntryModal) {
+        licenseEntryModal.classList.add('hidden');
+        licenseKeyEntry.value = '';
+      }
+    });
+  }
+
+  if (btnLicenseActivate) {
+    btnLicenseActivate.addEventListener('click', async () => {
+      const key = licenseKeyEntry.value.trim();
+      if (!key) {
+        alert(t('licenseEntryDesc'));
+        return;
+      }
+
+      const result = await activateLicense(key);
+      if (result.success) {
+        licenseEntryModal.classList.add('hidden');
+        licenseKeyEntry.value = '';
+        await updateProUI();
+        alert('✅ ' + (result.message || t('proActive')));
+      } else {
+        alert('❌ ' + (result.error || t('errorOccurred')));
+      }
+    });
+  }
+
+  if (licenseKeyEntry) {
+    licenseKeyEntry.addEventListener('input', (e) => {
+      let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (value.length > 0) {
+        const parts = [];
+        parts.push('FVD');
+        parts.push('PRO');
+        if (value.length > 0) parts.push(value.substring(0, 4));
+        if (value.length > 4) parts.push(value.substring(4, 8));
+        e.target.value = parts.join('-');
+      }
+    });
+  }
+
+  if (btnDeactivateLicense) {
+    btnDeactivateLicense.addEventListener('click', async () => {
+      if (confirm('Are you sure you want to deactivate your Pro license?')) {
+        await deactivateLicense();
+        await updateProUI();
+        alert('Pro license deactivated.');
+      }
+    });
+  }
+
+  // Listen for Pro settings open event from upgrade modal
+  document.addEventListener('fvd-open-pro-settings', () => {
+    openSettingsView();
+    // Scroll to Pro section if needed
+    setTimeout(() => {
+      const proSection = document.querySelector('.pro-section');
+      if (proSection) {
+        proSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  });
+
+  // Listen for license changes
+  document.addEventListener('fvd-license-changed', () => {
+    updateProUI();
+  });
+
   pollInterval = setInterval(checkOngoingDownloads, 120);
 
   if (canLoadMedia) {
@@ -1322,4 +1506,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     loadingState.classList.add('hidden');
   }
+  
+  // Initialize Pro UI
+  updateProUI();
 });

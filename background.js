@@ -1,7 +1,9 @@
-// Flash Video Downloader - Background Service Worker (v3.2.5)
+// Flash Video Downloader - Background Service Worker (v3.3.0)
 // HLS downloads are delegated to offscreen.js which has full DOM/Blob/ObjectURL access.
 
 importScripts('blocked-hosts.js');
+importScripts('license.js');
+importScripts('pro-gates.js');
 
 const tabMedia = new Map();
 const activeDownloads = new Map();
@@ -469,7 +471,11 @@ async function saveDownloadToHistory(item) {
       duration: item.duration || 'N/A',
       timestamp: now
     });
-    if (history.length > 50) history = history.slice(0, 50);
+    
+    // Apply Pro limits
+    const limit = await getHistoryLimit();
+    if (history.length > limit) history = history.slice(0, limit);
+    
     await chrome.storage.local.set({ downloadHistory: history });
   } catch (e) { console.warn('[FVD] Failed to save history:', e && e.message ? e.message : e); }
 }
@@ -882,6 +888,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     persistActiveDownloads();
     updateBadge();
     sendResponse({ status: 'removed' });
+  }
+  // License activation
+  else if (message.type === 'ACTIVATE_LICENSE') {
+    (async () => {
+      const result = await activateLicense(message.key);
+      sendResponse(result);
+    })();
+    return true;
+  }
+  else if (message.type === 'DEACTIVATE_LICENSE') {
+    (async () => {
+      const result = await deactivateLicense();
+      sendResponse(result);
+    })();
+    return true;
+  }
+  else if (message.type === 'CHECK_LICENSE_STATUS') {
+    (async () => {
+      const status = await checkLicenseStatus();
+      sendResponse(status);
+    })();
+    return true;
   }
 
   return true;

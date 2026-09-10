@@ -50,23 +50,33 @@ Does NOT: bypass DRM, download from YouTube/Netflix/Disney+/Twitch, collect anal
 ## 5. Store listing text
 
 **Kort beskrivning (EN):**
-Free video downloader — detect and save open video files (MP4, WEBM, M3U8) from the current tab. No ads, no subscription.
+Video downloader with Free and optional Pro tiers. Detect and save videos (MP4, WEBM, M3U8) from the current tab. No ads.
 
 **Detaljerad beskrivning (EN):**
-Flash Video Downloader is a free Chrome extension that helps you find and save openly accessible videos on the page you're viewing.
+Flash Video Downloader helps you find and save openly accessible videos on the page you're viewing.
 
-Features:
-• Detect MP4, WEBM, M3U8 and more from network traffic and page elements
+**Free Tier (no payment required):**
+• Detect MP4, WEBM, M3U8 and more from network traffic
 • Preview before download
-• Pause, resume and cancel HLS downloads
-• Download history (local, auto-delete after 24h)
-• 6 languages
-• 100% free — all features included, no payment required
+• Download 1 video at a time with pause/resume/cancel
+• Last 10 download history (auto-delete after 24h)
+• 6 languages (English, Svenska, Türkçe, Español, Français, العربية)
+• Choose download location
 
-Important:
+**Optional Pro Upgrade ($5.99 one-time):**
+• 3+ concurrent downloads (instead of 1)
+• Batch download all detected videos
+• Unlimited history + export to CSV/JSON
+• Custom filename templates (title, site, date)
+• HLS quality picker
+
+The Free tier is fully functional and includes all core features. Pro is an optional one-time payment for power users who need concurrent downloads and advanced features.
+
+**Important:**
 • Does NOT download from YouTube, Netflix, Disney+, Twitch or other DRM-protected platforms
 • Does NOT bypass copyright protection
 • Only downloads content you have the right to save
+• No ads, no recurring subscription
 
 **Kategori:** Productivity
 
@@ -89,10 +99,13 @@ Ladda upp minst 1 skärmdump (helst alla tre 1280×800):
 ## 7. Checklista före submit
 
 - [ ] `privacy.html` publicerad med publik URL
-- [ ] ZIP innehåller `lib/mux.min.js`, `blocked-hosts.js`, `i18n.js`
+- [ ] `pages/pro.html` publicerad med publik URL (freemium upgrade page)
+- [ ] ZIP innehåller `lib/mux.min.js`, `blocked-hosts.js`, `i18n.js`, `license.js`, `pro-gates.js`
 - [ ] Inga externa CDN-länkar i popup
-- [ ] Testat "Load unpacked" utan fel
-- [ ] Beskrivning matchar faktisk funktion (gratis, ingen betalversion, ingen YouTube-downloader)
+- [ ] Testat "Load unpacked" utan fel med både Free och Pro (test license: `FVD-PRO-TEST-0000`)
+- [ ] Beskrivning matchar faktisk funktion (freemium: Free tier + optional Pro tier, ingen YouTube-downloader)
+- [ ] Checkout URL konfigurerad (ersätt placeholder med faktisk Lemon Squeezy / Stripe Payment Link)
+- [ ] Privacy policy uppdaterad för license verification network call (om backend endpoint används)
 
 ## 8. Kontakt
 

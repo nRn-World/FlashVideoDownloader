@@ -109,6 +109,62 @@
           <div id="history-list" class="history-list">
             <!-- Rendered dynamically -->
           </div>
+          
+          <div id="history-limit-notice" class="history-limit-notice hidden">
+            <span id="txt-history-limit">Free: showing last 10. Upgrade to Pro for unlimited history + export!</span>
+          </div>
+        </div>
+
+        <!-- Pro Upgrade Section -->
+        <div class="settings-section pro-section">
+          <div class="pro-header">
+            <div class="pro-badge-large" id="pro-badge-status">FREE</div>
+            <h3 id="txt-pro-title">Upgrade to Pro</h3>
+          </div>
+          
+          <div id="pro-features-free" class="pro-content">
+            <p class="pro-description" id="txt-pro-description">
+              Unlock powerful features for serious video downloading:
+            </p>
+            
+            <ul class="pro-features-list">
+              <li><span class="pro-feature-icon">⚡</span> <span id="txt-pro-feature-concurrent">3+ concurrent downloads (Free: 1)</span></li>
+              <li><span class="pro-feature-icon">📦</span> <span id="txt-pro-feature-batch">Download all detected videos</span></li>
+              <li><span class="pro-feature-icon">📜</span> <span id="txt-pro-feature-history">Unlimited history + CSV/JSON export</span></li>
+              <li><span class="pro-feature-icon">✏️</span> <span id="txt-pro-feature-template">Custom filename templates</span></li>
+              <li><span class="pro-feature-icon">🎬</span> <span id="txt-pro-feature-quality">HLS quality picker</span></li>
+            </ul>
+            
+            <div class="pro-price-tag">
+              <span class="pro-price" id="txt-pro-price">$5.99</span>
+              <span class="pro-price-label" id="txt-pro-price-label">One-time payment</span>
+            </div>
+            
+            <div class="pro-actions">
+              <button id="btn-buy-pro" class="btn-primary-action pro-buy-btn">
+                <span id="txt-buy-pro">⭐ Upgrade to Pro</span>
+              </button>
+              <button id="btn-enter-license" class="btn-secondary-action">
+                <span id="txt-enter-license">Enter license key</span>
+              </button>
+            </div>
+          </div>
+          
+          <div id="pro-activated" class="pro-content hidden">
+            <div class="pro-activated-badge">
+              <span class="pro-check">✓</span>
+              <span id="txt-pro-active">Pro Active</span>
+            </div>
+            <p class="pro-thank-you" id="txt-pro-thank-you">
+              Thank you for supporting Flash Video Downloader! All Pro features are now unlocked.
+            </p>
+            <div class="pro-license-info">
+              <span id="txt-license-key">License: </span><code id="license-key-display">FVD-PRO-****-****</code>
+            </div>
+            <button id="btn-deactivate-license" class="btn-text-action">
+              <span id="txt-deactivate">Deactivate license</span>
+            </button>
+          </div>
         </div>
 
         <div class="support-section">
@@ -167,7 +223,27 @@
     </div>
   </div>
 
+  <!-- License Entry Modal -->
+  <div id="license-entry-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3 id="txt-license-entry-title">Enter Pro License Key</h3>
+      <p id="txt-license-entry-desc">Enter the license key you received after purchase:</p>
+      <div class="license-entry-group">
+        <input type="text" id="license-key-entry" class="license-input" placeholder="FVD-PRO-XXXX-YYYY" maxlength="19" />
+      </div>
+      <p class="license-entry-help" id="txt-license-help">
+        For testing, use: <code>FVD-PRO-TEST-0000</code>
+      </p>
+      <div class="modal-actions">
+        <button id="btn-license-cancel" class="btn-modal btn-modal-cancel">Cancel</button>
+        <button id="btn-license-activate" class="btn-modal btn-modal-primary">Activate</button>
+      </div>
+    </div>
+  </div>
+
   <script src="storage-handles.js"></script>
+  <script src="license.js"></script>
+  <script src="pro-gates.js"></script>
   <script src="i18n.js"></script>
   <script src="popup.js"></script>
 </body>
