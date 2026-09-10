@@ -26,7 +26,7 @@
     <li><strong>Download history</strong> – filename, sanitized URL (without query tokens), file size, timestamp. Stored in Chrome local storage.</li>
     <li><strong>Settings</strong> – language preference and auto-delete history option.</li>
     <li><strong>Active downloads</strong> – progress state during the browser session (session storage).</li>
-    <li><strong>Pro license key</strong> (optional) – if you purchase a Pro upgrade via Ko-fi, the license key is stored locally in Chrome storage. License validation is performed on your device. No payment information is collected by the extension.</li>
+    <li><strong>Pro license</strong> (optional) – if you purchase a Pro upgrade via Ko-fi, a hashed license token is stored locally in Chrome storage. The plaintext key is not kept in the extension source. No payment information is collected by the extension.</li>
   </ul>
 
   <h2>Data processed temporarily</h2>
@@ -50,7 +50,7 @@
   <p>Chrome deletes an extension’s local data when it is uninstalled. To keep the Free limit of 1 download per rolling hour, a Free download may trigger one request to our rate-limit service. The request contains no video URL, no filename, and no license key. The service records a hashed network identifier and the time, kept for at most 60 minutes. Pro users are not rate-limited and do not call this check.</p>
 
   <h2>Pro upgrade (optional paid feature)</h2>
-  <p>Flash Video Downloader is free to install. The Free tier allows <strong>1 video download per rolling hour</strong> and 1 concurrent download. An optional Pro upgrade (EUR 10.99, one-time lifetime license) unlocks unlimited hourly downloads, 3 concurrent downloads, and unlimited local history. Payment is processed on Ko-fi (https://ko-fi.com/s/72a48b875e). After payment, Ko-fi shows your license key. You activate it in Settings → Pro. The extension stores only the license key locally. No payment card data is collected or processed by the extension.</p>
+  <p>Flash Video Downloader is free to install. The Free tier allows <strong>1 video download per rolling hour</strong> and 1 concurrent download. An optional Pro upgrade (EUR 10.99, one-time lifetime license) unlocks unlimited hourly downloads, 3 concurrent downloads, and unlimited local history. Payment is processed on Ko-fi (https://ko-fi.com/s/72a48b875e). After payment, Ko-fi shows your license key. You activate it in Settings → Pro. The extension stores a hashed license token locally, not the key in source code. No payment card data is collected or processed by the extension.</p>
 
   <h2>Permissions explained</h2>
   <ul>

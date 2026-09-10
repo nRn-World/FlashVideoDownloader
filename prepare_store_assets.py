@@ -8,6 +8,7 @@ import sys
 sys.dont_write_bytecode = True  # avoid __pycache__ in extension folder (Chrome blocks _* dirs)
 
 import os
+import re
 import shutil
 import zipfile
 from pathlib import Path
@@ -334,6 +335,8 @@ FORBIDDEN_ZIP_PARTS = (
     "prepare_store_assets",
     "create_zip.bat",
     "workers/",
+    "kofi-thank-you",
+    ".local.txt",
 )
 
 
@@ -347,6 +350,20 @@ def verify_zip() -> None:
     leaked = [name for name in names if any(part in name for part in FORBIDDEN_ZIP_PARTS)]
     if leaked:
         raise RuntimeError("ZIP contains files that must not be uploaded: " + ", ".join(leaked))
+
+    placeholder = re.compile(r"^FVD-PRO(?:-X{4}){2,4}$")
+    key_re = re.compile(rb"FVD-PRO(?:-[A-Z0-9]{4}){2,4}")
+    plaintext = []
+    with zipfile.ZipFile(ZIP_NAME, "r") as zf:
+        for name in zf.namelist():
+            for match in key_re.finditer(zf.read(name)):
+                token = match.group().decode("ascii")
+                if not placeholder.fullmatch(token):
+                    plaintext.append(name)
+    if plaintext:
+        raise RuntimeError(
+            "ZIP contains a plaintext license key in: " + ", ".join(sorted(set(plaintext)))
+        )
     print(f"ZIP check OK ({len(names)} files)")
 
 

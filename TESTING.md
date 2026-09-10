@@ -64,15 +64,17 @@ This document outlines the testing steps for the new freemium features in v3.3.0
 
 ---
 
-## 4. Pro Activation (Test License Key)
+## 4. Pro Activation
 
-### Test: Activate with DEV key
+Pro keys are **never** stored in this repo. Use the key from the local file `kofi-thank-you.local.txt` (gitignored).
+
+### Test: Activate with the Ko-fi key
 1. Open Settings → Pro section
-2. Enter test license: **`FVD-PRO-TEST-0000`**
+2. Paste the key from `kofi-thank-you.local.txt`
 3. Click **Activate**
-4. **Expected:** 
-   - Success message: "✅ Pro activated!"
-   - Pro status badge appears: "✅ Pro Active"
+4. **Expected:**
+   - Success message: Pro activated
+   - Pro status badge appears
    - Comparison table hides
    - Purchase box hides
    - "Deactivate License" button appears
@@ -87,14 +89,13 @@ After activating Pro:
 1. **Hourly downloads:** Download multiple videos within same hour → all should proceed (no rate limit)
 2. **Concurrent downloads:** Start 3 downloads at once → all should proceed
 3. **History:** Unlimited history (no 10-item cap)
-4. **Export:** (UI not fully implemented yet, but limit is lifted)
 
 ---
 
 ## 5. Pro Deactivation
 
 ### Test: Deactivate license
-1. Activate Pro (use test key)
+1. Activate Pro (local Ko-fi key only)
 2. Click **Deactivate License** in Pro section
 3. Confirm deactivation
 4. **Expected:**
@@ -135,7 +136,7 @@ After activating Pro:
 ### Test: pro.html
 - Open `pages/pro.html` (GitHub Pages URL)
 - **Expected:** Full Pro landing page with pricing, comparison, activation steps
-- **Expected:** Dev test key mentioned: `FVD-PRO-TEST-0000`
+- **Expected:** Activation steps; no plaintext license key on the page
 
 ---
 
@@ -169,7 +170,7 @@ Robin must configure before publishing:
 
 - ✅ Free tier: Core download functionality intact (1 download/hour, 1 concurrent)
 - ✅ Pro tier: Unlimited hourly, 3+ concurrent, batch, unlimited history, export
-- ✅ License: Test key `FVD-PRO-TEST-0000` works
+- ✅ License: plaintext key is not in git; only Ko-fi buyers see it
 - ✅ UI: Pro section polished, comparison table clear, rate limit modal
 - ✅ Docs: README, STORE_LISTING, privacy.html updated
 - ✅ i18n: All 6 locales have Pro strings
@@ -178,11 +179,10 @@ Robin must configure before publishing:
 **Ready for Robin to:**
 1. Load unpacked and test locally
 2. Test rate limit: download 1, wait, try 2nd immediately (should block)
-3. Activate Pro with `FVD-PRO-TEST-0000` → unlimited
+3. Activate Pro with the local Ko-fi key → unlimited
 4. Configure `CHECKOUT_URL` to real payment link
 5. Submit v3.3.1 to Chrome Web Store
 
 ---
 
-**Contact:** bynrnworld@gmail.com  
-**Test key:** `FVD-PRO-TEST-0000`
+**Contact:** bynrnworld@gmail.com

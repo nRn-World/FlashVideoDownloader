@@ -15,3 +15,5 @@ Flash Video Downloader.zip
 # Local secrets / handoff (do not publish)
 pro-license-keys-*.txt
 CURSOR-HANDOFF.md
+kofi-thank-you.local.txt
+*.local.txt

@@ -12,11 +12,9 @@ const FREE_RATE_WINDOW_MS = 60 * 60 * 1000;
 // Example: 'https://fvd-rate-limit.YOURNAME.workers.dev/'
 const FREE_RATE_LIMIT_API = '';
 
-// Official lifetime key shown to Ko-fi buyers after payment
-const OFFICIAL_LICENSE_KEY = 'FVD-PRO-K7M2-9QX4';
-
-const VALID_LICENSE_KEYS = new Set([
-  OFFICIAL_LICENSE_KEY
+// SHA-256 hashes of valid keys (plaintext exists only on Ko-fi after payment).
+const LICENSE_KEY_HASHES = new Set([
+  '2292da59ca854fd61bb321141d8cbe2092a514d48fafad21e936a70ac7394dec'
 ]);
 
 function normalizeLicenseKey(key) {
@@ -24,33 +22,45 @@ function normalizeLicenseKey(key) {
   return key.trim().toUpperCase().replace(/\s+/g, '');
 }
 
-function validateLicenseFormat(key) {
+function looksLikeLicenseKey(key) {
+  return /^FVD-PRO(?:-[A-Z0-9]{4}){2,4}$/.test(key);
+}
+
+async function hashLicenseKey(normalizedKey) {
+  const payload = 'FVD-LICENSE-v1|' + normalizedKey;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload));
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function validateLicenseFormat(key) {
   const normalized = normalizeLicenseKey(key);
   if (!normalized) {
     return { valid: false, error: 'Please enter a license key' };
   }
 
-  if (!/^FVD-PRO-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(normalized)) {
+  if (!looksLikeLicenseKey(normalized)) {
     return { valid: false, error: 'Invalid format. Expected: FVD-PRO-XXXX-XXXX' };
   }
 
-  if (!VALID_LICENSE_KEYS.has(normalized)) {
+  const digest = await hashLicenseKey(normalized);
+  if (!LICENSE_KEY_HASHES.has(digest)) {
     return { valid: false, error: 'Invalid license key' };
   }
 
-  return { valid: true, tier: 'pro', source: 'ko-fi' };
+  return { valid: true, tier: 'pro', source: 'ko-fi', digest };
 }
 
 async function activateLicense(licenseKey) {
-  const result = validateLicenseFormat(licenseKey);
+  const result = await validateLicenseFormat(licenseKey);
 
   if (!result.valid) {
     return { success: false, error: result.error || 'Invalid license key' };
   }
 
-  const normalizedKey = normalizeLicenseKey(licenseKey);
   await chrome.storage.local.set({
-    [LICENSE_STORAGE_KEY]: normalizedKey,
+    [LICENSE_STORAGE_KEY]: result.digest,
     [PRO_STATUS_KEY]: {
       active: true,
       tier: result.tier,
@@ -71,21 +81,25 @@ async function isProUser() {
   try {
     const data = await chrome.storage.local.get([LICENSE_STORAGE_KEY, PRO_STATUS_KEY]);
 
-    if (!data[LICENSE_STORAGE_KEY]) {
+    const stored = data[LICENSE_STORAGE_KEY];
+    if (!stored) {
       return { isPro: false, tier: 'free' };
     }
 
-    const result = validateLicenseFormat(data[LICENSE_STORAGE_KEY]);
+    const digest = LICENSE_KEY_HASHES.has(stored)
+      ? stored
+      : looksLikeLicenseKey(stored)
+        ? await hashLicenseKey(normalizeLicenseKey(stored))
+        : '';
 
-    if (!result.valid) {
+    if (!LICENSE_KEY_HASHES.has(digest)) {
       await deactivateLicense();
       return { isPro: false, tier: 'free' };
     }
 
     return {
       isPro: true,
-      tier: result.tier,
-      license: data[LICENSE_STORAGE_KEY],
+      tier: 'pro',
       status: data[PRO_STATUS_KEY]
     };
   } catch (e) {
@@ -291,7 +305,6 @@ if (typeof module !== 'undefined' && module.exports) {
     getFeatureLimits,
     canUseFeature,
     canStartDownload,
-    consumeFreeDownloadSlot,
-    OFFICIAL_LICENSE_KEY
+    consumeFreeDownloadSlot
   };
 }

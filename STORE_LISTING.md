@@ -7,25 +7,11 @@ GitHub ska **inte** pushas förrän du uttryckligen ber om det. ZIP:en räcker f
 Produkt: https://ko-fi.com/s/72a48b875e  
 Pris: **EUR 10.99** (lifetime)
 
-Klistra in detta som **Thank you / confirmation message** efter köp i Ko-fi Shop (item settings):
+Klistra in thank-you-texten från den **lokala** filen `kofi-thank-you.local.txt` (gitignorerad, finns bara på din dator).
 
-```
-Thank you for buying Flash Video Downloader Pro! 🎉
+Publicera **aldrig** licensnyckeln i git, README, issues, store-text eller skärmdumpar. Köpare ska bara se den på Ko-fi efter betalning.
 
-Your lifetime license key:
-
-FVD-PRO-K7M2-9QX4
-
-Activate:
-1. Open Flash Video Downloader in Chrome
-2. Settings (gear) → Pro
-3. Enter license key → Activate
-
-ENJOY! :)
-Support: bynrnworld@gmail.com
-```
-
-Utan detta meddelande i Ko-fi får köpare ingen nyckel. Tillägget visar inte nyckeln i UI.
+Utan thank-you-meddelandet i Ko-fi får köpare ingen nyckel. Tillägget visar inte nyckeln i UI och lagrar bara en hash lokalt.
 
 ## 0b. Stoppa ominstallationsfusk (Cloudflare Worker, gratis)
 
@@ -67,7 +53,7 @@ Dashboard → Privacy practices → Privacy policy URL:
 
 **Certify:** Data is not sold to third parties. Data is not used for unrelated purposes.
 
-**Paid features:** Optional Pro upgrade. Payment is handled on Ko-fi. The extension only stores a license key locally.
+**Paid features:** Optional Pro upgrade. Payment is handled on Ko-fi. The extension stores a hashed license token locally.
 
 ## 4. EU / trader (DSA)
 
@@ -145,7 +131,7 @@ Promo (valfritt):
 
 ## 8. Checklista före submit
 
-- [ ] Ko-fi thank-you-meddelandet med nyckeln `FVD-PRO-K7M2-9QX4` är live
+- [ ] Ko-fi thank-you-meddelandet är live (text från `kofi-thank-you.local.txt`, nyckeln syns inte i git)
 - [ ] Publik privacy-URL visar den nya texten (Pro + Ko-fi + 1/timme)
 - [ ] ZIP skapad med `create_zip.bat` och innehåller `license.js` + `_locales`
 - [ ] Testat Load unpacked: Free = 1 nedladdning/timme, Pro-nyckeln aktiverar obegränsat
