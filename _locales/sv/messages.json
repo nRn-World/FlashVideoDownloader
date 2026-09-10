@@ -6,10 +6,10 @@
     "message": "FVD"
   },
   "appDescription": {
-    "message": "Hitta och ladda ner öppna videor (MP4, WEBM, M3U8) på aktiv flik. Kringgår inte DRM-skydd."
+    "message": "Hitta och ladda ner öppna videor (MP4, WEBM, M3U8) på aktiv flik. Gratis: 1 nedladdning/timme. Kringgår inte DRM."
   },
   "appVersion": {
-    "message": "v3.2.5"
+    "message": "v3.3.1"
   },
   "searchPlaceholder": {
     "message": "Sök bland videor..."
@@ -170,8 +170,8 @@
   "featureConcurrentDownloads": {
     "message": "Parallella nedladdningar"
   },
-  "featureBatchDownload": {
-    "message": "Batch-nedladdning"
+  "featureHourlyDownloads": {
+    "message": "Nedladdningar per timme"
   },
   "featureHistory": {
     "message": "Nedladdningshistorik"
@@ -192,7 +192,7 @@
     "message": "1 aktiv"
   },
   "limitPro3": {
-    "message": "3+ aktiva"
+    "message": "3 aktiva"
   },
   "limitLast10": {
     "message": "Senaste 10"
@@ -200,17 +200,23 @@
   "limitUnlimited": {
     "message": "Obegränsat"
   },
+  "limitOnePerHour": {
+    "message": "1"
+  },
   "proPrice": {
-    "message": "Engångsbetalning: $5.99"
+    "message": "€10.99"
   },
   "proPriceLifetime": {
-    "message": "Livstidsåtkomst — betala en gång, använd för alltid"
+    "message": "Engångsköp · livstidsåtkomst"
   },
   "buyPro": {
     "message": "Köp Pro-licens"
   },
   "enterLicense": {
     "message": "Ange licensnyckel"
+  },
+  "licenseAfterPurchase": {
+    "message": "Efter betalning på Ko-fi kopierar du licensnyckeln från tack-sidan och klistrar in den här."
   },
   "licenseKeyPlaceholder": {
     "message": "FVD-PRO-XXXX-XXXX"

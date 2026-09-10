@@ -6,10 +6,10 @@
     "message": "FVD"
   },
   "appDescription": {
-    "message": "Detect and download open videos (MP4, WEBM, M3U8) from the active tab. Does not bypass DRM protection."
+    "message": "Detect and download open videos (MP4, WEBM, M3U8) from the active tab. Free: 1 download/hour. Does not bypass DRM."
   },
   "appVersion": {
-    "message": "v3.2.5"
+    "message": "v3.3.1"
   },
   "searchPlaceholder": {
     "message": "Search detected videos..."
@@ -170,8 +170,8 @@
   "featureConcurrentDownloads": {
     "message": "Concurrent downloads"
   },
-  "featureBatchDownload": {
-    "message": "Batch download all"
+  "featureHourlyDownloads": {
+    "message": "Downloads per hour"
   },
   "featureHistory": {
     "message": "Download history"
@@ -192,7 +192,7 @@
     "message": "1 active"
   },
   "limitPro3": {
-    "message": "3+ active"
+    "message": "3 active"
   },
   "limitLast10": {
     "message": "Last 10"
@@ -200,17 +200,23 @@
   "limitUnlimited": {
     "message": "Unlimited"
   },
+  "limitOnePerHour": {
+    "message": "1"
+  },
   "proPrice": {
-    "message": "One-time payment: $5.99"
+    "message": "€10.99"
   },
   "proPriceLifetime": {
-    "message": "Lifetime access — pay once, use forever"
+    "message": "One-time · lifetime access"
   },
   "buyPro": {
     "message": "Buy Pro License"
   },
   "enterLicense": {
     "message": "Enter License Key"
+  },
+  "licenseAfterPurchase": {
+    "message": "After paying on Ko-fi, copy the license key from the thank-you page and paste it below."
   },
   "licenseKeyPlaceholder": {
     "message": "FVD-PRO-XXXX-XXXX"

@@ -11,3 +11,7 @@ temp_zip_check/
 # Release artifacts
 *.zip
 Flash Video Downloader.zip
+
+# Local secrets / handoff (do not publish)
+pro-license-keys-*.txt
+CURSOR-HANDOFF.md

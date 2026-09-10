@@ -27,12 +27,12 @@ The extension focuses on **visible page videos**, offers **pause / resume / canc
 
 ### Free vs Pro
 
-**Flash Video Downloader** offers a **Free tier** with all core features, plus an optional **Pro upgrade** ($5.99 one-time) for power users:
+**Flash Video Downloader** offers a **Free tier** with core features, plus an optional **Pro upgrade** (EUR 10.99 one-time) for power users:
 
-- **Free:** Detect videos, download one at a time (1 per hour), pause/resume, last 10 history, all formats
-- **Pro:** Unlimited hourly downloads, 3+ concurrent downloads, batch download all, unlimited history, export (CSV/JSON), filename templates, quality picker
+- **Free:** Detect videos, 1 download per rolling hour, 1 at a time, pause/resume, last 10 history
+- **Pro:** Unlimited hourly downloads, 3 concurrent downloads, unlimited local history
 
-[⚡ Learn more about Pro](https://nrn-world.github.io/FlashVideoDownloader/pages/pro.html)
+Buy Pro on [Ko-fi](https://ko-fi.com/s/72a48b875e). After payment you receive a license key on the thank-you page. Activate it in Settings → Pro.
 
 > **Important:** This extension does not bypass DRM. Sites such as YouTube, Netflix, Twitch, Disney+, and Spotify are blocked by design for Chrome Web Store compliance.
 
@@ -74,8 +74,8 @@ The extension focuses on **visible page videos**, offers **pause / resume / canc
 | **Save location** | Ask each time, or save all videos to a folder you pick on your computer |
 | **Languages** | English, Svenska, Türkçe, Español, Français, العربية |
 | **History** | Last 10 (Free) or Unlimited (Pro) with optional 24-hour auto-cleanup |
-| **Rate limits** | Free: 1 download/hour, 1 concurrent; Pro: unlimited hourly, 3+ concurrent |
-| **Pro features** | 3+ concurrent downloads, batch download, history export, filename templates, quality picker |
+| **Rate limits** | Free: 1 download/hour, 1 concurrent; Pro: unlimited hourly, 3 concurrent |
+| **Pro** | Optional EUR 10.99 lifetime license via Ko-fi |
 | **Privacy** | On-demand content script injection · no keyboard capture · blocked-host list |
 
 ---
@@ -205,7 +205,7 @@ Chrome Web Store: [Flash Video Downloader](https://chromewebstore.google.com/det
 
 | Version | Highlights |
 |---|---|
-| **3.3.1** | Free tier rate limit: 1 download per hour (Pro: unlimited). Clear upgrade prompts with countdown |
+| **3.3.1** | Freemium: Free 1 download/hour; Pro lifetime via Ko-fi (EUR 10.99). Official key `FVD-PRO-K7M2-9QX4`. Store package. |
 | **3.3.0** | Freemium model: Free tier + Pro upgrade ($5.99 lifetime). Pro: 3+ concurrent, batch, unlimited history, export, templates |
 | **3.2.5** | Better detection for tube/CMS URLs (`.mp4/`, `/get_file/`), iframe scan, less aggressive preview filter |
 | **3.2.4** | Stronger HLS/DASH downloads: page Referer retries, lower parallelism, segment repair, MPD support |

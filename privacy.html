@@ -14,18 +14,19 @@
 </head>
 <body>
   <h1>Privacy Policy – Flash Video Downloader</h1>
-  <p><strong>Last updated:</strong> August 28, 2026</p>
+  <p><strong>Last updated:</strong> September 10, 2026</p>
   <p><strong>Developer:</strong> nRn World (<a href="mailto:bynrnworld@gmail.com">bynrnworld@gmail.com</a>)</p>
 
   <h2>Summary</h2>
-  <p>Flash Video Downloader processes data <strong>locally on your device only</strong>. We do not operate servers that collect your browsing data.</p>
+  <p>Download history, settings and your optional Pro license key stay <strong>on your device</strong>. We do not collect video URLs or browsing history on a server.</p>
+  <p>To enforce the Free limit of 1 download per hour after reinstall, the extension may contact a small rate-limit service. That service does not receive page URLs or file names. It stores a one-way hash of your network address and a timestamp for up to 60 minutes, then deletes it.</p>
 
   <h2>Data stored on your device</h2>
   <ul>
     <li><strong>Download history</strong> – filename, sanitized URL (without query tokens), file size, timestamp. Stored in Chrome local storage.</li>
     <li><strong>Settings</strong> – language preference and auto-delete history option.</li>
     <li><strong>Active downloads</strong> – progress state during the browser session (session storage).</li>
-    <li><strong>Pro license key</strong> (optional) – if you purchase a Pro upgrade, the license key is stored locally in Chrome storage. License validation is performed client-side. No payment information is collected by the extension.</li>
+    <li><strong>Pro license key</strong> (optional) – if you purchase a Pro upgrade via Ko-fi, the license key is stored locally in Chrome storage. License validation is performed on your device. No payment information is collected by the extension.</li>
   </ul>
 
   <h2>Data processed temporarily</h2>
@@ -41,11 +42,15 @@
     <li>No sale or sharing of personal data with third parties.</li>
     <li>No cloud upload of your videos or browsing history.</li>
     <li>No bypass of DRM-protected or restricted streaming platforms.</li>
-    <li>No collection of payment information (Pro purchases are processed via external payment providers).</li>
+    <li>No collection of payment information (optional Pro purchases are completed on Ko-fi; Ko-fi/PayPal process payment under their own policies).</li>
+    <li>No storage of raw IP addresses — the optional rate-limit service stores only a one-way hash for up to 60 minutes.</li>
   </ul>
 
+  <h2>Free-tier rate limit (optional online check)</h2>
+  <p>Chrome deletes an extension’s local data when it is uninstalled. To keep the Free limit of 1 download per rolling hour, a Free download may trigger one request to our rate-limit service. The request contains no video URL, no filename, and no license key. The service records a hashed network identifier and the time, kept for at most 60 minutes. Pro users are not rate-limited and do not call this check.</p>
+
   <h2>Pro upgrade (optional paid feature)</h2>
-  <p>Flash Video Downloader offers an optional Pro upgrade ($5.99 one-time payment) that unlocks additional features such as concurrent downloads, batch operations, and unlimited history. Payment is processed via external providers (Ko-fi, Lemon Squeezy, or Stripe). The extension stores only the license key locally for feature activation. No payment information or financial data is collected or processed by the extension itself.</p>
+  <p>Flash Video Downloader is free to install. The Free tier allows <strong>1 video download per rolling hour</strong> and 1 concurrent download. An optional Pro upgrade (EUR 10.99, one-time lifetime license) unlocks unlimited hourly downloads, 3 concurrent downloads, and unlimited local history. Payment is processed on Ko-fi (https://ko-fi.com/s/72a48b875e). After payment, Ko-fi shows your license key. You activate it in Settings → Pro. The extension stores only the license key locally. No payment card data is collected or processed by the extension.</p>
 
   <h2>Permissions explained</h2>
   <ul>

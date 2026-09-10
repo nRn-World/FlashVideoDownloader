@@ -13,7 +13,7 @@
         <img src="icons/icon32.png" alt="FVD" class="logo-img" />
         <div class="brand-text">
           <h1 id="txt-app-title">Flash Video Downloader</h1>
-          <span class="version" id="txt-app-version">v3.2.5</span>
+          <span class="version" id="txt-app-version">v3.3.1</span>
         </div>
       </div>
       <div class="header-actions">
@@ -76,6 +76,77 @@
     <!-- Settings & History View -->
     <div id="view-settings" class="view-panel hidden">
       <div class="settings-container">
+        <!-- Pro Upgrade Section (first in Settings — conversion) -->
+        <div class="pro-upgrade-section" id="pro-section">
+          <div class="pro-header">
+            <div class="pro-badge-icon">⚡</div>
+            <div class="pro-header-text">
+              <h3 class="pro-title" id="txt-pro-title">Flash Video Downloader Pro</h3>
+              <p class="pro-subtitle" id="txt-pro-description">Pay once. Download without the hourly limit.</p>
+            </div>
+          </div>
+
+          <div id="pro-active-status" class="pro-active-status hidden">
+            <div class="pro-active-badge">
+              <span class="pro-active-icon">✅</span>
+              <span class="pro-active-text" id="txt-pro-active">Pro Active</span>
+            </div>
+            <button type="button" id="btn-deactivate-license" class="btn-text-link" data-i18n="licenseDeactivate">Deactivate License</button>
+          </div>
+
+          <div id="pro-sales-block">
+            <p class="pro-hook" id="txt-pro-hook">Free is limited to 1 video download per hour.</p>
+            <div id="pro-comparison-table" class="pro-comparison">
+              <table class="comparison-table">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th data-i18n="tierFree">Free</th>
+                    <th data-i18n="tierPro">Pro</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="pro-row-hook">
+                    <td data-i18n="featureHourlyDownloads">Downloads per hour</td>
+                    <td class="cell-free-limit"><span data-i18n="limitOnePerHour">1</span></td>
+                    <td class="cell-pro-unlock"><span data-i18n="limitUnlimited">Unlimited</span></td>
+                  </tr>
+                  <tr>
+                    <td data-i18n="featureConcurrentDownloads">Concurrent downloads</td>
+                    <td class="cell-free-limit"><span data-i18n="limitFree1">1 active</span></td>
+                    <td class="cell-pro-unlock"><span data-i18n="limitPro3">3 active</span></td>
+                  </tr>
+                  <tr>
+                    <td data-i18n="featureHistory">Download history</td>
+                    <td class="cell-free-limit"><span data-i18n="limitLast10">Last 10</span></td>
+                    <td class="cell-pro-unlock"><span data-i18n="limitUnlimited">Unlimited</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="pro-purchase-box" class="pro-purchase-box">
+              <div class="pro-price">
+                <span class="price-amount" id="txt-pro-price">€10.99</span>
+                <span class="price-lifetime" id="txt-pro-lifetime">One-time · lifetime access</span>
+              </div>
+              <a href="#" id="btn-buy-pro" class="btn-buy-pro" target="_blank" rel="noopener noreferrer">
+                <span data-i18n="buyPro">Buy Pro License</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="pro-license-entry" id="pro-license-entry">
+            <label class="field-label" id="lbl-enter-license" data-i18n="alreadyHaveLicense">Already have a license key?</label>
+            <div class="license-input-row">
+              <input type="text" id="input-license-key" class="license-input" placeholder="FVD-PRO-XXXX-XXXX" maxlength="19" />
+              <button type="button" id="btn-activate-license" class="btn-activate" data-i18n="activateLicense">Activate</button>
+            </div>
+            <p class="license-hint" id="txt-license-after-purchase">After Ko-fi payment, paste the key from the thank-you page.</p>
+            <p class="license-hint" id="license-result-message"></p>
+          </div>
+        </div>
+
         <div class="settings-section">
           <h3 id="txt-download-title">Download location</h3>
           <label class="toggle-control">
@@ -85,103 +156,6 @@
           <div id="fixed-location-options" class="folder-options hidden">
             <button type="button" id="btn-pick-folder" class="btn-secondary-action">📁 Choose folder on computer</button>
             <p class="settings-hint" id="txt-selected-folder">No folder selected</p>
-          </div>
-        </div>
-
-        <!-- Pro Upgrade Section -->
-        <div class="pro-upgrade-section" id="pro-section">
-          <div class="pro-header">
-            <div class="pro-badge-icon">⚡</div>
-            <div class="pro-header-text">
-              <h3 class="pro-title" id="txt-pro-title">Flash Video Downloader Pro</h3>
-              <p class="pro-subtitle" id="txt-pro-description">Unlock power-user features for professional video downloading</p>
-            </div>
-          </div>
-
-          <!-- Pro Status Display (when activated) -->
-          <div id="pro-active-status" class="pro-active-status hidden">
-            <div class="pro-active-badge">
-              <span class="pro-active-icon">✅</span>
-              <span class="pro-active-text" id="txt-pro-active">Pro Active</span>
-            </div>
-            <button type="button" id="btn-deactivate-license" class="btn-text-link" data-i18n="licenseDeactivate">Deactivate License</button>
-          </div>
-
-          <!-- Free vs Pro Comparison -->
-          <div id="pro-comparison-table" class="pro-comparison">
-            <h4 class="comparison-title" id="txt-free-vs-pro">Free vs Pro</h4>
-            <table class="comparison-table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th data-i18n="tierFree">Free</th>
-                  <th data-i18n="tierPro">Pro</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td data-i18n="featureCoreDownload">Detect & download videos</td>
-                  <td>✅</td>
-                  <td>✅</td>
-                </tr>
-                <tr>
-                  <td data-i18n="featurePauseResume">Pause/resume/cancel</td>
-                  <td>✅</td>
-                  <td>✅</td>
-                </tr>
-                <tr>
-                  <td data-i18n="featureConcurrentDownloads">Concurrent downloads</td>
-                  <td><span data-i18n="limitFree1">1 active</span></td>
-                  <td><span data-i18n="limitPro3">3+ active</span></td>
-                </tr>
-                <tr>
-                  <td data-i18n="featureBatchDownload">Batch download all</td>
-                  <td>❌</td>
-                  <td>✅</td>
-                </tr>
-                <tr>
-                  <td data-i18n="featureHistory">Download history</td>
-                  <td><span data-i18n="limitLast10">Last 10</span></td>
-                  <td><span data-i18n="limitUnlimited">Unlimited</span></td>
-                </tr>
-                <tr>
-                  <td data-i18n="featureHistoryExport">Export history</td>
-                  <td>❌</td>
-                  <td>✅</td>
-                </tr>
-                <tr>
-                  <td data-i18n="featureFilenameTemplate">Filename templates</td>
-                  <td>❌</td>
-                  <td>✅</td>
-                </tr>
-                <tr>
-                  <td data-i18n="featureQualityPicker">Quality picker (HLS)</td>
-                  <td>❌</td>
-                  <td>✅</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Pro Pricing & Purchase -->
-          <div id="pro-purchase-box" class="pro-purchase-box">
-            <div class="pro-price">
-              <span class="price-amount" id="txt-pro-price">One-time payment: $5.99</span>
-              <span class="price-lifetime" id="txt-pro-lifetime">Lifetime access — pay once, use forever</span>
-            </div>
-            <a href="#" id="btn-buy-pro" class="btn-buy-pro" target="_blank" rel="noopener noreferrer">
-              <span data-i18n="buyPro">Buy Pro License</span>
-            </a>
-          </div>
-
-          <!-- License Entry -->
-          <div class="pro-license-entry">
-            <label class="field-label" id="lbl-enter-license" data-i18n="enterLicense">Enter License Key</label>
-            <div class="license-input-row">
-              <input type="text" id="input-license-key" class="license-input" placeholder="FVD-PRO-XXXX-XXXX" maxlength="19" />
-              <button type="button" id="btn-activate-license" class="btn-activate" data-i18n="activateLicense">Activate</button>
-            </div>
-            <p class="license-hint" id="license-result-message"></p>
           </div>
         </div>
 
@@ -243,7 +217,7 @@
               </svg>
             </button>
           </div>
-          <p class="credits-version" id="txt-settings-version">v3.2.5</p>
+          <p class="credits-version" id="txt-settings-version">v3.3.1</p>
         </div>
 
         <div class="settings-footer-btn">
@@ -255,7 +229,7 @@
     <!-- Footer -->
     <footer class="app-footer" id="app-footer">
       <span id="txt-footer">Captures MP4, WEBM, FLV, M3U8 & more</span>
-      <span id="txt-footer-version" class="footer-version">v3.2.5</span>
+      <span id="txt-footer-version" class="footer-version">v3.3.1</span>
     </footer>
   </div>
 

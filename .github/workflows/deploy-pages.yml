@@ -33,9 +33,11 @@ jobs:
 
       - name: Build site
         run: |
-          mkdir -p public
+          mkdir -p public/pages public/icons
           cp privacy.html public/
           cp pages/index.html public/
+          cp pages/pro.html public/pages/
+          cp icons/icon128.png public/icons/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

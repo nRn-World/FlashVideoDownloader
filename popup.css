@@ -1228,6 +1228,8 @@ body {
   color: var(--text-secondary);
   line-height: 1.4;
   margin: 0;
+  overflow: visible;
+  white-space: normal;
 }
 
 .pro-active-status {
@@ -1273,11 +1275,36 @@ body {
   gap: 8px;
 }
 
-.comparison-title {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #f1f5f9;
+.pro-hook {
   margin: 0;
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: var(--radius-sm);
+}
+
+#pro-sales-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comparison-table .pro-row-hook td {
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.cell-free-limit {
+  color: #fbbf24 !important;
+  font-weight: 700;
+}
+
+.cell-pro-unlock {
+  color: #34d399 !important;
+  font-weight: 700;
 }
 
 .comparison-table {
@@ -1345,9 +1372,10 @@ body {
 }
 
 .price-amount {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #60a5fa;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #93c5fd;
+  letter-spacing: -0.03em;
 }
 
 .price-lifetime {

@@ -6,10 +6,10 @@
     "message": "FVD"
   },
   "appDescription": {
-    "message": "Detect and download open videos (MP4, WEBM, M3U8) from the active tab. Does not bypass DRM protection."
+    "message": "Detect and download open videos (MP4, WEBM, M3U8) from the active tab. Free: 1 download/hour. Does not bypass DRM."
   },
   "appVersion": {
-    "message": "v3.2.5"
+    "message": "v3.3.1"
   },
   "searchPlaceholder": {
     "message": "Search detected videos..."
@@ -201,7 +201,7 @@
     "message": "Unlimited"
   },
   "proPrice": {
-    "message": "One-time payment: $5.99"
+    "message": "One-time payment: EUR 10.99"
   },
   "proPriceLifetime": {
     "message": "Lifetime access — pay once, use forever"

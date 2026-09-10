@@ -1,22 +1,61 @@
-# Chrome Web Store – Publiceringsguide
+# Chrome Web Store – Publiceringsguide (v3.3.1)
 
-## 1. Ladda upp ZIP
+GitHub ska **inte** pushas förrän du uttryckligen ber om det. ZIP:en räcker för uppladdning.
 
-Kör `create_zip.bat` eller packa manuellt (exkludera `server.py`, `test_player.html`, `temp_zip_check/`).
+## 0. Ko-fi (gör detta före eller samtidigt som store-submit)
 
-## 2. Integritetspolicy (OBLIGATORISKT)
+Produkt: https://ko-fi.com/s/72a48b875e  
+Pris: **EUR 10.99** (lifetime)
 
-Integritetspolicyn publiceras automatiskt via **GitHub Actions** (`.github/workflows/deploy-pages.yml`) till:
+Klistra in detta som **Thank you / confirmation message** efter köp i Ko-fi Shop (item settings):
+
+```
+Thank you for buying Flash Video Downloader Pro! 🎉
+
+Your lifetime license key:
+
+FVD-PRO-K7M2-9QX4
+
+Activate:
+1. Open Flash Video Downloader in Chrome
+2. Settings (gear) → Pro
+3. Enter license key → Activate
+
+ENJOY! :)
+Support: bynrnworld@gmail.com
+```
+
+Utan detta meddelande i Ko-fi får köpare ingen nyckel. Tillägget visar inte nyckeln i UI.
+
+## 0b. Stoppa ominstallationsfusk (Cloudflare Worker, gratis)
+
+Chrome rensar tilläggets lagring vid avinstallering. För att Free-gränsen ska hålla: skapa en Worker och klistra in URL:en i `license.js` som `FREE_RATE_LIMIT_API`.
+
+1. https://dash.cloudflare.com → Workers & Pages → Create → Worker
+2. Klistra in koden från `workers/fvd-rate-limit.js` → Deploy
+3. Kopiera `https://….workers.dev/` till `FREE_RATE_LIMIT_API` i `license.js`
+4. Kör `create_zip.bat` igen
+5. Publicera den uppdaterade `privacy.html` (nämner rate-limit-tjänsten)
+
+Worker-filen ska **inte** ligga i Chrome-ZIP:en.
+
+## 1. ZIP att ladda upp
+
+Kör `create_zip.bat` (eller `python prepare_store_assets.py`).
+
+Fil: `Flash Video Downloader.zip`
+
+ZIP:en ska **inte** innehålla: nyckelfiler, Screenshots, CURSOR-HANDOFF, TESTING, Python, `.git`.
+
+## 2. Integritetspolicy (obligatoriskt)
+
+Dashboard → Privacy practices → Privacy policy URL:
 
 `https://nrn-world.github.io/FlashVideoDownloader/privacy.html`
 
-Efter push till `main`: öppna **Actions** → vänta tills *Deploy GitHub Pages* är grön. Under **Settings → Pages** ska källan vara **GitHub Actions**.
-
-Klistra in URL:en i Developer Dashboard → **Privacy practices → Privacy policy**.
+**Viktigt:** den publika sidan måste matcha den uppdaterade `privacy.html` (Pro / Ko-fi / 1 nedladdning per timme). Om GitHub Pages fortfarande visar den gamla texten: publicera den nya `privacy.html` innan du skickar in tillagget (det kräver en push till `main`, eller annan publik host).
 
 ## 3. Data usage – Developer Dashboard
-
-Markera följande under **Privacy practices**:
 
 | Datatyp | Samlas in? | Delas? | Syfte |
 |---------|------------|--------|-------|
@@ -24,12 +63,17 @@ Markera följande under **Privacy practices**:
 | Användaraktivitet | Ja, lokalt | Nej | Nedladdningshistorik |
 | Personlig kommunikation | Nej | – | – |
 | Plats | Nej | – | – |
+| Finansiell / betaldata | Nej | – | Betalning sker på Ko-fi, inte i tillägget |
 
 **Certify:** Data is not sold to third parties. Data is not used for unrelated purposes.
 
-**Freemium disclosure:** The extension offers a paid Pro upgrade. All payment and licensing data is processed client-side. No payment information is collected by the extension itself.
+**Paid features:** Optional Pro upgrade. Payment is handled on Ko-fi. The extension only stores a license key locally.
 
-## 4. Permission justification (klistra in vid granskning)
+## 4. EU / trader (DSA)
+
+Om du säljer Pro i EU: i Chrome Web Store Developer Dashboard, deklarera **trader status** och fyll i de uppgifter Google kräver. Utelämnad trader-deklaration är en vanlig avvisningsorsak för betalda tillägg.
+
+## 5. Permission justification (klistra in vid granskning)
 
 ```
 Single purpose: Help users detect and download openly accessible video files from the current browser tab.
@@ -38,7 +82,7 @@ Single purpose: Help users detect and download openly accessible video files fro
 
 • activeTab + scripting: Inject a content script only when the user opens the popup, to scan <video> elements on the active tab.
 
-• storage: Save language preference and local download history on device only.
+• storage: Save language preference, local download history, Free-tier hourly download timestamps, and optional Pro license key on device only.
 
 • offscreen: Merge HLS segments into a downloadable file using Blob APIs.
 
@@ -46,70 +90,71 @@ Single purpose: Help users detect and download openly accessible video files fro
 
 • tabs: Show badge count and communicate with the active tab.
 
-Does NOT: bypass DRM, download from YouTube/Netflix/Disney+/Twitch, collect analytics, or transmit data to external servers.
+Does NOT: bypass DRM, download from YouTube/Netflix/Disney+/Twitch, collect analytics, or transmit browsing data to our servers.
+
+Paid feature: Free tier is limited to 1 download per rolling hour. Optional lifetime Pro license (EUR 10.99) is purchased on Ko-fi. The extension does not process payments.
 ```
 
-## 5. Store listing text
+## 6. Store listing text (klistra in i Dashboard)
 
-**Kort beskrivning (EN):**
-Detect and download videos from any site — Free with core features (1/hour). Optional Pro upgrade for power users ($5.99 lifetime).
+**Kort beskrivning (EN, max 132 tecken):**
+Detect and save open videos from the page you are viewing. Free: 1 download/hour. Optional Pro. No DRM bypass.
 
 **Detaljerad beskrivning (EN):**
-Flash Video Downloader helps you find and save openly accessible videos on the page you're viewing.
+Flash Video Downloader helps you find and save openly accessible videos on the page you are viewing.
 
-**Free Features (included):**
+FREE
 • Detect MP4, WEBM, M3U8 and more from network traffic and page elements
 • Preview before download
 • Pause, resume and cancel downloads
-• **1 download per hour** (rate limit resets every 60 minutes)
-• 1 concurrent download at a time
+• 1 download per rolling hour
+• 1 download at a time
 • Download history (last 10)
 • 6 languages
 • Choose where files are saved
 
-**Pro Features ($5.99 one-time, lifetime):**
-• **Unlimited hourly downloads** (no rate limit)
-• 3+ concurrent downloads (vs 1 on Free)
-• Batch "Download all detected" button
-• Unlimited download history + export (CSV/JSON)
-• Filename templates (title, site, date)
-• Quality picker for HLS streams
-• Pro badge & priority
+PRO (optional, EUR 10.99 one-time, lifetime)
+Buy on Ko-fi. After payment you receive a license key. Enter it in Settings → Pro.
+• Unlimited hourly downloads
+• 3 concurrent downloads
+• Unlimited local download history
 
-**Important:**
+IMPORTANT
 • Does NOT download from YouTube, Netflix, Disney+, Twitch or other DRM-protected platforms
 • Does NOT bypass copyright protection
-• Only downloads content you have the right to save
+• Only download content you have the right to save
+• Free to install. Pro is optional and is not required to use core detection
 
-**Pricing:**
-Free tier is fully functional for basic use (1 download/hour). Pro upgrade is optional, one-time $5.99 (no subscription).
+Pricing: Free tier works for basic use (1 download per hour). Pro is a one-time EUR 10.99 lifetime license via Ko-fi — no subscription, no in-extension checkout form.
+
+Support: bynrnworld@gmail.com
 
 **Kategori:** Productivity
 
-## 6. Skärmdumpar (krävs)
+## 7. Skärmdumpar
 
-Kör `create_zip.bat` – skapar även butiks-skärmdumpar i `Screenshots/store/`.
+Ladda upp minst 1 (helst tre) i **1280×800**:
 
-**Chrome Web Store storlekar:**
-- **1280×800** (rekommenderas) – `*-1280x800.png`
-- **640×400** (alternativ) – `*-640x400.png`
+1. `Screenshots/store/01-main-popup-1280x800.png`
+2. `Screenshots/store/02-download-progress-1280x800.png`
+3. `Screenshots/store/03-settings-1280x800.png`
 
-Ladda upp minst 1 skärmdump (helst alla tre 1280×800):
-1. `01-main-popup-1280x800.png` – detekterade videor
-2. `02-download-progress-1280x800.png` – nedladdning pågår
-3. `03-settings-1280x800.png` – inställningar
+Promo (valfritt):
+- Small tile: `Screenshots/store/promo-tile-440x280.png`
+- Marquee: `Screenshots/store/promo-featured-1400x560.png`
 
-**Integritetspolicy-URL (efter GitHub Pages):**
-`https://nrn-world.github.io/FlashVideoDownloader/privacy.html`
+## 8. Checklista före submit
 
-## 7. Checklista före submit
+- [ ] Ko-fi thank-you-meddelandet med nyckeln `FVD-PRO-K7M2-9QX4` är live
+- [ ] Publik privacy-URL visar den nya texten (Pro + Ko-fi + 1/timme)
+- [ ] ZIP skapad med `create_zip.bat` och innehåller `license.js` + `_locales`
+- [ ] Testat Load unpacked: Free = 1 nedladdning/timme, Pro-nyckeln aktiverar obegränsat
+- [ ] Store-texten nämner 1/timme, EUR 10.99, Ko-fi, ingen YouTube/DRM
+- [ ] Inga påståenden om batch, filnamnsmallar eller kvalitetsväljare (de är inte med i denna version)
+- [ ] EU trader-deklaration ifylld om du säljer i EU
+- [ ] Version 3.3.1 i manifest
 
-- [ ] `privacy.html` publicerad med publik URL
-- [ ] ZIP innehåller `lib/mux.min.js`, `blocked-hosts.js`, `i18n.js`
-- [ ] Inga externa CDN-länkar i popup
-- [ ] Testat "Load unpacked" utan fel
-- [ ] Beskrivning matchar faktisk funktion (gratis, ingen betalversion, ingen YouTube-downloader)
+## 9. Kontakt
 
-## 8. Kontakt
-
-bynrnworld@gmail.com
+bynrnworld@gmail.com  
+Ko-fi shop: https://ko-fi.com/s/72a48b875e

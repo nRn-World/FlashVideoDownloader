@@ -1,4 +1,4 @@
-// Flash Video Downloader - Background Service Worker (v3.3.0)
+// Flash Video Downloader - Background Service Worker (v3.3.1)
 // HLS downloads are delegated to offscreen.js which has full DOM/Blob/ObjectURL access.
 
 importScripts('blocked-hosts.js');
@@ -372,12 +372,7 @@ function completeTrackedDownload(extId) {
   activeDownloads.set(extId, dl);
   persistActiveDownloads();
   emitDownloadProgress(dl);
-  
-  // Record download completion for rate limiting (Free tier only)
-  if (typeof recordDownloadCompletion === 'function') {
-    recordDownloadCompletion().catch((e) => console.warn('[FVD] Record download:', e));
-  }
-  
+
   Promise.resolve(
     saveDownloadToHistory({
       filename: dl.filename,
@@ -529,50 +524,56 @@ async function canStartNewDownload() {
   }
 }
 
-async function checkRateLimitAndNotify() {
+function notifyRateLimit(minutesRemaining) {
+  chrome.runtime.sendMessage({
+    type: 'RATE_LIMIT_REACHED',
+    minutesRemaining: minutesRemaining || 60,
+    requiresUpgrade: true
+  }).catch(() => {});
+}
+
+function notifyConcurrentLimit() {
+  chrome.runtime.sendMessage({
+    type: 'DOWNLOAD_LIMIT_REACHED',
+    message: 'Free users can only download 1 video at a time. Upgrade to Pro for 3 concurrent downloads.',
+    requiresUpgrade: true
+  }).catch(() => {});
+}
+
+// Enforce Free: 1/hour + 1 concurrent. Consumes the hourly slot only when start is allowed.
+async function gateDownloadStart() {
   try {
-    if (typeof canStartDownload !== 'function') {
-      return { allowed: true };
+    if (!(await canStartNewDownload())) {
+      notifyConcurrentLimit();
+      return { ok: false, status: 'concurrent_limit' };
     }
-    
-    const rateLimitCheck = await canStartDownload();
-    
-    if (!rateLimitCheck.allowed && rateLimitCheck.reason === 'rate_limit') {
-      // Notify popup about rate limit
-      chrome.runtime.sendMessage({
-        type: 'RATE_LIMIT_REACHED',
-        minutesRemaining: rateLimitCheck.minutesRemaining,
-        requiresUpgrade: true
-      }).catch(() => {});
+
+    if (typeof consumeFreeDownloadSlot !== 'function') {
+      notifyRateLimit(60);
+      return { ok: false, status: 'rate_limited', minutesRemaining: 60 };
     }
-    
-    return rateLimitCheck;
+
+    const rate = await consumeFreeDownloadSlot();
+    if (!rate.allowed) {
+      notifyRateLimit(rate.minutesRemaining);
+      return {
+        ok: false,
+        status: 'rate_limited',
+        minutesRemaining: rate.minutesRemaining || 60
+      };
+    }
+
+    return { ok: true, status: 'started' };
   } catch (e) {
-    console.warn('[FVD] Rate limit check failed:', e);
-    return { allowed: true };
+    console.warn('[FVD] Download gate failed:', e);
+    notifyRateLimit(60);
+    return { ok: false, status: 'rate_limited', minutesRemaining: 60 };
   }
 }
 
 async function startHlsDownload(downloadId, playlistUrl, filename, pageReferer) {
-  // Check rate limit first (Free: 1/hour, Pro: unlimited)
-  const rateLimitCheck = await checkRateLimitAndNotify();
-  if (!rateLimitCheck.allowed) {
-    return;
-  }
-
-  // Check concurrent download limit
-  if (!(await canStartNewDownload())) {
-    const limits = await getFeatureLimits();
-    if (limits.tier === 'free') {
-      // Send upgrade message for Free users
-      chrome.runtime.sendMessage({
-        type: 'DOWNLOAD_LIMIT_REACHED',
-        message: 'Free users can only download 1 video at a time. Upgrade to Pro for 3+ concurrent downloads.',
-        requiresUpgrade: true
-      }).catch(() => {});
-    }
-    return;
-  }
+  const gate = await gateDownloadStart();
+  if (!gate.ok) return gate;
 
   try {
     activeDownloads.set(downloadId, {
@@ -600,21 +601,12 @@ async function startHlsDownload(downloadId, playlistUrl, filename, pageReferer) 
       updateBadge();
     }
   } catch (e) { console.error('[FVD] startHlsDownload', e); }
+  return { ok: true, status: 'started' };
 }
 
 async function startDashDownload(downloadId, mpdUrl, filename, pageReferer) {
-  // Check concurrent download limit
-  if (!(await canStartNewDownload())) {
-    const limits = await getFeatureLimits();
-    if (limits.tier === 'free') {
-      chrome.runtime.sendMessage({
-        type: 'DOWNLOAD_LIMIT_REACHED',
-        message: 'Free users can only download 1 video at a time. Upgrade to Pro for 3+ concurrent downloads.',
-        requiresUpgrade: true
-      }).catch(() => {});
-    }
-    return;
-  }
+  const gate = await gateDownloadStart();
+  if (!gate.ok) return gate;
 
   try {
     activeDownloads.set(downloadId, {
@@ -645,27 +637,12 @@ async function startDashDownload(downloadId, mpdUrl, filename, pageReferer) {
       updateBadge();
     }
   } catch (e) { console.error('[FVD] startDashDownload', e); }
+  return { ok: true, status: 'started' };
 }
 
 async function startBlobDownload(downloadId, tabId, blobUrl, filename) {
-  // Check rate limit first
-  const rateLimitCheck = await checkRateLimitAndNotify();
-  if (!rateLimitCheck.allowed) {
-    return;
-  }
-
-  // Check concurrent download limit
-  if (!(await canStartNewDownload())) {
-    const limits = await getFeatureLimits();
-    if (limits.tier === 'free') {
-      chrome.runtime.sendMessage({
-        type: 'DOWNLOAD_LIMIT_REACHED',
-        message: 'Free users can only download 1 video at a time. Upgrade to Pro for 3+ concurrent downloads.',
-        requiresUpgrade: true
-      }).catch(() => {});
-    }
-    return;
-  }
+  const gate = await gateDownloadStart();
+  if (!gate.ok) return gate;
 
   const dlState = {
     id: downloadId, url: blobUrl, filename: filename,
@@ -701,7 +678,7 @@ async function startBlobDownload(downloadId, tabId, blobUrl, filename) {
       });
       updateBadge();
       scheduleDownloadCleanup(downloadId);
-      return;
+      return { ok: true, status: 'started' };
     }
 
     const errMsg = blobResponse && blobResponse.error ? blobResponse.error : 'Blob download failed';
@@ -709,33 +686,18 @@ async function startBlobDownload(downloadId, tabId, blobUrl, filename) {
   } catch (e) {
     console.error('[FVD] startBlobDownload', e);
     failTrackedDownload(downloadId, e && e.message ? e.message : 'Blob download failed');
+    return { ok: false, status: 'error' };
   }
 }
 
 async function startGenericDownload(downloadId, fileUrl, filename, pageReferer) {
   if (fileUrl && fileUrl.startsWith('blob:')) {
     console.warn('[FVD] blob: URL must use START_BLOB_DOWNLOAD');
-    return;
+    return { ok: false, status: 'error' };
   }
 
-  // Check rate limit first
-  const rateLimitCheck = await checkRateLimitAndNotify();
-  if (!rateLimitCheck.allowed) {
-    return;
-  }
-
-  // Check concurrent download limit
-  if (!(await canStartNewDownload())) {
-    const limits = await getFeatureLimits();
-    if (limits.tier === 'free') {
-      chrome.runtime.sendMessage({
-        type: 'DOWNLOAD_LIMIT_REACHED',
-        message: 'Free users can only download 1 video at a time. Upgrade to Pro for 3+ concurrent downloads.',
-        requiresUpgrade: true
-      }).catch(() => {});
-    }
-    return;
-  }
+  const gate = await gateDownloadStart();
+  if (!gate.ok) return gate;
 
   const dlState = {
     id: downloadId, url: fileUrl, filename: filename,
@@ -771,8 +733,10 @@ async function startGenericDownload(downloadId, fileUrl, filename, pageReferer) 
         downloadId,
         (primaryErr && primaryErr.message) || (fallbackErr && fallbackErr.message) || 'Download failed'
       );
+      return { ok: false, status: 'error' };
     }
   }
+  return { ok: true, status: 'started' };
 }
 
 function resolvePageReferer(message) {
@@ -847,38 +811,45 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ status: 'ok' });
     }
   }
-  // From popup: start HLS / DASH / generic download
   else if (message.type === 'START_HLS_DOWNLOAD') {
     if (fvdIsBlockedUrl(message.url)) {
       sendResponse({ status: 'blocked' });
       return true;
     }
-    startHlsDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message));
-    sendResponse({ status: 'started' });
+    startHlsDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message))
+      .then((result) => sendResponse(result || { status: 'started' }))
+      .catch(() => sendResponse({ status: 'error' }));
+    return true;
   }
   else if (message.type === 'START_DASH_DOWNLOAD') {
     if (fvdIsBlockedUrl(message.url)) {
       sendResponse({ status: 'blocked' });
       return true;
     }
-    startDashDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message));
-    sendResponse({ status: 'started' });
+    startDashDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message))
+      .then((result) => sendResponse(result || { status: 'started' }))
+      .catch(() => sendResponse({ status: 'error' }));
+    return true;
   }
   else if (message.type === 'START_GENERIC_DOWNLOAD') {
     if (fvdIsBlockedUrl(message.url)) {
       sendResponse({ status: 'blocked' });
       return true;
     }
-    startGenericDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message));
-    sendResponse({ status: 'started' });
+    startGenericDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message))
+      .then((result) => sendResponse(result || { status: 'started' }))
+      .catch(() => sendResponse({ status: 'error' }));
+    return true;
   }
   else if (message.type === 'START_BLOB_DOWNLOAD') {
     if (fvdIsBlockedUrl(message.url)) {
       sendResponse({ status: 'blocked' });
       return true;
     }
-    startBlobDownload(message.downloadId, message.tabId, message.url, message.filename);
-    sendResponse({ status: 'started' });
+    startBlobDownload(message.downloadId, message.tabId, message.url, message.filename)
+      .then((result) => sendResponse(result || { status: 'started' }))
+      .catch(() => sendResponse({ status: 'error' }));
+    return true;
   }
   // From popup: get all download states
   else if (message.type === 'GET_ALL_DOWNLOADS') {
@@ -945,11 +916,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   // From offscreen.js: download completed, save to history
   else if (message.type === 'OFFSCREEN_DOWNLOAD_COMPLETE') {
-    // Record completion for rate limiting
-    if (typeof recordDownloadCompletion === 'function') {
-      recordDownloadCompletion().catch((e) => console.warn('[FVD] Record download:', e));
-    }
-    
     saveDownloadToHistory({
       filename: message.filename, url: message.url,
       size: message.size || 'Stream', duration: message.duration || ''
