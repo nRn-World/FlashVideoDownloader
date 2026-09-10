@@ -5,16 +5,16 @@
 </p>
 
 <p align="center">
-  <strong>A fast, modern Chrome extension that detects and downloads videos from the web.</strong><br/>
-  Built with Manifest V3 · Free on the Chrome Web Store · Created by nRn World
+  <strong>Detect and save openly accessible videos from the page you are viewing.</strong><br/>
+  Manifest V3 · Free to install · Optional Pro via Ko-fi · Created by nRn World
 </p>
 
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg"><img src="https://img.shields.io/badge/Download-Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=0B57D0" alt="Download on Chrome Web Store" /></a>
-  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.3.0-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.3.0" /></a>
+  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.3.2-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.3.2" /></a>
   <a href="https://developer.chrome.com/docs/extensions/mv3/"><img src="https://img.shields.io/badge/Manifest-V3-FF6D00?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=E65100" alt="Manifest V3" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-00BFA5?style=for-the-badge&logo=creativecommons&logoColor=white&labelColor=00897B" alt="License CC BY-NC 4.0" /></a>
-  <a href="https://ko-fi.com/nrnworld"><img src="https://img.shields.io/badge/Support-Buy%20me%20a%20coffee-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white&labelColor=D32F2F" alt="Support on Ko-fi" /></a>
+  <a href="https://ko-fi.com/s/72a48b875e"><img src="https://img.shields.io/badge/Pro-EUR%2010.99%20lifetime-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white&labelColor=D32F2F" alt="Buy Pro on Ko-fi" /></a>
 </p>
 
 ---
@@ -23,16 +23,19 @@
 
 **Flash Video Downloader** helps you save videos you are already watching on supported websites. It combines network sniffing with on-page video detection, so you get a clean list of downloadable media instead of dozens of unrelated segment URLs.
 
-The extension focuses on **visible page videos**, offers **pause / resume / cancel** during downloads, lets you choose **where files are saved**, and ships with **6 languages** out of the box.
+The extension focuses on **visible page videos**, offers **pause / resume / cancel** during downloads, lets you choose **where files are saved**, and ships with **6 languages**.
 
 ### Free vs Pro
 
-**Flash Video Downloader** offers a **Free tier** with core features, plus an optional **Pro upgrade** (EUR 10.99 one-time) for power users:
+| | Free | Pro |
+|---|---|---|
+| Detect, preview, pause / resume / cancel | Yes | Yes |
+| Downloads per hour | **1** | Unlimited |
+| Concurrent downloads | 1 | 3 |
+| Download history | Last 10 | Unlimited |
+| Price | Free | **EUR 10.99** one-time, lifetime |
 
-- **Free:** Detect videos, 1 download per rolling hour, 1 at a time, pause/resume, last 10 history
-- **Pro:** Unlimited hourly downloads, 3 concurrent downloads, unlimited local history
-
-Buy Pro on [Ko-fi](https://ko-fi.com/s/72a48b875e). After payment you receive a license key on the thank-you page. Activate it in Settings → Pro.
+Buy Pro on [Ko-fi](https://ko-fi.com/s/72a48b875e). After payment, copy the license key from the thank-you page. Open the extension → **Settings** → **Pro** → paste key → **Activate**.
 
 > **Important:** This extension does not bypass DRM. Sites such as YouTube, Netflix, Twitch, Disney+, and Spotify are blocked by design for Chrome Web Store compliance.
 
@@ -56,7 +59,7 @@ Buy Pro on [Ko-fi](https://ko-fi.com/s/72a48b875e). After payment you receive a 
     </td>
     <td align="center" width="50%">
       <img src="Screenshots/SC3.png" alt="Settings and download location" width="380" /><br/>
-      <sub>Settings, history, folder picker, and support section</sub>
+      <sub>Settings, history, folder picker, and Pro upgrade</sub>
     </td>
   </tr>
 </table>
@@ -73,30 +76,24 @@ Buy Pro on [Ko-fi](https://ko-fi.com/s/72a48b875e). After payment you receive a 
 | **Download control** | Pause, resume, cancel, and global active-download banner |
 | **Save location** | Ask each time, or save all videos to a folder you pick on your computer |
 | **Languages** | English, Svenska, Türkçe, Español, Français, العربية |
-| **History** | Last 10 (Free) or Unlimited (Pro) with optional 24-hour auto-cleanup |
-| **Rate limits** | Free: 1 download/hour, 1 concurrent; Pro: unlimited hourly, 3 concurrent |
-| **Pro** | Optional EUR 10.99 lifetime license via Ko-fi |
-| **Privacy** | On-demand content script injection · no keyboard capture · blocked-host list |
+| **History** | Last 10 (Free) or unlimited (Pro), optional 24-hour auto-cleanup |
+| **Rate limits** | Free: 1 download per rolling hour, 1 concurrent. Pro: unlimited hourly, 3 concurrent |
+| **Pro** | Optional EUR 10.99 lifetime license via [Ko-fi](https://ko-fi.com/s/72a48b875e) |
+| **Privacy** | On-demand content script injection · no analytics · blocked-host list |
 
 ---
 
 ## Download
 
-Get the extension from the Chrome Web Store:
+**[⬇ Add Flash Video Downloader from the Chrome Web Store](https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg)**
 
-**[⬇ Download Flash Video Downloader](https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg)**
-
-https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg
-
-1. Open the link
+1. Open the store listing
 2. Click **Add to Chrome**
 3. Pin **Flash Video Downloader** to your toolbar
 
 ---
 
-## Installation
-
-### From source (developer mode)
+## Installation from source
 
 ```bash
 git clone https://github.com/nRn-World/FlashVideoDownloader.git
@@ -108,6 +105,8 @@ cd FlashVideoDownloader
 3. Click **Load unpacked**
 4. Select the project folder
 5. Pin **Flash Video Downloader** to your toolbar
+
+Do not test on `chrome://` pages (including `chrome://extensions`). Open a normal website, play a video, then open the popup.
 
 ### Update a local install
 
@@ -122,16 +121,22 @@ Then click **Reload** on the extension card in `chrome://extensions/`.
 ## How to use
 
 1. Open a supported website and **play the video** you want to save.
-2. Click the extension icon to open the popup.
+2. Click the extension icon.
 3. Press **Refresh** if the video does not appear immediately.
-4. Click **Download** on the detected entry.
-5. Use **Pause**, **Resume**, or **Cancel** from the card or the **Active Downloads** banner.
-6. Open **Settings** to change language, download folder, or view history.
+4. Click **Download**.
+5. Use **Pause**, **Resume**, or **Cancel** from **Active Downloads**.
+6. Open **Settings** for language, download folder, history, and Pro.
+
+### Activate Pro
+
+1. Buy a license: [ko-fi.com/s/72a48b875e](https://ko-fi.com/s/72a48b875e) (EUR 10.99, lifetime).
+2. Copy the key from the Ko-fi thank-you page.
+3. Extension → Settings → Pro → paste key → Activate.
 
 ### Download location
 
 - **Default:** Chrome asks where to save each video.
-- **Fixed folder:** Disable “Ask where to save each video” and choose a folder on your computer. All future downloads go there automatically.
+- **Fixed folder:** Disable “Ask where to save each video” and choose a folder. Later downloads go there automatically.
 
 ---
 
@@ -151,16 +156,17 @@ Then click **Reload** on the extension card in `chrome://extensions/`.
 | File | Purpose |
 |---|---|
 | `manifest.json` | MV3 manifest, permissions, CSP, locales |
-| `background.js` | Network sniffing, download state, offscreen orchestration, Pro licensing |
+| `background.js` | Network sniffing, download state, offscreen orchestration, rate limits |
 | `offscreen.js` | HLS/generic download engine, blob merge, file delivery |
 | `content.js` | Visible video DOM scan (on-demand injection) |
-| `popup.js` / `.html` / `.css` | UI, settings, history, progress, Pro upgrade, i18n |
-| `license.js` | Pro license validation and feature gating |
+| `popup.js` / `.html` / `.css` | UI, settings, history, progress, Pro upgrade |
+| `license.js` | Pro license check and Free hourly limit |
 | `blocked-hosts.js` | DRM / policy-restricted platform blocklist |
 | `storage-handles.js` | File System Access directory handle persistence |
 | `i18n.js` | In-extension translations |
-| `privacy.html` | Privacy policy for Chrome Web Store |
-| `pages/pro.html` | Pro upgrade landing page (GitHub Pages) |
+| `privacy.html` | Privacy policy ([live](https://nrn-world.github.io/FlashVideoDownloader/privacy.html)) |
+| `pages/pro.html` | Pro landing page on GitHub Pages |
+| `workers/fvd-rate-limit.js` | Optional Cloudflare Worker to keep the Free limit after reinstall |
 
 ---
 
@@ -170,15 +176,14 @@ Then click **Reload** on the extension card in `chrome://extensions/`.
 create_zip.bat
 ```
 
-This packages the extension for manual upload or Chrome Web Store submission. Publish `privacy.html` online before store submission (see `STORE_LISTING.md`).
+See `STORE_LISTING.md` for Chrome Web Store listing text and the privacy-policy URL.
 
 ---
 
 ## Support the project
 
-If Flash Video Downloader helps you, consider supporting development:
-
-**[Buy me a coffee on Ko-fi](https://ko-fi.com/nrnworld)**
+- **Pro license (EUR 10.99 lifetime):** [ko-fi.com/s/72a48b875e](https://ko-fi.com/s/72a48b875e)
+- **Tip / coffee:** [ko-fi.com/nrnworld](https://ko-fi.com/nrnworld)
 
 ---
 
@@ -197,7 +202,8 @@ This project is licensed under the **Creative Commons Attribution-NonCommercial 
 **nRn World**  
 Email: [bynrnworld@gmail.com](mailto:bynrnworld@gmail.com)  
 GitHub: [nRn-World/FlashVideoDownloader](https://github.com/nRn-World/FlashVideoDownloader)  
-Chrome Web Store: [Flash Video Downloader](https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg)
+Chrome Web Store: [Flash Video Downloader](https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg)  
+Privacy policy: [nrn-world.github.io/FlashVideoDownloader/privacy.html](https://nrn-world.github.io/FlashVideoDownloader/privacy.html)
 
 ---
 
@@ -205,9 +211,9 @@ Chrome Web Store: [Flash Video Downloader](https://chromewebstore.google.com/det
 
 | Version | Highlights |
 |---|---|
-| **3.3.2** | Fix popup/service-worker message warning that showed as an error in chrome://extensions |
-| **3.3.1** | Freemium: Free 1 download/hour; Pro lifetime via Ko-fi (EUR 10.99). Official key `FVD-PRO-K7M2-9QX4`. Store package. |
-| **3.3.0** | Freemium model: Free tier + Pro upgrade ($5.99 lifetime). Pro: 3+ concurrent, batch, unlimited history, export, templates |
+| **3.3.2** | Fix service-worker message handling that showed as an error in `chrome://extensions` |
+| **3.3.1** | Freemium: Free 1 download/hour; Pro lifetime via Ko-fi (EUR 10.99) |
+| **3.3.0** | First Pro/Free split (later priced at EUR 10.99 on Ko-fi) |
 | **3.2.5** | Better detection for tube/CMS URLs (`.mp4/`, `/get_file/`), iframe scan, less aggressive preview filter |
 | **3.2.4** | Stronger HLS/DASH downloads: page Referer retries, lower parallelism, segment repair, MPD support |
 | **3.2.3** | Fix post-download crash (`chrome.storage`), save HLS/blob via offscreen `chrome.downloads` |
