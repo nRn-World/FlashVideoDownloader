@@ -81,6 +81,103 @@
           </div>
         </div>
 
+        <!-- Pro Upgrade Section -->
+        <div class="pro-upgrade-section" id="pro-section">
+          <div class="pro-header">
+            <div class="pro-badge-icon">⚡</div>
+            <div class="pro-header-text">
+              <h3 class="pro-title" id="txt-pro-title">Flash Video Downloader Pro</h3>
+              <p class="pro-subtitle" id="txt-pro-description">Unlock power-user features for professional video downloading</p>
+            </div>
+          </div>
+
+          <!-- Pro Status Display (when activated) -->
+          <div id="pro-active-status" class="pro-active-status hidden">
+            <div class="pro-active-badge">
+              <span class="pro-active-icon">✅</span>
+              <span class="pro-active-text" id="txt-pro-active">Pro Active</span>
+            </div>
+            <button type="button" id="btn-deactivate-license" class="btn-text-link" data-i18n="licenseDeactivate">Deactivate License</button>
+          </div>
+
+          <!-- Free vs Pro Comparison -->
+          <div id="pro-comparison-table" class="pro-comparison">
+            <h4 class="comparison-title" id="txt-free-vs-pro">Free vs Pro</h4>
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th data-i18n="tierFree">Free</th>
+                  <th data-i18n="tierPro">Pro</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td data-i18n="featureCoreDownload">Detect & download videos</td>
+                  <td>✅</td>
+                  <td>✅</td>
+                </tr>
+                <tr>
+                  <td data-i18n="featurePauseResume">Pause/resume/cancel</td>
+                  <td>✅</td>
+                  <td>✅</td>
+                </tr>
+                <tr>
+                  <td data-i18n="featureConcurrentDownloads">Concurrent downloads</td>
+                  <td><span data-i18n="limitFree1">1 active</span></td>
+                  <td><span data-i18n="limitPro3">3+ active</span></td>
+                </tr>
+                <tr>
+                  <td data-i18n="featureBatchDownload">Batch download all</td>
+                  <td>❌</td>
+                  <td>✅</td>
+                </tr>
+                <tr>
+                  <td data-i18n="featureHistory">Download history</td>
+                  <td><span data-i18n="limitLast10">Last 10</span></td>
+                  <td><span data-i18n="limitUnlimited">Unlimited</span></td>
+                </tr>
+                <tr>
+                  <td data-i18n="featureHistoryExport">Export history</td>
+                  <td>❌</td>
+                  <td>✅</td>
+                </tr>
+                <tr>
+                  <td data-i18n="featureFilenameTemplate">Filename templates</td>
+                  <td>❌</td>
+                  <td>✅</td>
+                </tr>
+                <tr>
+                  <td data-i18n="featureQualityPicker">Quality picker (HLS)</td>
+                  <td>❌</td>
+                  <td>✅</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pro Pricing & Purchase -->
+          <div id="pro-purchase-box" class="pro-purchase-box">
+            <div class="pro-price">
+              <span class="price-amount" id="txt-pro-price">One-time payment: $5.99</span>
+              <span class="price-lifetime" id="txt-pro-lifetime">Lifetime access — pay once, use forever</span>
+            </div>
+            <a href="#" id="btn-buy-pro" class="btn-buy-pro" target="_blank" rel="noopener noreferrer">
+              <span data-i18n="buyPro">Buy Pro License</span>
+            </a>
+          </div>
+
+          <!-- License Entry -->
+          <div class="pro-license-entry">
+            <label class="field-label" id="lbl-enter-license" data-i18n="enterLicense">Enter License Key</label>
+            <div class="license-input-row">
+              <input type="text" id="input-license-key" class="license-input" placeholder="FVD-PRO-XXXX-XXXX" maxlength="19" />
+              <button type="button" id="btn-activate-license" class="btn-activate" data-i18n="activateLicense">Activate</button>
+            </div>
+            <p class="license-hint" id="license-result-message"></p>
+          </div>
+        </div>
+
         <div class="settings-section">
           <h3 id="txt-lang-title">Language</h3>
           <div class="select-wrapper">
@@ -168,6 +265,7 @@
   </div>
 
   <script src="storage-handles.js"></script>
+  <script src="license.js"></script>
   <script src="i18n.js"></script>
   <script src="popup.js"></script>
 </body>

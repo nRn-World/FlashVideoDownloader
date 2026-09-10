@@ -1,4 +1,4 @@
-// Flash Video Downloader - Popup Script (v3.2.5)
+// Flash Video Downloader - Popup Script (v3.3.0)
 
 document.addEventListener('DOMContentLoaded', async () => {
   const mediaListContainer = document.getElementById('media-list');
@@ -24,6 +24,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnPickFolder = document.getElementById('btn-pick-folder');
   const txtSelectedFolder = document.getElementById('txt-selected-folder');
 
+  // Pro elements
+  const proSection = document.getElementById('pro-section');
+  const proActiveStatus = document.getElementById('pro-active-status');
+  const proComparisonTable = document.getElementById('pro-comparison-table');
+  const proPurchaseBox = document.getElementById('pro-purchase-box');
+  const btnBuyPro = document.getElementById('btn-buy-pro');
+  const inputLicenseKey = document.getElementById('input-license-key');
+  const btnActivateLicense = document.getElementById('btn-activate-license');
+  const btnDeactivateLicense = document.getElementById('btn-deactivate-license');
+  const licenseResultMessage = document.getElementById('license-result-message');
+
   let currentLang = 'en'; // Default English
   let allMedia = [];
   let currentFilter = 'all';
@@ -39,6 +50,137 @@ document.addEventListener('DOMContentLoaded', async () => {
   const txtConfirmDesc = document.getElementById('txt-confirm-desc');
   const btnConfirmYes = document.getElementById('btn-confirm-yes');
   const btnConfirmNo = document.getElementById('btn-confirm-no');
+
+  // Pro status
+  let isProActive = false;
+  let featureLimits = {};
+
+  // CONFIGURABLE: External checkout URL (replace with Lemon Squeezy / Stripe Payment Link)
+  const CHECKOUT_URL = 'https://nrn-world.github.io/FlashVideoDownloader/pro.html';
+
+  // Initialize Pro status
+  async function initializeProStatus() {
+    try {
+      if (typeof isProUser === 'function') {
+        const proStatus = await isProUser();
+        isProActive = proStatus.isPro;
+        
+        if (typeof getFeatureLimits === 'function') {
+          featureLimits = await getFeatureLimits();
+        }
+
+        updateProUI();
+      }
+    } catch (e) {
+      console.warn('[FVD] Pro init failed:', e);
+    }
+  }
+
+  function updateProUI() {
+    if (!proSection) return;
+
+    if (isProActive) {
+      // Show Pro active status
+      if (proActiveStatus) proActiveStatus.classList.remove('hidden');
+      if (proComparisonTable) proComparisonTable.classList.add('hidden');
+      if (proPurchaseBox) proPurchaseBox.classList.add('hidden');
+      if (inputLicenseKey) {
+        inputLicenseKey.disabled = true;
+        inputLicenseKey.value = '';
+      }
+      if (btnActivateLicense) btnActivateLicense.disabled = true;
+    } else {
+      // Show upgrade prompt
+      if (proActiveStatus) proActiveStatus.classList.add('hidden');
+      if (proComparisonTable) proComparisonTable.classList.remove('hidden');
+      if (proPurchaseBox) proPurchaseBox.classList.remove('hidden');
+      if (inputLicenseKey) inputLicenseKey.disabled = false;
+      if (btnActivateLicense) btnActivateLicense.disabled = false;
+    }
+  }
+
+  // License activation
+  if (btnActivateLicense) {
+    btnActivateLicense.addEventListener('click', async () => {
+      const key = inputLicenseKey.value.trim();
+      
+      if (!key) {
+        showLicenseMessage('Please enter a license key', 'error');
+        return;
+      }
+
+      btnActivateLicense.disabled = true;
+      btnActivateLicense.textContent = '...';
+
+      try {
+        if (typeof activateLicense === 'function') {
+          const result = await activateLicense(key);
+          
+          if (result.success) {
+            showLicenseMessage('✅ ' + t('licenseActivated'), 'success');
+            isProActive = true;
+            
+            if (typeof getFeatureLimits === 'function') {
+              featureLimits = await getFeatureLimits();
+            }
+            
+            updateProUI();
+            setTimeout(() => {
+              showLicenseMessage('', '');
+            }, 3000);
+          } else {
+            showLicenseMessage(result.error || t('licenseInvalid'), 'error');
+          }
+        }
+      } catch (e) {
+        showLicenseMessage(t('licenseInvalid'), 'error');
+      } finally {
+        btnActivateLicense.disabled = false;
+        btnActivateLicense.textContent = t('activateLicense');
+      }
+    });
+  }
+
+  // License deactivation
+  if (btnDeactivateLicense) {
+    btnDeactivateLicense.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to deactivate your Pro license?')) {
+        return;
+      }
+
+      try {
+        if (typeof deactivateLicense === 'function') {
+          await deactivateLicense();
+          isProActive = false;
+          
+          if (typeof getFeatureLimits === 'function') {
+            featureLimits = await getFeatureLimits();
+          }
+          
+          updateProUI();
+          showLicenseMessage('License deactivated', 'success');
+          setTimeout(() => showLicenseMessage('', ''), 2000);
+        }
+      } catch (e) {
+        console.warn('[FVD] Deactivate failed:', e);
+      }
+    });
+  }
+
+  function showLicenseMessage(message, type) {
+    if (!licenseResultMessage) return;
+    licenseResultMessage.textContent = message;
+    licenseResultMessage.className = 'license-hint';
+    if (type) licenseResultMessage.classList.add(type);
+  }
+
+  // Set checkout URL
+  if (btnBuyPro) {
+    btnBuyPro.href = CHECKOUT_URL;
+  }
+
+  // Initialize Pro status on load
+  await initializeProStatus();
 
   // Smooth 1-100 animation helpers
   const smoothPercents = new Map(); // downloadId -> last displayed percent
@@ -1136,6 +1278,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       history = history.filter(h => h.timestamp > oneDayAgo);
     }
 
+    // Apply Free tier history limit (last 10)
+    if (!isProActive && featureLimits.historyLimit > 0) {
+      history = history.slice(0, featureLimits.historyLimit);
+    }
+
     historyListContainer.innerHTML = '';
 
     if (history.length === 0) {
@@ -1159,6 +1306,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       `;
       historyListContainer.appendChild(div);
     });
+
+    // Show Pro upgrade prompt if history is limited
+    if (!isProActive && history.length >= 10) {
+      const upgradePrompt = document.createElement('div');
+      upgradePrompt.className = 'history-upgrade-prompt';
+      upgradePrompt.innerHTML = `
+        <p style="font-size:0.72rem; color:#94a3b8; text-align:center; margin:8px 0;">
+          <span style="color:#f59e0b;">⚡</span> ${t('upgradeUnlockFeature')} - unlimited history & export
+        </p>
+      `;
+      historyListContainer.appendChild(upgradePrompt);
+    }
   }
 
   function showEmptyState(customMessage) {

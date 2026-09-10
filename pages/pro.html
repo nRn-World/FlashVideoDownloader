@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flash Video Downloader Pro — Unlock Power Features</title>
+  <meta name="description" content="Upgrade to Flash Video Downloader Pro for concurrent downloads, batch operations, unlimited history, and more power-user features.">
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --bg-card: #1a2332;
+      --bg-accent: rgba(37, 99, 235, 0.1);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      flex: 1;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      display: block;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #60a5fa, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .price-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .price {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #60a5fa;
+      margin-bottom: 8px;
+    }
+
+    .price-label {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      padding: 16px 40px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 10px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+    }
+
+    .features {
+      margin-bottom: 48px;
+    }
+
+    .section-title {
+      font-size: 1.8rem;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .comparison-table th {
+      background: var(--bg-accent);
+      font-weight: 600;
+      color: #93c5fd;
+      text-align: center;
+    }
+
+    .comparison-table td:first-child {
+      font-weight: 500;
+    }
+
+    .comparison-table td:not(:first-child) {
+      text-align: center;
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .check {
+      color: var(--success);
+      font-size: 1.2rem;
+    }
+
+    .cross {
+      color: #ef4444;
+      font-size: 1.2rem;
+    }
+
+    .activation-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 48px;
+    }
+
+    .activation-title {
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+    }
+
+    .activation-steps {
+      list-style: none;
+      counter-reset: step-counter;
+    }
+
+    .activation-steps li {
+      counter-increment: step-counter;
+      position: relative;
+      padding-left: 48px;
+      margin-bottom: 20px;
+      color: var(--text-secondary);
+    }
+
+    .activation-steps li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .activation-steps strong {
+      color: var(--text-primary);
+    }
+
+    .license-format {
+      background: rgba(15, 23, 42, 0.8);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      color: #60a5fa;
+      font-size: 1.1rem;
+      text-align: center;
+      margin: 16px 0;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .faq {
+      margin-bottom: 48px;
+    }
+
+    .faq-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .faq-question {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #93c5fd;
+    }
+
+    .faq-answer {
+      color: var(--text-secondary);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 32px 20px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-color);
+    }
+
+    .footer a {
+      color: #60a5fa;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .price {
+        font-size: 2.5rem;
+      }
+
+      .comparison-table th,
+      .comparison-table td {
+        padding: 12px 8px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="../icons/icon128.png" alt="Flash Video Downloader" class="logo">
+      <h1>⚡ Flash Video Downloader Pro</h1>
+      <p class="subtitle">Unlock powerful features for professional video downloading. Pay once, use forever.</p>
+    </div>
+
+    <div class="price-box">
+      <div class="price">$5.99</div>
+      <div class="price-label">One-time payment • Lifetime access • No subscription</div>
+      <a href="https://ko-fi.com/nrnworld" class="btn-primary">Buy Pro License</a>
+      <p style="margin-top: 16px; font-size: 0.9rem; color: var(--text-muted);">
+        Note: Payment is currently processed via Ko-fi. After purchase, you'll receive your license key via email.
+      </p>
+    </div>
+
+    <div class="features">
+      <h2 class="section-title">Free vs Pro</h2>
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Free</th>
+            <th>Pro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Detect & download videos</td>
+            <td><span class="check">✅</span></td>
+            <td><span class="check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Pause, resume, cancel downloads</td>
+            <td><span class="check">✅</span></td>
+            <td><span class="check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Preview videos before download</td>
+            <td><span class="check">✅</span></td>
+            <td><span class="check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Concurrent downloads</td>
+            <td>1 active</td>
+            <td><strong>3+ active</strong></td>
+          </tr>
+          <tr>
+            <td>Batch "Download all" button</td>
+            <td><span class="cross">❌</span></td>
+            <td><span class="check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Download history</td>
+            <td>Last 10</td>
+            <td><strong>Unlimited</strong></td>
+          </tr>
+          <tr>
+            <td>Export history (CSV/JSON)</td>
+            <td><span class="cross">❌</span></td>
+            <td><span class="check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Filename templates (title, site, date)</td>
+            <td><span class="cross">❌</span></td>
+            <td><span class="check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Quality picker for HLS streams</td>
+            <td><span class="cross">❌</span></td>
+            <td><span class="check">✅</span></td>
+          </tr>
+          <tr>
+            <td>Pro badge & priority support</td>
+            <td><span class="cross">❌</span></td>
+            <td><span class="check">✅</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="activation-section">
+      <h2 class="activation-title">How to Activate Pro</h2>
+      <ol class="activation-steps">
+        <li>
+          <strong>Purchase your Pro license</strong> via the button above. You'll receive your license key via email within 24 hours.
+        </li>
+        <li>
+          <strong>Open the extension</strong> in Chrome and click the ⚙️ Settings icon.
+        </li>
+        <li>
+          <strong>Scroll to the Pro section</strong> and enter your license key in the format:
+          <div class="license-format">FVD-PRO-XXXX-XXXX</div>
+        </li>
+        <li>
+          <strong>Click "Activate"</strong> and you're done! All Pro features are now unlocked.
+        </li>
+      </ol>
+      <p style="margin-top: 24px; color: var(--text-secondary); text-align: center;">
+        <strong>Dev/Test key:</strong> Use <code style="color: #60a5fa;">FVD-PRO-TEST-0000</code> to try Pro features (demo only)
+      </p>
+    </div>
+
+    <div class="faq">
+      <h2 class="section-title">Frequently Asked Questions</h2>
+      
+      <div class="faq-item">
+        <div class="faq-question">Is this a subscription?</div>
+        <div class="faq-answer">No! Pro is a one-time payment of $5.99. Pay once, use forever. No recurring charges.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Can I use Pro on multiple devices?</div>
+        <div class="faq-answer">Yes! One license works on all your Chrome browsers where you've installed the extension.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">What if I lose my license key?</div>
+        <div class="faq-answer">Email us at <a href="mailto:bynrnworld@gmail.com">bynrnworld@gmail.com</a> with your purchase proof, and we'll resend it.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Does Pro work offline?</div>
+        <div class="faq-answer">Yes! License validation is client-side, so Pro features work without internet after activation.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Will Free features remain free?</div>
+        <div class="faq-answer">Absolutely! Core video detection and single-download functionality will always be free.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Can Pro download from YouTube/Netflix?</div>
+        <div class="faq-answer">No. DRM-protected sites (YouTube, Netflix, Twitch, Disney+) are blocked for Chrome Web Store compliance.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Flash Video Downloader Pro by <a href="https://github.com/nRn-World">nRn World</a></p>
+    <p>
+      <a href="https://github.com/nRn-World/FlashVideoDownloader">GitHub</a> •
+      <a href="https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg">Chrome Web Store</a> •
+      <a href="https://ko-fi.com/nrnworld">Support</a>
+    </p>
+    <p style="margin-top: 8px; font-size: 0.9rem;">© 2026 nRn World • <a href="mailto:bynrnworld@gmail.com">bynrnworld@gmail.com</a></p>
+  </div>
+</body>
+</html>

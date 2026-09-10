@@ -27,6 +27,8 @@ Markera följande under **Privacy practices**:
 
 **Certify:** Data is not sold to third parties. Data is not used for unrelated purposes.
 
+**Freemium disclosure:** The extension offers a paid Pro upgrade. All payment and licensing data is processed client-side. No payment information is collected by the extension itself.
+
 ## 4. Permission justification (klistra in vid granskning)
 
 ```
@@ -50,23 +52,34 @@ Does NOT: bypass DRM, download from YouTube/Netflix/Disney+/Twitch, collect anal
 ## 5. Store listing text
 
 **Kort beskrivning (EN):**
-Free video downloader — detect and save open video files (MP4, WEBM, M3U8) from the current tab. No ads, no subscription.
+Detect and download videos from any site — Free with core features. Optional Pro upgrade for power users ($5.99 lifetime).
 
 **Detaljerad beskrivning (EN):**
-Flash Video Downloader is a free Chrome extension that helps you find and save openly accessible videos on the page you're viewing.
+Flash Video Downloader helps you find and save openly accessible videos on the page you're viewing.
 
-Features:
+**Free Features (included):**
 • Detect MP4, WEBM, M3U8 and more from network traffic and page elements
 • Preview before download
-• Pause, resume and cancel HLS downloads
-• Download history (local, auto-delete after 24h)
+• Pause, resume and cancel downloads (1 active at a time)
+• Download history (last 10)
 • 6 languages
-• 100% free — all features included, no payment required
+• Choose where files are saved
 
-Important:
+**Pro Features ($5.99 one-time, lifetime):**
+• 3+ concurrent downloads (vs 1 on Free)
+• Batch "Download all detected" button
+• Unlimited download history + export (CSV/JSON)
+• Filename templates (title, site, date)
+• Quality picker for HLS streams
+• Pro badge & priority
+
+**Important:**
 • Does NOT download from YouTube, Netflix, Disney+, Twitch or other DRM-protected platforms
 • Does NOT bypass copyright protection
 • Only downloads content you have the right to save
+
+**Pricing:**
+Free tier is fully functional for single downloads. Pro upgrade is optional, one-time $5.99 (no subscription).
 
 **Kategori:** Productivity
 

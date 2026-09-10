@@ -142,5 +142,149 @@
   },
   "confirmNo": {
     "message": "Avbryt"
+  },
+  "proUpgrade": {
+    "message": "⚡ Uppgradera till Pro"
+  },
+  "proTitle": {
+    "message": "Flash Video Downloader Pro"
+  },
+  "proDescription": {
+    "message": "Lås upp kraftfulla funktioner för professionell videonedladdning"
+  },
+  "freeVsPro": {
+    "message": "Gratis vs Pro"
+  },
+  "tierFree": {
+    "message": "Gratis"
+  },
+  "tierPro": {
+    "message": "Pro"
+  },
+  "featureCoreDownload": {
+    "message": "Upptäck & ladda ner videor"
+  },
+  "featurePauseResume": {
+    "message": "Pausa/fortsätt/avbryt"
+  },
+  "featureConcurrentDownloads": {
+    "message": "Parallella nedladdningar"
+  },
+  "featureBatchDownload": {
+    "message": "Batch-nedladdning"
+  },
+  "featureHistory": {
+    "message": "Nedladdningshistorik"
+  },
+  "featureHistoryExport": {
+    "message": "Exportera historik (CSV/JSON)"
+  },
+  "featureFilenameTemplate": {
+    "message": "Filnamnsmallar"
+  },
+  "featureQualityPicker": {
+    "message": "Kvalitetsväljare (HLS)"
+  },
+  "featureProBadge": {
+    "message": "Pro-märke & prioritet"
+  },
+  "limitFree1": {
+    "message": "1 aktiv"
+  },
+  "limitPro3": {
+    "message": "3+ aktiva"
+  },
+  "limitLast10": {
+    "message": "Senaste 10"
+  },
+  "limitUnlimited": {
+    "message": "Obegränsat"
+  },
+  "proPrice": {
+    "message": "Engångsbetalning: $5.99"
+  },
+  "proPriceLifetime": {
+    "message": "Livstidsåtkomst — betala en gång, använd för alltid"
+  },
+  "buyPro": {
+    "message": "Köp Pro-licens"
+  },
+  "enterLicense": {
+    "message": "Ange licensnyckel"
+  },
+  "licenseKeyPlaceholder": {
+    "message": "FVD-PRO-XXXX-XXXX"
+  },
+  "activateLicense": {
+    "message": "Aktivera"
+  },
+  "licenseActivated": {
+    "message": "✅ Pro aktiverad!"
+  },
+  "licenseInvalid": {
+    "message": "Ogiltig licensnyckel"
+  },
+  "licenseDeactivate": {
+    "message": "Avaktivera licens"
+  },
+  "proActive": {
+    "message": "⚡ Pro Aktiv"
+  },
+  "proUpgradeRequired": {
+    "message": "Uppgradera till Pro"
+  },
+  "proFeatureLocked": {
+    "message": "Detta är en Pro-funktion"
+  },
+  "upgradeUnlockFeature": {
+    "message": "Uppgradera till Pro för att låsa upp denna funktion"
+  },
+  "learnMore": {
+    "message": "Läs mer"
+  },
+  "downloadLocation": {
+    "message": "Nedladdningsplats"
+  },
+  "askEachTime": {
+    "message": "Fråga var jag ska spara varje video"
+  },
+  "pickFolderBtn": {
+    "message": "📁 Välj mapp på datorn"
+  },
+  "selectedFolder": {
+    "message": "Vald: {name}"
+  },
+  "noFolderSelected": {
+    "message": "Ingen mapp vald"
+  },
+  "folderPickerUnsupported": {
+    "message": "Mappväljare stöds inte i denna webbläsare"
+  },
+  "title": {
+    "message": "Flash Video Downloader"
+  },
+  "supportTitle": {
+    "message": "☕ HEDERSVÄGGEN"
+  },
+  "supportDesc": {
+    "message": "Stöd utvecklingen av Flash Video Downloader genom att bjuda mig på en kaffe. Ditt bidrag hjälper till att hålla tillägget gratis och ständigt förbättras!"
+  },
+  "supportBtn": {
+    "message": "Klicka här för att bjuda mig på kaffe"
+  },
+  "creditsCreated": {
+    "message": "Skapad 2026 av nRn World"
+  },
+  "copyEmail": {
+    "message": "Kopiera e-post"
+  },
+  "emailCopied": {
+    "message": "E-post kopierad!"
+  },
+  "blockedSite": {
+    "message": "Denna webbplats är blockerad (DRM-skydd)"
+  },
+  "internalPageBlocked": {
+    "message": "Kan inte upptäcka videor på webbläsarens interna sidor"
   }
 }

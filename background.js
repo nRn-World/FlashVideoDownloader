@@ -1,7 +1,8 @@
-// Flash Video Downloader - Background Service Worker (v3.2.5)
+// Flash Video Downloader - Background Service Worker (v3.3.0)
 // HLS downloads are delegated to offscreen.js which has full DOM/Blob/ObjectURL access.
 
 importScripts('blocked-hosts.js');
+importScripts('license.js');
 
 const tabMedia = new Map();
 const activeDownloads = new Map();
@@ -502,7 +503,41 @@ self.addEventListener('error', (e) => console.error('[FVD background error]', e 
 self.addEventListener('unhandledrejection', (e) => console.error('[FVD unhandled]', e && e.reason ? e.reason : e));
 
 // === HLS / Generic Download Trigger (delegates to offscreen.js) ===
+async function canStartNewDownload() {
+  try {
+    const limits = await getFeatureLimits();
+    const maxConcurrent = limits.concurrentDownloads;
+    
+    // Count currently active downloads (downloading, merging, paused)
+    let activeCount = 0;
+    for (const dl of activeDownloads.values()) {
+      if (dl.status === 'downloading' || dl.status === 'merging' || dl.status === 'paused') {
+        activeCount++;
+      }
+    }
+    
+    return activeCount < maxConcurrent;
+  } catch (e) {
+    // Default to 1 if check fails
+    return activeDownloads.size === 0;
+  }
+}
+
 async function startHlsDownload(downloadId, playlistUrl, filename, pageReferer) {
+  // Check concurrent download limit
+  if (!(await canStartNewDownload())) {
+    const limits = await getFeatureLimits();
+    if (limits.tier === 'free') {
+      // Send upgrade message for Free users
+      chrome.runtime.sendMessage({
+        type: 'DOWNLOAD_LIMIT_REACHED',
+        message: 'Free users can only download 1 video at a time. Upgrade to Pro for 3+ concurrent downloads.',
+        requiresUpgrade: true
+      }).catch(() => {});
+    }
+    return;
+  }
+
   try {
     activeDownloads.set(downloadId, {
       id: downloadId, url: playlistUrl, filename: filename,
@@ -532,6 +567,19 @@ async function startHlsDownload(downloadId, playlistUrl, filename, pageReferer) 
 }
 
 async function startDashDownload(downloadId, mpdUrl, filename, pageReferer) {
+  // Check concurrent download limit
+  if (!(await canStartNewDownload())) {
+    const limits = await getFeatureLimits();
+    if (limits.tier === 'free') {
+      chrome.runtime.sendMessage({
+        type: 'DOWNLOAD_LIMIT_REACHED',
+        message: 'Free users can only download 1 video at a time. Upgrade to Pro for 3+ concurrent downloads.',
+        requiresUpgrade: true
+      }).catch(() => {});
+    }
+    return;
+  }
+
   try {
     activeDownloads.set(downloadId, {
       id: downloadId, url: mpdUrl, filename: filename,
@@ -564,6 +612,19 @@ async function startDashDownload(downloadId, mpdUrl, filename, pageReferer) {
 }
 
 async function startBlobDownload(downloadId, tabId, blobUrl, filename) {
+  // Check concurrent download limit
+  if (!(await canStartNewDownload())) {
+    const limits = await getFeatureLimits();
+    if (limits.tier === 'free') {
+      chrome.runtime.sendMessage({
+        type: 'DOWNLOAD_LIMIT_REACHED',
+        message: 'Free users can only download 1 video at a time. Upgrade to Pro for 3+ concurrent downloads.',
+        requiresUpgrade: true
+      }).catch(() => {});
+    }
+    return;
+  }
+
   const dlState = {
     id: downloadId, url: blobUrl, filename: filename,
     status: 'downloading', completed: 0, total: 1, percent: 0,
@@ -612,6 +673,19 @@ async function startBlobDownload(downloadId, tabId, blobUrl, filename) {
 async function startGenericDownload(downloadId, fileUrl, filename, pageReferer) {
   if (fileUrl && fileUrl.startsWith('blob:')) {
     console.warn('[FVD] blob: URL must use START_BLOB_DOWNLOAD');
+    return;
+  }
+
+  // Check concurrent download limit
+  if (!(await canStartNewDownload())) {
+    const limits = await getFeatureLimits();
+    if (limits.tier === 'free') {
+      chrome.runtime.sendMessage({
+        type: 'DOWNLOAD_LIMIT_REACHED',
+        message: 'Free users can only download 1 video at a time. Upgrade to Pro for 3+ concurrent downloads.',
+        requiresUpgrade: true
+      }).catch(() => {});
+    }
     return;
   }
 
