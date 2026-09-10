@@ -372,6 +372,12 @@ function completeTrackedDownload(extId) {
   activeDownloads.set(extId, dl);
   persistActiveDownloads();
   emitDownloadProgress(dl);
+  
+  // Record download completion for rate limiting (Free tier only)
+  if (typeof recordDownloadCompletion === 'function') {
+    recordDownloadCompletion().catch((e) => console.warn('[FVD] Record download:', e));
+  }
+  
   Promise.resolve(
     saveDownloadToHistory({
       filename: dl.filename,
@@ -523,7 +529,37 @@ async function canStartNewDownload() {
   }
 }
 
+async function checkRateLimitAndNotify() {
+  try {
+    if (typeof canStartDownload !== 'function') {
+      return { allowed: true };
+    }
+    
+    const rateLimitCheck = await canStartDownload();
+    
+    if (!rateLimitCheck.allowed && rateLimitCheck.reason === 'rate_limit') {
+      // Notify popup about rate limit
+      chrome.runtime.sendMessage({
+        type: 'RATE_LIMIT_REACHED',
+        minutesRemaining: rateLimitCheck.minutesRemaining,
+        requiresUpgrade: true
+      }).catch(() => {});
+    }
+    
+    return rateLimitCheck;
+  } catch (e) {
+    console.warn('[FVD] Rate limit check failed:', e);
+    return { allowed: true };
+  }
+}
+
 async function startHlsDownload(downloadId, playlistUrl, filename, pageReferer) {
+  // Check rate limit first (Free: 1/hour, Pro: unlimited)
+  const rateLimitCheck = await checkRateLimitAndNotify();
+  if (!rateLimitCheck.allowed) {
+    return;
+  }
+
   // Check concurrent download limit
   if (!(await canStartNewDownload())) {
     const limits = await getFeatureLimits();
@@ -612,6 +648,12 @@ async function startDashDownload(downloadId, mpdUrl, filename, pageReferer) {
 }
 
 async function startBlobDownload(downloadId, tabId, blobUrl, filename) {
+  // Check rate limit first
+  const rateLimitCheck = await checkRateLimitAndNotify();
+  if (!rateLimitCheck.allowed) {
+    return;
+  }
+
   // Check concurrent download limit
   if (!(await canStartNewDownload())) {
     const limits = await getFeatureLimits();
@@ -673,6 +715,12 @@ async function startBlobDownload(downloadId, tabId, blobUrl, filename) {
 async function startGenericDownload(downloadId, fileUrl, filename, pageReferer) {
   if (fileUrl && fileUrl.startsWith('blob:')) {
     console.warn('[FVD] blob: URL must use START_BLOB_DOWNLOAD');
+    return;
+  }
+
+  // Check rate limit first
+  const rateLimitCheck = await checkRateLimitAndNotify();
+  if (!rateLimitCheck.allowed) {
     return;
   }
 
@@ -897,6 +945,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   // From offscreen.js: download completed, save to history
   else if (message.type === 'OFFSCREEN_DOWNLOAD_COMPLETE') {
+    // Record completion for rate limiting
+    if (typeof recordDownloadCompletion === 'function') {
+      recordDownloadCompletion().catch((e) => console.warn('[FVD] Record download:', e));
+    }
+    
     saveDownloadToHistory({
       filename: message.filename, url: message.url,
       size: message.size || 'Stream', duration: message.duration || ''

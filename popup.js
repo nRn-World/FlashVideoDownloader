@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Pro status
   let isProActive = false;
   let featureLimits = {};
+  let rateLimitStatusInterval = null;
 
   // CONFIGURABLE: External checkout URL (replace with Lemon Squeezy / Stripe Payment Link)
   const CHECKOUT_URL = 'https://nrn-world.github.io/FlashVideoDownloader/pro.html';
@@ -70,9 +71,58 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         updateProUI();
+        updateRateLimitStatus();
+        
+        // Start rate limit status update interval (only for Free users)
+        if (!isProActive) {
+          if (rateLimitStatusInterval) clearInterval(rateLimitStatusInterval);
+          rateLimitStatusInterval = setInterval(updateRateLimitStatus, 5000); // Update every 5 seconds
+        }
       }
     } catch (e) {
       console.warn('[FVD] Pro init failed:', e);
+    }
+  }
+
+  async function updateRateLimitStatus() {
+    const rateLimitStatusEl = document.getElementById('rate-limit-status');
+    const rateLimitStatusText = document.getElementById('rate-limit-status-text');
+    
+    if (!rateLimitStatusEl || !rateLimitStatusText) return;
+    
+    // Hide for Pro users
+    if (isProActive) {
+      rateLimitStatusEl.classList.add('hidden');
+      return;
+    }
+    
+    try {
+      if (typeof canStartDownload === 'function') {
+        const check = await canStartDownload();
+        
+        if (check.allowed) {
+          // Ready to download
+          rateLimitStatusEl.classList.remove('hidden');
+          rateLimitStatusEl.classList.add('ready');
+          rateLimitStatusText.textContent = '✅ ' + t('rateLimitReady');
+        } else if (check.reason === 'rate_limit' && check.minutesRemaining) {
+          // Rate limited
+          rateLimitStatusEl.classList.remove('hidden');
+          rateLimitStatusEl.classList.remove('ready');
+          
+          if (check.minutesRemaining > 1) {
+            rateLimitStatusText.textContent = t('rateLimitWaitPlural').replace('{minutes}', check.minutesRemaining);
+          } else {
+            rateLimitStatusText.textContent = t('rateLimitWaitSingular');
+          }
+        } else {
+          // Unknown state, hide
+          rateLimitStatusEl.classList.add('hidden');
+        }
+      }
+    } catch (e) {
+      console.warn('[FVD] Rate limit status check failed:', e);
+      rateLimitStatusEl.classList.add('hidden');
     }
   }
 
@@ -125,6 +175,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             
             updateProUI();
+            
+            // Stop rate limit status updates for Pro users
+            if (rateLimitStatusInterval) {
+              clearInterval(rateLimitStatusInterval);
+              rateLimitStatusInterval = null;
+            }
+            
+            // Hide rate limit status immediately
+            const rateLimitStatusEl = document.getElementById('rate-limit-status');
+            if (rateLimitStatusEl) rateLimitStatusEl.classList.add('hidden');
+            
             setTimeout(() => {
               showLicenseMessage('', '');
             }, 3000);
@@ -158,6 +219,12 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
           
           updateProUI();
+          
+          // Restart rate limit status updates for Free users
+          if (rateLimitStatusInterval) clearInterval(rateLimitStatusInterval);
+          rateLimitStatusInterval = setInterval(updateRateLimitStatus, 5000);
+          updateRateLimitStatus();
+          
           showLicenseMessage('License deactivated', 'success');
           setTimeout(() => showLicenseMessage('', ''), 2000);
         }
@@ -225,6 +292,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (card) updateCardDownloadState(card, dl);
       // also trigger active list refresh throttled
       checkOngoingDownloads();
+    } else if (msg.type === 'RATE_LIMIT_REACHED') {
+      // Free user hit hourly download limit
+      showRateLimitModal(msg.minutesRemaining);
+    } else if (msg.type === 'DOWNLOAD_LIMIT_REACHED') {
+      // Free user hit concurrent download limit (kept for backwards compatibility)
+      if (msg.message) {
+        alert(msg.message);
+      }
     }
   });
 
@@ -420,6 +495,52 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   if (btnConfirmNo) btnConfirmNo.addEventListener('click', closeConfirmModal);
   if (confirmModal) confirmModal.addEventListener('click', (e) => { if (e.target === confirmModal) closeConfirmModal(); });
+
+  // Rate limit modal
+  function showRateLimitModal(minutesRemaining) {
+    const modal = document.getElementById('rate-limit-modal');
+    if (!modal) return;
+    
+    const txtMinutes = document.getElementById('txt-rate-limit-minutes');
+    const txtRateMessage = document.getElementById('txt-rate-limit-message');
+    
+    if (txtMinutes && minutesRemaining) {
+      txtMinutes.textContent = minutesRemaining;
+    }
+    
+    if (txtRateMessage) {
+      if (minutesRemaining > 1) {
+        txtRateMessage.textContent = t('rateLimitMessagePlural').replace('{minutes}', minutesRemaining);
+      } else {
+        txtRateMessage.textContent = t('rateLimitMessageSingular');
+      }
+    }
+    
+    modal.classList.remove('hidden');
+  }
+  
+  function closeRateLimitModal() {
+    const modal = document.getElementById('rate-limit-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+  
+  const btnRateLimitClose = document.getElementById('btn-rate-limit-close');
+  const btnRateLimitUpgrade = document.getElementById('btn-rate-limit-upgrade');
+  const rateLimitModal = document.getElementById('rate-limit-modal');
+  
+  if (btnRateLimitClose) btnRateLimitClose.addEventListener('click', closeRateLimitModal);
+  if (btnRateLimitUpgrade) {
+    btnRateLimitUpgrade.addEventListener('click', () => {
+      closeRateLimitModal();
+      openSettingsView();
+      // Scroll to Pro section
+      setTimeout(() => {
+        const proSection = document.getElementById('pro-section');
+        if (proSection) proSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    });
+  }
+  if (rateLimitModal) rateLimitModal.addEventListener('click', (e) => { if (e.target === rateLimitModal) closeRateLimitModal(); });
 
   const activeDownloadsList = document.getElementById('active-downloads-list');
   if (activeDownloadsList && !activeDownloadsList.dataset.controlsBound) {

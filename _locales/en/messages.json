@@ -286,5 +286,32 @@
   },
   "internalPageBlocked": {
     "message": "Cannot detect videos on browser internal pages"
+  },
+  "rateLimitTitle": {
+    "message": "Download Limit Reached"
+  },
+  "rateLimitMessagePlural": {
+    "message": "Free users can download 1 video per hour. You can download again in {minutes} minutes."
+  },
+  "rateLimitMessageSingular": {
+    "message": "Free users can download 1 video per hour. You can download again in about 1 minute."
+  },
+  "rateLimitProPitch": {
+    "message": "⚡ Upgrade to Pro for unlimited downloads — no hourly limits!"
+  },
+  "rateLimitClose": {
+    "message": "Got it"
+  },
+  "rateLimitUpgrade": {
+    "message": "Upgrade to Pro"
+  },
+  "rateLimitReady": {
+    "message": "Ready to download!"
+  },
+  "rateLimitWaitPlural": {
+    "message": "Next download in {minutes} min"
+  },
+  "rateLimitWaitSingular": {
+    "message": "Next download in ~1 min"
   }
 }

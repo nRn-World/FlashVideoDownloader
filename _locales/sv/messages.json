@@ -286,5 +286,32 @@
   },
   "internalPageBlocked": {
     "message": "Kan inte upptäcka videor på webbläsarens interna sidor"
+  },
+  "rateLimitTitle": {
+    "message": "Nedladdningsgräns nådd"
+  },
+  "rateLimitMessagePlural": {
+    "message": "Gratisanvändare kan ladda ner 1 video per timme. Du kan ladda ner igen om {minutes} minuter."
+  },
+  "rateLimitMessageSingular": {
+    "message": "Gratisanvändare kan ladda ner 1 video per timme. Du kan ladda ner igen om ungefär 1 minut."
+  },
+  "rateLimitProPitch": {
+    "message": "⚡ Uppgradera till Pro för obegränsade nedladdningar — inga timgränser!"
+  },
+  "rateLimitClose": {
+    "message": "Okej"
+  },
+  "rateLimitUpgrade": {
+    "message": "Uppgradera till Pro"
+  },
+  "rateLimitReady": {
+    "message": "Redo att ladda ner!"
+  },
+  "rateLimitWaitPlural": {
+    "message": "Nästa nedladdning om {minutes} min"
+  },
+  "rateLimitWaitSingular": {
+    "message": "Nästa nedladdning om ~1 min"
   }
 }

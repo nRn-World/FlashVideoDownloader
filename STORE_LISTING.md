@@ -52,7 +52,7 @@ Does NOT: bypass DRM, download from YouTube/Netflix/Disney+/Twitch, collect anal
 ## 5. Store listing text
 
 **Kort beskrivning (EN):**
-Detect and download videos from any site — Free with core features. Optional Pro upgrade for power users ($5.99 lifetime).
+Detect and download videos from any site — Free with core features (1/hour). Optional Pro upgrade for power users ($5.99 lifetime).
 
 **Detaljerad beskrivning (EN):**
 Flash Video Downloader helps you find and save openly accessible videos on the page you're viewing.
@@ -60,12 +60,15 @@ Flash Video Downloader helps you find and save openly accessible videos on the p
 **Free Features (included):**
 • Detect MP4, WEBM, M3U8 and more from network traffic and page elements
 • Preview before download
-• Pause, resume and cancel downloads (1 active at a time)
+• Pause, resume and cancel downloads
+• **1 download per hour** (rate limit resets every 60 minutes)
+• 1 concurrent download at a time
 • Download history (last 10)
 • 6 languages
 • Choose where files are saved
 
 **Pro Features ($5.99 one-time, lifetime):**
+• **Unlimited hourly downloads** (no rate limit)
 • 3+ concurrent downloads (vs 1 on Free)
 • Batch "Download all detected" button
 • Unlimited download history + export (CSV/JSON)
@@ -79,7 +82,7 @@ Flash Video Downloader helps you find and save openly accessible videos on the p
 • Only downloads content you have the right to save
 
 **Pricing:**
-Free tier is fully functional for single downloads. Pro upgrade is optional, one-time $5.99 (no subscription).
+Free tier is fully functional for basic use (1 download/hour). Pro upgrade is optional, one-time $5.99 (no subscription).
 
 **Kategori:** Productivity
 

@@ -1,8 +1,13 @@
-// Flash Video Downloader - License & Pro Feature Manager (v3.3.0)
+// Flash Video Downloader - License & Pro Feature Manager (v3.3.1)
 // Client-side license validation (no server calls by default)
 
 const LICENSE_STORAGE_KEY = 'fvd_pro_license';
 const PRO_STATUS_KEY = 'fvd_pro_status';
+const DOWNLOAD_TIMESTAMPS_KEY = 'fvd_download_timestamps';
+
+// Free tier rate limit: 1 download per hour
+const FREE_DOWNLOAD_LIMIT = 1;
+const FREE_RATE_WINDOW_MS = 60 * 60 * 1000; // 60 minutes
 
 // Test license key for development/demo (always valid)
 const DEV_LICENSE_KEY = 'FVD-PRO-TEST-0000';
@@ -110,7 +115,8 @@ async function getFeatureLimits() {
       canExportHistory: true,
       canBatchDownload: true,
       canUseFilenameTemplates: true,
-      canPickQuality: true
+      canPickQuality: true,
+      downloadsPerHour: -1 // unlimited
     };
   }
   
@@ -122,8 +128,85 @@ async function getFeatureLimits() {
     canExportHistory: false,
     canBatchDownload: false,
     canUseFilenameTemplates: false,
-    canPickQuality: false
+    canPickQuality: false,
+    downloadsPerHour: FREE_DOWNLOAD_LIMIT // 1 per hour
   };
+}
+
+// Track successful download completion
+async function recordDownloadCompletion() {
+  try {
+    const proStatus = await isProUser();
+    if (proStatus.isPro) {
+      // Pro users don't need rate limiting
+      return;
+    }
+
+    const now = Date.now();
+    const data = await chrome.storage.local.get([DOWNLOAD_TIMESTAMPS_KEY]);
+    let timestamps = data[DOWNLOAD_TIMESTAMPS_KEY] || [];
+    
+    // Add current timestamp
+    timestamps.push(now);
+    
+    // Clean up old timestamps (older than rate window)
+    const cutoff = now - FREE_RATE_WINDOW_MS;
+    timestamps = timestamps.filter(ts => ts > cutoff);
+    
+    // Store updated timestamps
+    await chrome.storage.local.set({
+      [DOWNLOAD_TIMESTAMPS_KEY]: timestamps
+    });
+  } catch (e) {
+    console.warn('[FVD License] Failed to record download:', e);
+  }
+}
+
+// Check if user can start a new download (rate limit check)
+async function canStartDownload() {
+  try {
+    const proStatus = await isProUser();
+    if (proStatus.isPro) {
+      // Pro users have unlimited downloads
+      return { allowed: true, tier: 'pro' };
+    }
+
+    // Check Free tier rate limit
+    const now = Date.now();
+    const data = await chrome.storage.local.get([DOWNLOAD_TIMESTAMPS_KEY]);
+    let timestamps = data[DOWNLOAD_TIMESTAMPS_KEY] || [];
+    
+    // Clean up old timestamps
+    const cutoff = now - FREE_RATE_WINDOW_MS;
+    timestamps = timestamps.filter(ts => ts > cutoff);
+    
+    // Update storage with cleaned timestamps
+    await chrome.storage.local.set({
+      [DOWNLOAD_TIMESTAMPS_KEY]: timestamps
+    });
+
+    // Check if limit exceeded
+    if (timestamps.length >= FREE_DOWNLOAD_LIMIT) {
+      // Calculate when next download is allowed
+      const oldestTimestamp = Math.min(...timestamps);
+      const nextAllowedAt = oldestTimestamp + FREE_RATE_WINDOW_MS;
+      const minutesRemaining = Math.ceil((nextAllowedAt - now) / (60 * 1000));
+      
+      return {
+        allowed: false,
+        tier: 'free',
+        reason: 'rate_limit',
+        minutesRemaining: minutesRemaining,
+        nextAllowedAt: nextAllowedAt
+      };
+    }
+
+    return { allowed: true, tier: 'free' };
+  } catch (e) {
+    console.warn('[FVD License] Rate limit check failed:', e);
+    // On error, allow download (fail open)
+    return { allowed: true, tier: 'free' };
+  }
 }
 
 // Check if feature is available
@@ -157,6 +240,8 @@ if (typeof module !== 'undefined' && module.exports) {
     isProUser,
     getFeatureLimits,
     canUseFeature,
+    canStartDownload,
+    recordDownloadCompletion,
     DEV_LICENSE_KEY
   };
 }

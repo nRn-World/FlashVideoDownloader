@@ -29,8 +29,8 @@ The extension focuses on **visible page videos**, offers **pause / resume / canc
 
 **Flash Video Downloader** offers a **Free tier** with all core features, plus an optional **Pro upgrade** ($5.99 one-time) for power users:
 
-- **Free:** Detect videos, download one at a time, pause/resume, last 10 history, all formats
-- **Pro:** 3+ concurrent downloads, batch download all, unlimited history, export (CSV/JSON), filename templates, quality picker
+- **Free:** Detect videos, download one at a time (1 per hour), pause/resume, last 10 history, all formats
+- **Pro:** Unlimited hourly downloads, 3+ concurrent downloads, batch download all, unlimited history, export (CSV/JSON), filename templates, quality picker
 
 [⚡ Learn more about Pro](https://nrn-world.github.io/FlashVideoDownloader/pages/pro.html)
 
@@ -74,6 +74,7 @@ The extension focuses on **visible page videos**, offers **pause / resume / canc
 | **Save location** | Ask each time, or save all videos to a folder you pick on your computer |
 | **Languages** | English, Svenska, Türkçe, Español, Français, العربية |
 | **History** | Last 10 (Free) or Unlimited (Pro) with optional 24-hour auto-cleanup |
+| **Rate limits** | Free: 1 download/hour, 1 concurrent; Pro: unlimited hourly, 3+ concurrent |
 | **Pro features** | 3+ concurrent downloads, batch download, history export, filename templates, quality picker |
 | **Privacy** | On-demand content script injection · no keyboard capture · blocked-host list |
 
@@ -204,6 +205,7 @@ Chrome Web Store: [Flash Video Downloader](https://chromewebstore.google.com/det
 
 | Version | Highlights |
 |---|---|
+| **3.3.1** | Free tier rate limit: 1 download per hour (Pro: unlimited). Clear upgrade prompts with countdown |
 | **3.3.0** | Freemium model: Free tier + Pro upgrade ($5.99 lifetime). Pro: 3+ concurrent, batch, unlimited history, export, templates |
 | **3.2.5** | Better detection for tube/CMS URLs (`.mp4/`, `/get_file/`), iframe scan, less aggressive preview filter |
 | **3.2.4** | Stronger HLS/DASH downloads: page Referer retries, lower parallelism, segment repair, MPD support |

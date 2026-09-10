@@ -38,6 +38,13 @@
       <!-- Filter Bar -->
       <div class="filter-bar">
         <input type="text" id="search-input" placeholder="Search detected videos..." />
+        
+        <!-- Free tier rate limit status -->
+        <div id="rate-limit-status" class="rate-limit-status hidden">
+          <span class="rate-limit-icon">⏱️</span>
+          <span id="rate-limit-status-text" class="rate-limit-status-text"></span>
+        </div>
+        
         <div class="category-tabs">
           <button class="tab-btn active" data-filter="all"><span id="tab-all-text">All</span> (<span id="count-all">0</span>)</button>
           <button class="tab-btn" data-filter="video"><span id="tab-video-text">Video</span></button>
@@ -260,6 +267,22 @@
       <div class="modal-actions">
         <button id="btn-confirm-no" class="btn-modal btn-modal-cancel">Cancel</button>
         <button id="btn-confirm-yes" class="btn-modal btn-modal-danger">Yes, stop</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rate Limit Modal -->
+  <div id="rate-limit-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-icon-warning">⏱️</div>
+      <h3 id="txt-rate-limit-title" data-i18n="rateLimitTitle">Download Limit Reached</h3>
+      <p id="txt-rate-limit-message" data-i18n="rateLimitMessagePlural">Free users can download 1 video per hour. You can download again in <strong id="txt-rate-limit-minutes">X</strong> minutes.</p>
+      <div class="rate-limit-upgrade-box">
+        <p class="rate-limit-pro-pitch" data-i18n="rateLimitProPitch">⚡ Upgrade to Pro for unlimited downloads — no hourly limits!</p>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-rate-limit-close" class="btn-modal btn-modal-cancel" data-i18n="rateLimitClose">Got it</button>
+        <button id="btn-rate-limit-upgrade" class="btn-modal btn-modal-primary" data-i18n="rateLimitUpgrade">Upgrade to Pro</button>
       </div>
     </div>
   </div>

@@ -27,6 +27,14 @@ This document outlines the testing steps for the new freemium features in v3.3.0
 4. **Expected:** Download starts successfully
 5. **Expected:** Free users can download 1 video at a time
 
+### Test: Hourly rate limit (Free: 1/hour)
+1. Download one video successfully (wait for completion)
+2. Immediately try to download a second video
+3. **Expected:** Rate limit modal appears
+4. **Expected:** Message: "Free users can download 1 video per hour. You can download again in ~X minutes."
+5. **Expected:** "Upgrade to Pro" button visible
+6. **After 60 minutes:** Second download should work
+
 ### Test: Concurrent download limit (Free)
 1. Start downloading one video
 2. While first is active, try to download a second video
@@ -76,9 +84,10 @@ This document outlines the testing steps for the new freemium features in v3.3.0
 
 ### Test: Pro features unlocked
 After activating Pro:
-1. **Concurrent downloads:** Start 3 downloads at once → all should proceed
-2. **History:** Unlimited history (no 10-item cap)
-3. **Export:** (UI not fully implemented yet, but limit is lifted)
+1. **Hourly downloads:** Download multiple videos within same hour → all should proceed (no rate limit)
+2. **Concurrent downloads:** Start 3 downloads at once → all should proceed
+3. **History:** Unlimited history (no 10-item cap)
+4. **Export:** (UI not fully implemented yet, but limit is lifted)
 
 ---
 
@@ -158,18 +167,20 @@ Robin must configure before publishing:
 
 ## Summary
 
-- ✅ Free tier: Core download functionality intact
-- ✅ Pro tier: 3+ concurrent, batch, unlimited history, export
+- ✅ Free tier: Core download functionality intact (1 download/hour, 1 concurrent)
+- ✅ Pro tier: Unlimited hourly, 3+ concurrent, batch, unlimited history, export
 - ✅ License: Test key `FVD-PRO-TEST-0000` works
-- ✅ UI: Pro section polished, comparison table clear
+- ✅ UI: Pro section polished, comparison table clear, rate limit modal
 - ✅ Docs: README, STORE_LISTING, privacy.html updated
 - ✅ i18n: All 6 locales have Pro strings
 - ✅ Compliance: DRM blocklist unchanged
 
 **Ready for Robin to:**
 1. Load unpacked and test locally
-2. Configure `CHECKOUT_URL` to real payment link
-3. Submit v3.3.0 to Chrome Web Store
+2. Test rate limit: download 1, wait, try 2nd immediately (should block)
+3. Activate Pro with `FVD-PRO-TEST-0000` → unlimited
+4. Configure `CHECKOUT_URL` to real payment link
+5. Submit v3.3.1 to Chrome Web Store
 
 ---
 

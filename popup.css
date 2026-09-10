@@ -192,6 +192,37 @@ body {
   gap: 8px;
 }
 
+.rate-limit-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+}
+
+.rate-limit-status.ready {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.rate-limit-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.rate-limit-status-text {
+  color: #fbbf24;
+  font-weight: 500;
+  flex: 1;
+}
+
+.rate-limit-status.ready .rate-limit-status-text {
+  color: #34d399;
+}
+
 #search-input {
   width: 100%;
   padding: 8px 12px;
@@ -1120,6 +1151,38 @@ body {
   box-shadow: 0 2px 8px rgba(239,68,68,0.35);
 }
 .btn-modal-danger:hover { background: linear-gradient(135deg, #f87171, #ef4444); }
+
+.btn-modal-primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+.btn-modal-primary:hover { 
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.5);
+}
+
+.modal-icon-warning {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.rate-limit-upgrade-box {
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+}
+
+.rate-limit-pro-pitch {
+  font-size: 0.8rem;
+  color: #93c5fd;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
+}
 
 /* Pro Upgrade Section */
 .pro-upgrade-section {
