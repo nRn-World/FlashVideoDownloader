@@ -6,10 +6,10 @@
     "message": "FVD"
   },
   "appDescription": {
-    "message": "Hitta och ladda ner öppna videor (MP4, WEBM, M3U8) på aktiv flik. Gratis: 1 nedladdning/timme. Kringgår inte DRM."
+    "message": "Hitta och spara öppna videor (MP4, WEBM, M3U8) på sidan du tittar på. Förhandsgranska, pausa, lokal historik. Ingen DRM-kringgång."
   },
   "appVersion": {
-    "message": "v3.3.2"
+    "message": "v3.3.5"
   },
   "searchPlaceholder": {
     "message": "Sök bland videor..."
@@ -27,7 +27,7 @@
     "message": "Inga videor upptäckta än"
   },
   "noVideosDesc": {
-    "message": "Starta videon på webbsidan så att nätverkssniffern fångar upp medieströmmen automatiskt!"
+    "message": "Spela upp videon på sidan först · öppna sedan den här popupen. Strömmar fångas automatiskt från nätverkstrafiken."
   },
   "loading": {
     "message": "Sniffar webbsida och nätverk..."
@@ -219,7 +219,7 @@
     "message": "Efter betalning på Ko-fi kopierar du licensnyckeln från tack-sidan och klistrar in den här."
   },
   "licenseKeyPlaceholder": {
-    "message": "FVD-PRO-XXXX-XXXX"
+    "message": "FVD-PRO-XXXX-XXXX-XXXX-XXXX"
   },
   "activateLicense": {
     "message": "Aktivera"

@@ -35,6 +35,7 @@ INCLUDE_FILES = [
     "background.js",
     "blocked-hosts.js",
     "content.js",
+    "page-hook.js",
     "license.js",
     "popup.html",
     "popup.js",
@@ -44,6 +45,7 @@ INCLUDE_FILES = [
     "i18n.js",
     "storage-handles.js",
     "privacy.html",
+    "welcome.html",
     "LICENSE",
     "THIRD_PARTY_NOTICES.txt",
 ]

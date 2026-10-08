@@ -1,4 +1,4 @@
-// Flash Video Downloader - Popup Script (v3.3.2)
+// Flash Video Downloader - Popup Script (v3.3.7)
 
 document.addEventListener('DOMContentLoaded', async () => {
   const mediaListContainer = document.getElementById('media-list');
@@ -59,6 +59,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   let rateLimitStatusInterval = null;
 
   const CHECKOUT_URL = 'https://ko-fi.com/s/72a48b875e';
+  const STORE_REVIEWS_URL = 'https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg/reviews';
+  const REVIEW_MILESTONES = [1, 5, 10];
+  let reviewPromptShowing = false;
+  let currentReviewMilestone = null;
 
   // Initialize Pro status
   async function initializeProStatus() {
@@ -252,49 +256,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize Pro status on load
   await initializeProStatus();
 
-  // Smooth 1-100 animation helpers
-  const smoothPercents = new Map(); // downloadId -> last displayed percent
-  const smoothTimers = new Map(); // downloadId -> interval id
-  function animatePercentCounter(downloadId, targetPercent, onStep) {
-    let current = smoothPercents.get(downloadId);
-    if (current === undefined) {
-      // start from 0 so first animation shows 0→target step-by-step
-      current = 0;
-      smoothPercents.set(downloadId, 0);
-      if (targetPercent === 0) { onStep(0); return; }
-    }
-    if (current === targetPercent) {
-      onStep(targetPercent);
-      return;
-    }
-    if (smoothTimers.has(downloadId)) {
-      clearInterval(smoothTimers.get(downloadId));
-      smoothTimers.delete(downloadId);
-    }
-    const dir = targetPercent > current ? 1 : -1;
-    const steps = Math.abs(targetPercent - current);
-    const intervalMs = Math.max(18, Math.min(50, 320 / steps));
-    const timer = setInterval(() => {
-      current += dir;
-      smoothPercents.set(downloadId, current);
-      onStep(current);
-      if (current === targetPercent) {
-        clearInterval(timer);
-        smoothTimers.delete(downloadId);
-      }
-    }, intervalMs);
-    smoothTimers.set(downloadId, timer);
-  }
+  // Initialize Pro status on load
+  await initializeProStatus();
 
-  // Instant push update (no 500ms poll lag) - listen to OFFSCREEN_PROGRESS via background echo
+  // Instant push update — listen to OFFSCREEN_PROGRESS via background echo
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'OFFSCREEN_PROGRESS' && msg.state) {
       const dl = msg.state;
       // update card immediately if visible
       const card = document.querySelector(`.media-card[data-url="${CSS.escape(dl.url)}"]`);
       if (card) updateCardDownloadState(card, dl);
-      // also trigger active list refresh throttled
-      checkOngoingDownloads();
+      // Update active-downloads banner percent instantly (no poll round-trip)
+      applyActiveDownloadProgress(dl);
+      if (dl.status === 'completed') {
+        maybeShowReviewPrompt();
+      }
     } else if (msg.type === 'RATE_LIMIT_REACHED') {
       // Free user hit hourly download limit
       showRateLimitModal(msg.minutesRemaining);
@@ -349,6 +325,41 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  // Avoid innerHTML (AMO rejects unsafe assignment)
+  function clearChildren(node) {
+    if (!node) return;
+    while (node.firstChild) node.removeChild(node.firstChild);
+  }
+
+  function el(tag, props, children) {
+    const node = document.createElement(tag);
+    if (props) {
+      Object.keys(props).forEach((key) => {
+        const val = props[key];
+        if (val == null || val === false) return;
+        if (key === 'className') node.className = val;
+        else if (key === 'text') node.textContent = val;
+        else if (key === 'htmlFor') node.htmlFor = val;
+        else if (key.startsWith('on') && typeof val === 'function') node.addEventListener(key.slice(2).toLowerCase(), val);
+        else if (key === 'dataset' && typeof val === 'object') {
+          Object.keys(val).forEach((dk) => { node.dataset[dk] = val[dk]; });
+        } else if (key in node && key !== 'style') {
+          try { node[key] = val; } catch (e) { node.setAttribute(key, val); }
+        } else {
+          node.setAttribute(key, val);
+        }
+      });
+    }
+    if (children != null) {
+      const list = Array.isArray(children) ? children : [children];
+      list.forEach((child) => {
+        if (child == null || child === false) return;
+        node.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+      });
+    }
+    return node;
   }
 
   // Hjälpare för sortering: störst först
@@ -468,6 +479,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       const key = el.getAttribute('data-i18n');
       if (key) el.textContent = t(key);
     });
+    // Re-apply review modal texts for current milestone (10 uses a different body string)
+    if (reviewPromptShowing && currentReviewMilestone) {
+      applyReviewPromptTexts(currentReviewMilestone);
+    }
     const proTitleEl = document.getElementById('txt-pro-title');
     const proDescEl = document.getElementById('txt-pro-description');
     const freeVsProEl = document.getElementById('txt-free-vs-pro');
@@ -567,6 +582,114 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   if (rateLimitModal) rateLimitModal.addEventListener('click', (e) => { if (e.target === rateLimitModal) closeRateLimitModal(); });
 
+  // Review prompts at milestones 1, 5, 10 downloads (3rd has no "Not now")
+  const reviewPromptModal = document.getElementById('review-prompt-modal');
+  const btnReviewLater = document.getElementById('btn-review-later');
+  const btnReviewRate = document.getElementById('btn-review-rate');
+  const txtReviewPromptTitle = document.getElementById('txt-review-prompt-title');
+  const txtReviewPromptDesc = document.getElementById('txt-review-prompt-desc');
+
+  function closeReviewPromptModal() {
+    if (reviewPromptModal) reviewPromptModal.classList.add('hidden');
+    reviewPromptShowing = false;
+    currentReviewMilestone = null;
+  }
+
+  async function markReviewMilestoneShown(milestone) {
+    try {
+      const data = await chrome.storage.local.get(['reviewPromptsShown']);
+      const shown = Array.isArray(data.reviewPromptsShown) ? data.reviewPromptsShown.slice() : [];
+      if (milestone && !shown.includes(milestone)) shown.push(milestone);
+      await chrome.storage.local.set({
+        reviewPromptsShown: shown,
+        pendingReviewMilestone: null,
+        // Clear legacy one-shot keys if present
+        reviewPromptDone: true,
+        pendingReviewPrompt: false
+      });
+    } catch (e) {}
+    closeReviewPromptModal();
+  }
+
+  function openStoreReviews() {
+    try { chrome.tabs.create({ url: STORE_REVIEWS_URL }); } catch (e) {}
+  }
+
+  function applyReviewPromptTexts(milestone) {
+    const m = milestone || currentReviewMilestone || 1;
+    if (txtReviewPromptTitle) txtReviewPromptTitle.textContent = t('reviewPromptTitle');
+    if (txtReviewPromptDesc) {
+      txtReviewPromptDesc.textContent =
+        m === 10 ? t('reviewPromptForcedDesc') : t('reviewPromptDesc');
+    }
+    if (btnReviewLater) {
+      btnReviewLater.classList.remove('hidden');
+      btnReviewLater.textContent = t('reviewPromptLater');
+    }
+    if (btnReviewRate) {
+      btnReviewRate.textContent = t('reviewPromptRate');
+      btnReviewRate.style.flex = '';
+    }
+  }
+
+  function showReviewPromptModal(milestone) {
+    if (!reviewPromptModal || reviewPromptShowing) return;
+    const rateLimitEl = document.getElementById('rate-limit-modal');
+    if (rateLimitEl && !rateLimitEl.classList.contains('hidden')) return;
+
+    currentReviewMilestone = milestone;
+    reviewPromptShowing = true;
+    applyReviewPromptTexts(milestone);
+    reviewPromptModal.classList.remove('hidden');
+  }
+
+  async function maybeShowReviewPrompt() {
+    try {
+      const data = await chrome.storage.local.get([
+        'successfulDownloadCount',
+        'reviewPromptsShown',
+        'pendingReviewMilestone'
+      ]);
+      const count = Number(data.successfulDownloadCount) || 0;
+      const shown = Array.isArray(data.reviewPromptsShown) ? data.reviewPromptsShown : [];
+      let milestone = data.pendingReviewMilestone || null;
+
+      if (!milestone) {
+        for (const m of REVIEW_MILESTONES) {
+          if (count >= m && !shown.includes(m)) {
+            milestone = m;
+            await chrome.storage.local.set({ pendingReviewMilestone: m });
+            break;
+          }
+        }
+      }
+
+      if (!milestone || shown.includes(milestone)) return;
+      showReviewPromptModal(milestone);
+    } catch (e) {}
+  }
+
+  if (btnReviewLater) {
+    btnReviewLater.addEventListener('click', () => {
+      markReviewMilestoneShown(currentReviewMilestone);
+    });
+  }
+  if (btnReviewRate) {
+    btnReviewRate.addEventListener('click', () => {
+      openStoreReviews();
+      markReviewMilestoneShown(currentReviewMilestone);
+    });
+  }
+  if (reviewPromptModal) {
+    reviewPromptModal.addEventListener('click', (e) => {
+      if (e.target !== reviewPromptModal) return;
+      markReviewMilestoneShown(currentReviewMilestone);
+    });
+  }
+
+  // Show pending review prompt when popup opens (after language is applied below)
+  // maybeShowReviewPrompt() is called after applyLanguage()
+
   const activeDownloadsList = document.getElementById('active-downloads-list');
   if (activeDownloadsList && !activeDownloadsList.dataset.controlsBound) {
     activeDownloadsList.dataset.controlsBound = '1';
@@ -616,7 +739,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusKey = (dl.status === 'downloading' || dl.status === 'paused') ? dl.status : 'idle';
     if (ctrlBox.dataset.dlStatus === statusKey && ctrlBox.childElementCount > 0) return;
     ctrlBox.dataset.dlStatus = statusKey;
-    ctrlBox.innerHTML = '';
+    clearChildren(ctrlBox);
     if (dl.status === 'downloading') {
       const pauseBtn = document.createElement('button');
       pauseBtn.className = 'btn-adl btn-adl-pause';
@@ -667,6 +790,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   applyLanguage();
+  maybeShowReviewPrompt();
 
   let canLoadMedia = false;
 
@@ -697,6 +821,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       await chrome.scripting.executeScript({
         target: { tabId, allFrames: true },
+        world: 'MAIN',
+        files: ['page-hook.js']
+      });
+    } catch (e) {
+      console.warn('[FVD] page-hook injection:', e);
+    }
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
         files: ['blocked-hosts.js', 'content.js']
       });
     } catch (e) {
@@ -704,11 +837,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  async function collectMainWorldMedia(tabId) {
+    try {
+      const viaBg = await chrome.runtime.sendMessage({ type: 'COLLECT_MAIN_WORLD', tabId });
+      if (viaBg && viaBg.data) return viaBg.data;
+    } catch (e) {}
+    try {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId },
+        world: 'MAIN',
+        func: () => {
+          try {
+            if (typeof globalThis.__FVD_COLLECT_PAGE_MEDIA__ === 'function') {
+              return globalThis.__FVD_COLLECT_PAGE_MEDIA__();
+            }
+          } catch (err) {}
+          return { hls: [], standard: [], model: [], perf: [] };
+        }
+      });
+      return (results && results[0] && results[0].result) || null;
+    } catch (e) {
+      console.warn('[FVD] Main world collect:', e);
+      return null;
+    }
+  }
+
   function getSafeVideoFilename(originalFilename, url, format, contentType) {
     // Alla tillåtna källor sparas som video (.mp4) för universell uppspelning, utom ren audio
     let name = (originalFilename || '').split('?')[0].split('#')[0].trim();
-    name = name.replace(/[/\\?%*:|"<>]/g, '_');
+    name = name.replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, ' ').trim();
     name = name.replace(/\.(php|aspx|asp|jsp|html|htm|bin|do|cgi|axd|mpd|m3u|m3u8|ts|m4s|fmp4|m2ts)$/i, '');
+    name = name.replace(/^[._]+|[._]+$/g, '').trim();
+    if (name.length > 180) name = name.substring(0, 180).trim();
 
     const urlLower = (url || '').toLowerCase();
     const formatLower = (format || '').toLowerCase();
@@ -761,20 +921,48 @@ document.addEventListener('DOMContentLoaded', async () => {
     return /\.(ts|m4s|fmp4|cmfv|cmfa)(\?|#|$)/i.test(u);
   }
 
+  function isBlobItem(item) {
+    return (item.url || '').startsWith('blob:');
+  }
+
+  function isStreamItem(item) {
+    return /\.(m3u8|m3u|mpd)(?:\?|#|$|\/)/i.test(item.url || '');
+  }
+
   function itemByteSize(item) {
     if (typeof item.rawSize === 'number' && item.rawSize > 0) return item.rawSize;
     return parseSizeToBytes(item.size);
   }
 
+  // Alla video-behållare som kan laddas ner direkt – .avi/.mkv/.flv m.m. ska inte
+  // sorteras bort till "övrigt" bara för att de inte är mp4/webm.
+  const VIDEO_FILE_EXT_RE = /\.(mp4|m4v|webm|mov|mkv|avi|flv|f4v|ogv|ogm|3gp|3g2|wmv|asf|vob|m2v|divx|mts|m2ts|mpg|mpeg|av1|hevc)(\?|#|$|\/)/i;
+
+  function isProgressiveFileItem(item) {
+    const u = item.url || '';
+    return !u.startsWith('blob:') && VIDEO_FILE_EXT_RE.test(u);
+  }
+
+  function qualityRank(item) {
+    const q = String(item.quality || item.filename || item.url || '');
+    const m = q.match(/(\d{3,4})p/i) || q.match(/x(\d{3,4})(?:\D|$)/i) || q.match(/[_\-](\d{3,4})(?:\D|$)/);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+
   function pickBestMediaCandidates(items, maxCount) {
-    const sorted = [...items].sort((a, b) => itemByteSize(b) - itemByteSize(a));
-    const stream = sorted.find(i => /\.(m3u8|m3u|mpd)(\?|#|$)/i.test(i.url));
-    const blob = sorted.find(i => (i.url || '').startsWith('blob:'));
-    const file = sorted.find(i => /\.(mp4|webm|mov|mkv)(\?|#|$)/i.test(i.url));
+    const sorted = [...items].sort((a, b) => {
+      const qDiff = qualityRank(b) - qualityRank(a);
+      if (qDiff) return qDiff;
+      return itemByteSize(b) - itemByteSize(a);
+    });
+    const stream = sorted.find(i => isStreamItem(i));
+    const blob = sorted.find(i => isBlobItem(i));
+    const file = sorted.find(i => isProgressiveFileItem(i));
     const picked = [];
-    if (blob) picked.push(blob);
+    // Prefer real CDN/file URLs over blob (blob is often incomplete MSE buffer)
+    if (file) picked.push(file);
     else if (stream) picked.push(stream);
-    else if (file) picked.push(file);
+    else if (blob) picked.push(blob);
     else if (sorted[0]) picked.push(sorted[0]);
     for (const item of sorted) {
       if (picked.length >= maxCount) break;
@@ -783,36 +971,72 @@ document.addEventListener('DOMContentLoaded', async () => {
     return picked.slice(0, maxCount);
   }
 
+  // Visa alla unika media som DOM-skanningen faktiskt hittade (t.ex. en sida med
+  // 18 nedladdningslänkar), men håll en rimlig övre gräns. Enstaka videor visas
+  // oförändrat med den gamla topp-3-logiken eftersom budgeten då blir 3.
+  const MAX_MEDIA_ROWS = 60;
+
+  function mediaRowBudget(domResponse) {
+    const domItems = (domResponse && Array.isArray(domResponse.items)) ? domResponse.items : [];
+    const distinct = new Set(domItems.map(i => i && i.url).filter(Boolean));
+    return Math.min(MAX_MEDIA_ROWS, Math.max(10, distinct.size));
+  }
+
   function filterToVisiblePageMedia(items, domResponse) {
     let filtered = items.filter(i => !isSegmentLikeItem(i));
-    if (!domResponse) return pickBestMediaCandidates(filtered, 3);
+    const budget = mediaRowBudget(domResponse);
+    if (!domResponse) return pickBestMediaCandidates(filtered, budget);
 
     const visibleCount = domResponse.visibleVideoCount || 0;
     const visibleUrls = new Set(domResponse.visibleUrls || []);
+    const playlistItems = filtered.filter(i => i.fromPlaylist || (domResponse.items || []).some(d => d.url === i.url && d.fromPlaylist));
+
+    // Embedded playlist / xplayer / videojs sources first – these are the real download targets
+    const playlistInAll = filtered.filter(i =>
+      i.fromPlaylist || playlistItems.some(p => p.url === i.url) || /\/vid_\d+p\.mp4/i.test(i.url || '') || /\/vid\d*\//i.test(i.url || '')
+    );
+    if (playlistInAll.length > 0) {
+      return pickBestMediaCandidates(playlistInAll, Math.min(budget, playlistInAll.length));
+    }
 
     if (visibleCount === 0 && visibleUrls.size === 0) {
-      return pickBestMediaCandidates(filtered, 3);
+      return pickBestMediaCandidates(filtered, budget);
     }
+
+    const realMedia = filtered.filter(i =>
+      !isBlobItem(i) && (isProgressiveFileItem(i) || isStreamItem(i))
+    );
 
     if (visibleUrls.size > 0) {
       const direct = filtered.filter(item => visibleUrls.has(item.url));
-      if (direct.length > 0) {
+      const directReal = direct.filter(i => !isBlobItem(i));
+      if (directReal.length > 0) {
+        const otherReal = realMedia.filter(i => !directReal.some(d => d.url === i.url));
+        filtered = [...directReal, ...otherReal];
+      } else if (realMedia.length > 0) {
+        // DOM only exposed MSE blob: – keep sniffed HLS/MP4 instead of incomplete blob
+        filtered = realMedia;
+      } else if (direct.length > 0) {
         filtered = direct;
       }
     }
 
+    const files = filtered.filter(i => isProgressiveFileItem(i));
+    if (files.length) return pickBestMediaCandidates(files, Math.min(budget, files.length));
+    const streams = filtered.filter(i => isStreamItem(i));
+    if (streams.length) return pickBestMediaCandidates(streams, Math.min(budget, streams.length));
+
+    const nonBlob = filtered.filter(i => !isBlobItem(i));
+    if (nonBlob.length) return pickBestMediaCandidates(nonBlob, Math.min(budget, nonBlob.length));
+
     if (visibleCount === 1) {
-      const blobItem = filtered.find(i => (i.url || '').startsWith('blob:'));
+      const blobItem = filtered.find(i => isBlobItem(i));
       if (blobItem) return [blobItem];
-      const stream = filtered.find(i => /\.(m3u8|m3u|mpd)(\?|#|$)/i.test(i.url));
-      if (stream) return [stream];
-      const files = filtered.filter(i => /\.(mp4|webm|mov|mkv)(\?|#|$)/i.test(i.url));
-      if (files.length) return pickBestMediaCandidates(files, 1);
       return pickBestMediaCandidates(filtered, 1);
     }
 
-    if (filtered.length > visibleCount * 2) {
-      return pickBestMediaCandidates(filtered, visibleCount);
+    if (filtered.length > Math.max(visibleCount, 1) * 2) {
+      return pickBestMediaCandidates(filtered, Math.max(visibleCount, 1));
     }
 
     return filtered;
@@ -848,6 +1072,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (existing) {
         if (domItem.duration) existing.duration = domItem.duration;
         if (domItem.filename) existing.filename = domItem.filename;
+        if (domItem.fromPlaylist) existing.fromPlaylist = true;
+        if (domItem.quality) existing.quality = domItem.quality;
         existing.fromVisibleDom = true;
       } else {
         const added = {
@@ -858,7 +1084,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           size: 'Web source',
           rawSize: 0,
           discoveredAt: Date.now(),
-          fromVisibleDom: true
+          fromVisibleDom: true,
+          fromPlaylist: !!domItem.fromPlaylist,
+          quality: domItem.quality || ''
         };
         items.push(added);
         byUrl.set(domItem.url, added);
@@ -886,7 +1114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     loadingState.classList.remove('hidden');
     emptyState.classList.add('hidden');
-    mediaListContainer.innerHTML = '';
+    clearChildren(mediaListContainer);
     stopCurrentPreview();
 
     if (refresh) {
@@ -906,7 +1134,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       try {
         await ensureContentScript(activeTabId);
-        domResponse = await chrome.tabs.sendMessage(activeTabId, { type: 'SCAN_PAGE' });
+        const mainWorld = await collectMainWorldMedia(activeTabId);
+        domResponse = await chrome.tabs.sendMessage(activeTabId, {
+          type: 'SCAN_PAGE',
+          mainWorld: mainWorld || null
+        });
         if (domResponse && Array.isArray(domResponse.items)) {
           items = mergeDomItems(items, domResponse.items);
         }
@@ -917,6 +1149,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       items = filterToVisiblePageMedia(items, domResponse);
       allMedia = items;
       renderList();
+      if (activeTabId) {
+        chrome.runtime.sendMessage({
+          type: 'SET_TAB_BADGE_COUNT',
+          tabId: activeTabId,
+          count: allMedia.length
+        }).catch(() => {});
+      }
       checkOngoingDownloads();
     } catch (err) {
       console.error('Error fetching media:', err);
@@ -950,7 +1189,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const prevContainer = currentlyPlayingCard.querySelector('.preview-container');
       const prevPlayBtn = currentlyPlayingCard.querySelector('.btn-play');
       if (prevContainer) {
-        prevContainer.innerHTML = '';
+        prevContainer && clearChildren(prevContainer);
         prevContainer.classList.add('hidden');
       }
       if (prevPlayBtn) {
@@ -958,6 +1197,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         prevPlayBtn.classList.remove('playing');
       }
       currentlyPlayingCard = null;
+    }
+  }
+
+  function applyActiveDownloadProgress(dl) {
+    if (!dl || !dl.id) return;
+    const activeSection = document.getElementById('active-downloads-section');
+    const activeList = document.getElementById('active-downloads-list');
+    if (!activeSection || !activeList) return;
+
+    const cardId = `adl-${CSS.escape(dl.id)}`;
+    let card = activeList.querySelector(`#${cardId}`);
+
+    // Card may not exist yet (first progress tick) — fall back to full refresh
+    if (!card) {
+      checkOngoingDownloads();
+      return;
+    }
+
+    activeSection.classList.remove('hidden');
+    const adlBar = card.querySelector('.adl-progress-bar-fill');
+    const adlPercentEl = card.querySelector('.adl-percent');
+    const adlSegEl = card.querySelector('.adl-segments');
+    const adlDurEl = card.querySelector('.adl-duration');
+    const pct = Math.max(0, Math.min(100, Math.round(dl.percent || 0)));
+
+    if (adlBar) adlBar.style.width = `${pct}%`;
+
+    if (dl.status === 'downloading') {
+      let durationStr = '';
+      if (dl.totalDurationFormatted) {
+        durationStr = `${dl.downloadedDurationFormatted || '0s'} / ${dl.totalDurationFormatted}`;
+      }
+      const sz = dl.totalBytes ? formatBytesPopup(dl.totalBytes) : '';
+      if (adlSegEl) adlSegEl.textContent = `${dl.completed || 0}/${dl.total || '?'}`;
+      if (adlDurEl) adlDurEl.textContent = sz ? `📦 ${sz} • ${durationStr}` : durationStr;
+      if (adlPercentEl) adlPercentEl.textContent = `${t('downloading')} ${pct}%`;
+    } else if (dl.status === 'paused') {
+      let durationStr = '';
+      if (dl.totalDurationFormatted) {
+        durationStr = `${dl.downloadedDurationFormatted || '0s'} / ${dl.totalDurationFormatted}`;
+      }
+      const sz = dl.totalBytes ? formatBytesPopup(dl.totalBytes) : '';
+      if (adlSegEl) adlSegEl.textContent = `${dl.completed || 0}/${dl.total || '?'}`;
+      if (adlDurEl) adlDurEl.textContent = sz ? `📦 ${sz} • ${durationStr}` : durationStr;
+      if (adlPercentEl) adlPercentEl.textContent = `${t('paused')} ${pct}%`;
+    } else if (dl.status === 'merging' || dl.status === 'completed' || dl.status === 'error') {
+      // Status change — rebuild controls/labels via full refresh
+      checkOngoingDownloads();
     }
   }
 
@@ -984,7 +1271,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (showList.length === 0) {
           activeSection.classList.add('hidden');
-          activeList.innerHTML = '';
+          clearChildren(activeList);
           return;
         }
 
@@ -1000,12 +1287,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             card = document.createElement('div');
             card.className = 'active-dl-card';
             card.id = cardId;
-            card.innerHTML = `
-              <div class="adl-top-row"><div class="adl-title"></div><div class="adl-controls"></div></div>
-              <div class="adl-progress-bar-bg"><div class="adl-progress-bar-fill"></div></div>
-              <div class="adl-info"><span class="adl-percent"></span><span class="adl-segments"></span></div>
-              <div class="adl-duration"></div>
-            `;
+            card.appendChild(
+              el('div', { className: 'adl-top-row' }, [
+                el('div', { className: 'adl-title' }),
+                el('div', { className: 'adl-controls' })
+              ])
+            );
+            card.appendChild(
+              el('div', { className: 'adl-progress-bar-bg' }, [
+                el('div', { className: 'adl-progress-bar-fill' })
+              ])
+            );
+            card.appendChild(
+              el('div', { className: 'adl-info' }, [
+                el('span', { className: 'adl-percent' }),
+                el('span', { className: 'adl-segments' })
+              ])
+            );
+            card.appendChild(el('div', { className: 'adl-duration' }));
             activeList.appendChild(card);
           }
 
@@ -1029,9 +1328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const sz = dl.totalBytes ? formatBytesPopup(dl.totalBytes) : '';
             adlSegEl.textContent = `${dl.completed || 0}/${dl.total || '?'}`;
             adlDurEl.textContent = sz ? `📦 ${sz} • ${durationStr}` : durationStr;
-            animatePercentCounter(dl.id, dl.percent || 0, (cur) => {
-              adlPercentEl.textContent = `${t('downloading')} ${cur}%`;
-            });
+            adlPercentEl.textContent = `${t('downloading')} ${dl.percent || 0}%`;
           } else if (dl.status === 'paused') {
             let durationStr = '';
             if (dl.totalDurationFormatted) {
@@ -1040,9 +1337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const sz = dl.totalBytes ? formatBytesPopup(dl.totalBytes) : '';
             adlSegEl.textContent = `${dl.completed || 0}/${dl.total || '?'}`;
             adlDurEl.textContent = sz ? `📦 ${sz} • ${durationStr}` : durationStr;
-            animatePercentCounter(dl.id, dl.percent || 0, (cur) => {
-              adlPercentEl.textContent = `${t('paused')} ${cur}%`;
-            });
+            adlPercentEl.textContent = `${t('paused')} ${dl.percent || 0}%`;
           } else if (dl.status === 'merging') {
             adlPercentEl.textContent = t('saving');
             adlSegEl.textContent = '100%';
@@ -1091,7 +1386,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (ctr.dataset.dlStatus === statusKey && ctr.childElementCount > 0) return;
       ctr.dataset.dlStatus = statusKey;
       const showPause = dl.status === 'downloading' || dl.status === 'paused' || dl.status === 'merging';
-      ctr.innerHTML = '';
+      clearChildren(ctr);
       if (showPause) {
         if (dl.status === 'paused') {
           const b = document.createElement('button');
@@ -1139,7 +1434,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       downloadBtn.disabled = false;
       downloadBtn.textContent = t('downloaded');
       progressBarFill.style.width = `100%`;
-      progressHeader.innerHTML = `<span>${t('downloaded')}</span><span>100%</span>`;
+      clearChildren(progressHeader);
+      progressHeader.appendChild(el('span', { text: t('downloaded') }));
+      progressHeader.appendChild(el('span', { text: '100%' }));
       progressInfo.textContent = t('savedToComputer');
       // allow closing completed entry
       ensureCardControls({ ...dlState, status: 'completed' });
@@ -1147,14 +1444,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       progressBox.classList.remove('hidden');
       downloadBtn.disabled = false;
       downloadBtn.textContent = t('tryAgain');
-      progressHeader.innerHTML = `<span style="color:#ef4444;">${t('errorOccurred')}</span>`;
+      clearChildren(progressHeader);
+      const errSpan = el('span', { text: t('errorOccurred') });
+      errSpan.style.color = '#ef4444';
+      progressHeader.appendChild(errSpan);
       progressInfo.textContent = dlState.error || t('errorOccurred');
       ensureCardControls(dlState);
     }
   }
 
   function renderList() {
-    mediaListContainer.innerHTML = '';
+    clearChildren(mediaListContainer);
     stopCurrentPreview();
 
     let filtered = allMedia.filter(item => {
@@ -1204,58 +1504,54 @@ document.addEventListener('DOMContentLoaded', async () => {
       const displayFormat = isDash ? 'MPD' : (isHls ? 'M3U8' : (item.format || 'MP4'));
       const badgeClass = isHls ? 'badge-m3u8' : isStream ? 'badge-m3u8' : getBadgeClass(item.format);
 
-      const durationHtml = item.duration ? `<span class="media-duration-tag">⏱️ ${item.duration}</span>` : '';
       const sizeStr = getDisplaySize(item);
-      const sizeHtml = sizeStr ? `<span class="media-size-tag">📦 ${sizeStr}</span>` : '';
-      // Card-bottom visar nu både storlek och tid – t.ex. "📦 45.2 MB • ⏱️ 2:34"
       let bottomInfo = '';
       if (sizeStr && item.duration) bottomInfo = `📦 ${sizeStr} • ⏱️ ${item.duration}`;
       else if (sizeStr) bottomInfo = `📦 ${sizeStr}`;
       else if (item.duration) bottomInfo = `⏱️ ${item.duration}`;
       else if (isHls) bottomInfo = t('fullStream');
       else bottomInfo = t('readyToDownload');
-      // Progress-info visar också storlek om känd
-      const safeUrl = escapeHtml(item.url);
-      const safeTitle = escapeHtml(safeDownloadName);
-      const progressInfoText = sizeStr ? `${t('size')}: ${sizeStr} • ${t('duration')}: ${item.duration || t('unknownDuration')}` : `${t('duration')}: ${item.duration || t('unknownDuration')}`;
+      const progressInfoText = sizeStr
+        ? `${t('size')}: ${sizeStr} • ${t('duration')}: ${item.duration || t('unknownDuration')}`
+        : `${t('duration')}: ${item.duration || t('unknownDuration')}`;
 
-      card.innerHTML = `
-        <div class="card-top">
-          <div class="title-container">
-            <span class="media-title" title="${safeTitle}">${safeTitle}</span>
-            <div class="media-meta-row">
-              ${durationHtml}
-              ${sizeHtml}
-              <span class="media-url" title="${safeUrl}">${safeUrl}</span>
-            </div>
-          </div>
-          <span class="badge ${badgeClass}">${displayFormat}</span>
-        </div>
+      const metaRow = el('div', { className: 'media-meta-row' });
+      if (item.duration) metaRow.appendChild(el('span', { className: 'media-duration-tag', text: `⏱️ ${item.duration}` }));
+      if (sizeStr) metaRow.appendChild(el('span', { className: 'media-size-tag', text: `📦 ${sizeStr}` }));
+      metaRow.appendChild(el('span', { className: 'media-url', title: item.url, text: item.url }));
 
-        <!-- Preview Player -->
-        <div class="preview-container hidden"></div>
+      const progressHeader = el('div', { className: 'progress-header' }, [
+        el('span', { text: t('downloading') }),
+        el('span', { text: '0%' })
+      ]);
 
-        <!-- Download Progress Bar -->
-        <div class="progress-box hidden">
-          <div class="progress-header">
-            <span>${t('downloading')}</span>
-            <span>0%</span>
-          </div>
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill"></div>
-          </div>
-          <div class="progress-info">${progressInfoText}</div>
-        </div>
-
-        <div class="card-bottom">
-          <span class="media-size" title="${bottomInfo}">${bottomInfo}</span>
-          <div class="card-actions">
-            <button class="btn-action btn-play" title="Preview">${t('play')}</button>
-            <button class="btn-action btn-copy" data-url="${item.url}" title="Copy URL">${t('copy')}</button>
-            <button class="btn-action btn-download" title="Download">${t('download')}</button>
-          </div>
-        </div>
-      `;
+      card.appendChild(
+        el('div', { className: 'card-top' }, [
+          el('div', { className: 'title-container' }, [
+            el('span', { className: 'media-title', title: safeDownloadName, text: safeDownloadName }),
+            metaRow
+          ]),
+          el('span', { className: `badge ${badgeClass}`, text: displayFormat })
+        ])
+      );
+      card.appendChild(el('div', { className: 'preview-container hidden' }));
+      card.appendChild(
+        el('div', { className: 'progress-box hidden' }, [
+          progressHeader,
+          el('div', { className: 'progress-bar-bg' }, [el('div', { className: 'progress-bar-fill' })]),
+          el('div', { className: 'progress-info', text: progressInfoText })
+        ])
+      );
+      card.appendChild(
+        el('div', { className: 'card-bottom' }, [
+          el('span', { className: 'media-size', title: bottomInfo, text: bottomInfo }),
+          el('div', { className: 'card-actions' }, [
+            el('button', { className: 'btn-action btn-play', title: 'Preview', text: t('play') }),
+            el('button', { className: 'btn-action btn-copy', title: 'Copy URL', text: t('copy'), dataset: { url: item.url } }),
+            el('button', { className: 'btn-action btn-download', title: 'Download', text: t('download') })
+          ])
+        ])
+      );
 
       const playBtn = card.querySelector('.btn-play');
       const previewContainer = card.querySelector('.preview-container');
@@ -1266,25 +1562,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (isCurrentlyThisCard) return;
 
-        const previewUrl = escapeHtml(item.url);
         previewContainer.classList.remove('hidden');
-        previewContainer.innerHTML = `
-          <div class="preview-wrapper" style="position: relative; width: 100%;">
-            <video class="preview-video" controls autoplay playsinline preload="auto" tabindex="0">
-              <source src="${previewUrl}">
-              ${t('formatNotSupportedPreview')}
-            </video>
-            <div class="preview-osd hidden"></div>
-          </div>
-        `;
+        clearChildren(previewContainer);
+        const sourceEl = el('source');
+        sourceEl.src = item.url;
+        const videoEl = el('video', {
+          className: 'preview-video',
+          controls: true,
+          autoplay: true,
+          playsInline: true,
+          preload: 'auto',
+          tabIndex: 0
+        }, [sourceEl, document.createTextNode(t('formatNotSupportedPreview'))]);
+        const osdEl = el('div', { className: 'preview-osd hidden' });
+        const wrapper = el('div', { className: 'preview-wrapper' });
+        wrapper.style.position = 'relative';
+        wrapper.style.width = '100%';
+        wrapper.appendChild(videoEl);
+        wrapper.appendChild(osdEl);
+        previewContainer.appendChild(wrapper);
 
-        const videoEl = previewContainer.querySelector('video');
-        const osdEl = previewContainer.querySelector('.preview-osd');
         let seekState = { delta: 0, timer: null, baseTime: 0 };
 
         function showPreviewOsd(icon, text, subtext) {
           if (!osdEl) return;
-          osdEl.innerHTML = `<span>${icon} ${text}</span>${subtext ? `<small>${subtext}</small>` : ''}`;
+          clearChildren(osdEl);
+          osdEl.appendChild(el('span', { text: `${icon} ${text}` }));
+          if (subtext) osdEl.appendChild(el('small', { text: subtext }));
           osdEl.classList.remove('hidden');
           osdEl.style.opacity = '1';
           if (osdEl._timer) clearTimeout(osdEl._timer);
@@ -1341,11 +1645,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         videoEl.onerror = () => {
-          previewContainer.innerHTML = `
-            <div class="preview-error">
-              ${t('formatNotSupportedPreview')}
-            </div>
-          `;
+          clearChildren(previewContainer);
+          previewContainer.appendChild(el('div', { className: 'preview-error', text: t('formatNotSupportedPreview') }));
         };
 
         playBtn.textContent = t('stop');
@@ -1456,10 +1757,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       history = history.slice(0, featureLimits.historyLimit);
     }
 
-    historyListContainer.innerHTML = '';
+    clearChildren(historyListContainer);
 
     if (history.length === 0) {
-      historyListContainer.innerHTML = `<div style="text-align:center; padding:15px; color:#64748b; font-size:0.75rem;">${t('noHistory')}</div>`;
+      historyListContainer.appendChild(el('div', {
+        text: t('noHistory')
+      }, null));
+      const empty = historyListContainer.firstChild;
+      empty.style.textAlign = 'center';
+      empty.style.padding = '15px';
+      empty.style.color = '#64748b';
+      empty.style.fontSize = '0.75rem';
       return;
     }
 
@@ -1467,16 +1775,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       const dateStr = new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(h.timestamp).toLocaleDateString();
       const div = document.createElement('div');
       div.className = 'history-item';
-      const safeName = escapeHtml(h.filename);
-      const safeSize = escapeHtml(h.size);
-      const safeDur = h.duration && h.duration !== 'N/A' ? escapeHtml(h.duration) : '';
-      div.innerHTML = `
-        <div class="history-title" title="${safeName}">${safeName}</div>
-        <div class="history-meta">
-          <span>${safeSize}${safeDur ? ` • ⏱️ ${safeDur}` : ''}</span>
-          <span>${dateStr}</span>
-        </div>
-      `;
+      const metaLeft = h.duration && h.duration !== 'N/A' ? `${h.size || ''} • ⏱️ ${h.duration}` : (h.size || '');
+      div.appendChild(el('div', { className: 'history-title', title: h.filename || '', text: h.filename || '' }));
+      div.appendChild(el('div', { className: 'history-meta' }, [
+        el('span', { text: metaLeft }),
+        el('span', { text: dateStr })
+      ]));
       historyListContainer.appendChild(div);
     });
 
@@ -1484,17 +1788,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!isProActive && history.length >= 10) {
       const upgradePrompt = document.createElement('div');
       upgradePrompt.className = 'history-upgrade-prompt';
-      upgradePrompt.innerHTML = `
-        <p style="font-size:0.72rem; color:#94a3b8; text-align:center; margin:8px 0;">
-          <span style="color:#f59e0b;">⚡</span> ${t('upgradeUnlockFeature')}
-        </p>
-      `;
+      const p = el('p', { text: `⚡ ${t('upgradeUnlockFeature')}` });
+      p.style.fontSize = '0.72rem';
+      p.style.color = '#94a3b8';
+      p.style.textAlign = 'center';
+      p.style.margin = '8px 0';
+      upgradePrompt.appendChild(p);
       historyListContainer.appendChild(upgradePrompt);
     }
   }
 
   function showEmptyState(customMessage) {
-    mediaListContainer.innerHTML = '';
+    clearChildren(mediaListContainer);
     emptyState.classList.remove('hidden');
     loadingState.classList.add('hidden');
     if (customMessage) {
@@ -1535,6 +1840,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     allMedia = [];
     renderList();
+    if (activeTabId) {
+      chrome.runtime.sendMessage({
+        type: 'SET_TAB_BADGE_COUNT',
+        tabId: activeTabId,
+        count: 0
+      }).catch(() => {});
+    }
   });
 
   // Settings view toggle

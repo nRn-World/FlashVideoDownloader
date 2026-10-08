@@ -1,7 +1,7 @@
-const i18n = {
+﻿const i18n = {
   en: {
     title: "Flash Video Downloader",
-    version: "v3.2.5",
+    version: "v3.3.5",
     searchPlaceholder: "Search detected videos...",
     all: "All",
     video: "Video",
@@ -81,7 +81,7 @@ const i18n = {
     buyPro: "Buy Pro License",
     enterLicense: "Enter License Key",
     alreadyHaveLicense: "Already have a license key?",
-    licenseKeyPlaceholder: "FVD-PRO-XXXX-XXXX",
+    licenseKeyPlaceholder: "FVD-PRO-XXXX-XXXX-XXXX-XXXX",
     activateLicense: "Activate",
     licenseActivated: "✅ Pro activated!",
     licenseInvalid: "Invalid license key",
@@ -98,11 +98,16 @@ const i18n = {
     rateLimitUpgrade: "Upgrade to Pro",
     rateLimitReady: "Ready to download!",
     rateLimitWaitPlural: "Next download in {minutes} min",
-    rateLimitWaitSingular: "Next download in ~1 min"
+    rateLimitWaitSingular: "Next download in ~1 min",
+    reviewPromptTitle: "Enjoying Flash Video Downloader?",
+    reviewPromptDesc: "If you like the extension, a quick 5-star rating on the Chrome Web Store helps a lot. No pressure, thank you!",
+    reviewPromptForcedDesc: "You've downloaded 10 videos with Flash Video Downloader. A quick 5-star rating on the Chrome Web Store really helps us keep improving!",
+    reviewPromptLater: "Not now",
+    reviewPromptRate: "Rate on Chrome Web Store"
   },
   sv: {
     title: "Flash Video Downloader",
-    version: "v3.2.5",
+    version: "v3.3.5",
     searchPlaceholder: "Sök bland videor...",
     all: "Alla",
     video: "Video",
@@ -182,7 +187,7 @@ const i18n = {
     buyPro: "Köp Pro-licens",
     enterLicense: "Ange licensnyckel",
     alreadyHaveLicense: "Har du redan en licensnyckel?",
-    licenseKeyPlaceholder: "FVD-PRO-XXXX-XXXX",
+    licenseKeyPlaceholder: "FVD-PRO-XXXX-XXXX-XXXX-XXXX",
     activateLicense: "Aktivera",
     licenseActivated: "✅ Pro aktiverad!",
     licenseInvalid: "Ogiltig licensnyckel",
@@ -199,11 +204,16 @@ const i18n = {
     rateLimitUpgrade: "Uppgradera till Pro",
     rateLimitReady: "Redo att ladda ner!",
     rateLimitWaitPlural: "Nästa nedladdning om {minutes} min",
-    rateLimitWaitSingular: "Nästa nedladdning om ~1 min"
+    rateLimitWaitSingular: "Nästa nedladdning om ~1 min",
+    reviewPromptTitle: "Gillar du Flash Video Downloader?",
+    reviewPromptDesc: "Om du gillar tillägget hjälper ett snabbt 5-stjärnigt betyg i Chrome Web Store jättemycket. Inget krav, tack!",
+    reviewPromptForcedDesc: "Du har laddat ner 10 videor med Flash Video Downloader. Lämna gärna ett snabbt 5-stjärnigt betyg i Chrome Web Store. Det hjälper oss att fortsätta förbättra!",
+    reviewPromptLater: "Inte nu",
+    reviewPromptRate: "Betygsätt i Chrome Web Store"
   },
   tr: {
     title: "Flash Video Downloader",
-    version: "v3.2.5",
+    version: "v3.3.5",
     searchPlaceholder: "Tespit edilen videoları ara...",
     all: "Tümü",
     video: "Video",
@@ -283,7 +293,7 @@ const i18n = {
     buyPro: "Pro Lisansı Satın Al",
     enterLicense: "Lisans anahtarını girin",
     alreadyHaveLicense: "Lisans anahtarınız var mı?",
-    licenseKeyPlaceholder: "FVD-PRO-XXXX-XXXX",
+    licenseKeyPlaceholder: "FVD-PRO-XXXX-XXXX-XXXX-XXXX",
     activateLicense: "Etkinleştir",
     licenseActivated: "✅ Pro etkinleştirildi!",
     licenseInvalid: "Geçersiz lisans anahtarı",
@@ -300,11 +310,16 @@ const i18n = {
     rateLimitUpgrade: "Pro'ya yükselt",
     rateLimitReady: "İndirmeye hazır!",
     rateLimitWaitPlural: "Sonraki indirme {minutes} dk sonra",
-    rateLimitWaitSingular: "Sonraki indirme ~1 dk sonra"
+    rateLimitWaitSingular: "Sonraki indirme ~1 dk sonra",
+    reviewPromptTitle: "Flash Video Downloader'ı beğendiniz mi?",
+    reviewPromptDesc: "Eklentiyi beğendiyseniz Chrome Web Store'da hızlı bir 5 yıldız puanı çok yardımcı olur. Zorunlu değil, teşekkürler!",
+    reviewPromptForcedDesc: "Flash Video Downloader ile 10 video indirdiniz. Lütfen Chrome Web Store'da hızlı bir 5 yıldız puan bırakın. Geliştirmeye devam etmemize çok yardımcı olur!",
+    reviewPromptLater: "Şimdi değil",
+    reviewPromptRate: "Chrome Web Store'da puanla"
   },
   es: {
     title: "Flash Video Downloader",
-    version: "v3.2.5",
+    version: "v3.3.5",
     searchPlaceholder: "Buscar videos detectados...",
     all: "Todos",
     video: "Video",
@@ -384,7 +399,7 @@ const i18n = {
     buyPro: "Comprar licencia Pro",
     enterLicense: "Introduce la clave de licencia",
     alreadyHaveLicense: "¿Ya tienes una clave de licencia?",
-    licenseKeyPlaceholder: "FVD-PRO-XXXX-XXXX",
+    licenseKeyPlaceholder: "FVD-PRO-XXXX-XXXX-XXXX-XXXX",
     activateLicense: "Activar",
     licenseActivated: "✅ ¡Pro activado!",
     licenseInvalid: "Clave de licencia no válida",
@@ -401,11 +416,16 @@ const i18n = {
     rateLimitUpgrade: "Pasar a Pro",
     rateLimitReady: "¡Listo para descargar!",
     rateLimitWaitPlural: "Siguiente descarga en {minutes} min",
-    rateLimitWaitSingular: "Siguiente descarga en ~1 min"
+    rateLimitWaitSingular: "Siguiente descarga en ~1 min",
+    reviewPromptTitle: "¿Te gusta Flash Video Downloader?",
+    reviewPromptDesc: "Si te gusta la extensión, una valoración rápida de 5 estrellas en Chrome Web Store ayuda mucho. Sin presión, ¡gracias!",
+    reviewPromptForcedDesc: "Has descargado 10 vídeos con Flash Video Downloader. Por favor, deja una valoración rápida de 5 estrellas en Chrome Web Store. ¡Nos ayuda mucho a seguir mejorando!",
+    reviewPromptLater: "Ahora no",
+    reviewPromptRate: "Valorar en Chrome Web Store"
   },
   fr: {
     title: "Flash Video Downloader",
-    version: "v3.2.5",
+    version: "v3.3.5",
     searchPlaceholder: "Rechercher des vidéos...",
     all: "Tous",
     video: "Vidéo",
@@ -485,7 +505,7 @@ const i18n = {
     buyPro: "Acheter la licence Pro",
     enterLicense: "Saisir la clé de licence",
     alreadyHaveLicense: "Vous avez déjà une clé de licence ?",
-    licenseKeyPlaceholder: "FVD-PRO-XXXX-XXXX",
+    licenseKeyPlaceholder: "FVD-PRO-XXXX-XXXX-XXXX-XXXX",
     activateLicense: "Activer",
     licenseActivated: "✅ Pro activé !",
     licenseInvalid: "Clé de licence invalide",
@@ -502,11 +522,16 @@ const i18n = {
     rateLimitUpgrade: "Passer à Pro",
     rateLimitReady: "Prêt à télécharger !",
     rateLimitWaitPlural: "Prochain téléchargement dans {minutes} min",
-    rateLimitWaitSingular: "Prochain téléchargement dans ~1 min"
+    rateLimitWaitSingular: "Prochain téléchargement dans ~1 min",
+    reviewPromptTitle: "Vous aimez Flash Video Downloader ?",
+    reviewPromptDesc: "Si l'extension vous plaît, une note rapide de 5 étoiles sur le Chrome Web Store aide beaucoup. Aucune obligation, merci !",
+    reviewPromptForcedDesc: "Vous avez téléchargé 10 vidéos avec Flash Video Downloader. Merci de laisser une note rapide de 5 étoiles sur le Chrome Web Store. Cela nous aide vraiment à continuer d'améliorer l'extension !",
+    reviewPromptLater: "Pas maintenant",
+    reviewPromptRate: "Noter sur le Chrome Web Store"
   },
   ar: {
     title: "Flash Video Downloader",
-    version: "v3.2.5",
+    version: "v3.3.5",
     searchPlaceholder: "ابحث عن مقاطع الفيديو المكتشفة...",
     all: "الكل",
     video: "فيديو",
@@ -586,7 +611,7 @@ const i18n = {
     buyPro: "شراء رخصة Pro",
     enterLicense: "أدخل مفتاح الترخيص",
     alreadyHaveLicense: "هل لديك مفتاح ترخيص؟",
-    licenseKeyPlaceholder: "FVD-PRO-XXXX-XXXX",
+    licenseKeyPlaceholder: "FVD-PRO-XXXX-XXXX-XXXX-XXXX",
     activateLicense: "تفعيل",
     licenseActivated: "✅ تم تفعيل Pro!",
     licenseInvalid: "مفتاح ترخيص غير صالح",
@@ -603,6 +628,11 @@ const i18n = {
     rateLimitUpgrade: "الترقية إلى Pro",
     rateLimitReady: "جاهز للتنزيل!",
     rateLimitWaitPlural: "التنزيل التالي خلال {minutes} د",
-    rateLimitWaitSingular: "التنزيل التالي خلال ~1 د"
+    rateLimitWaitSingular: "التنزيل التالي خلال ~1 د",
+    reviewPromptTitle: "هل أعجبك Flash Video Downloader؟",
+    reviewPromptDesc: "إذا أعجبتك الإضافة، فإن تقييماً سريعاً بـ 5 نجوم في Chrome Web Store يساعد كثيراً. بلا ضغط، شكراً!",
+    reviewPromptForcedDesc: "لقد نزّلت 10 فيديوهات باستخدام Flash Video Downloader. يرجى ترك تقييم سريع بـ 5 نجوم في Chrome Web Store. هذا يساعدنا كثيراً على الاستمرار في التحسين!",
+    reviewPromptLater: "ليس الآن",
+    reviewPromptRate: "قيّم في Chrome Web Store"
   }
 };

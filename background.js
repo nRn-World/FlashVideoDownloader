@@ -1,4 +1,4 @@
-// Flash Video Downloader - Background Service Worker (v3.3.2)
+// Flash Video Downloader - Background Service Worker (v3.3.7)
 // HLS downloads are delegated to offscreen.js which has full DOM/Blob/ObjectURL access.
 
 importScripts('blocked-hosts.js');
@@ -26,6 +26,14 @@ const MEDIA_EXTENSIONS = [
   'ts', 'm2ts', 'mts',
   'mov', 'avi', 'mkv', 'ogv', '3gp', '3g2', 'wmv', 'av1', 'hevc', 'vob',
   'mp3', 'm4a', 'aac', 'wav', 'ogg', 'opus', 'flac', 'wma'
+];
+
+// Riktiga videobehållare. En URL som pekar på en av dessa är en äkta videofil och
+// ska aldrig filtreras bort bara för att sökvägen råkar innehålla /preview/ eller /poster/.
+const VIDEO_CONTAINER_EXTENSIONS = [
+  'mp4', 'm4v', 'webm', 'mov', 'mkv', 'avi', 'flv', 'f4v',
+  'ogv', 'ogm', '3gp', '3g2', 'wmv', 'asf', 'vob', 'm2v', 'divx',
+  'mts', 'm2ts', 'mpg', 'mpeg', 'ts', 'm4s', 'fmp4', 'av1', 'hevc', 'h264', 'h265'
 ];
 
 // Media MIME types - även generiska där filnamn indikerar video
@@ -86,7 +94,9 @@ function getCleanFilename(url, headerFilename, contentType) {
     baseName = `video_${Date.now().toString().slice(-4)}`;
   }
 
-  baseName = baseName.replace(/[/\\?%*:|"<>]/g, '_').trim();
+  baseName = baseName.replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, ' ').trim();
+  baseName = baseName.replace(/^[._]+|[._]+$/g, '').trim();
+  if (baseName.length > 180) baseName = baseName.substring(0, 180).trim();
   baseName = baseName.replace(/\.(php|aspx|asp|jsp|html|htm|bin|do|cgi|axd|mpd)$/i, '');
 
   const hasKnownMediaExt = MEDIA_EXTENSIONS.some(ext => baseName.toLowerCase().endsWith('.' + ext));
@@ -119,6 +129,10 @@ function isTubeCmsVideoUrl(url) {
   if (/\/get_file\//i.test(u)) return true;
   if (/\/video[_-]?file\//i.test(u)) return true;
   if (/\/contents\/videos?\//i.test(u) && /\.(mp4|webm|m3u8|mov)/i.test(u)) return true;
+  // pvvstream / JWPlayer progressive CDN (ukdevilz and similar)
+  if (/pvvstream\.pro\/videos\//i.test(u) && /\.mp4/i.test(u)) return true;
+  if (/\/vid_\d+p\.mp4/i.test(u)) return true;
+  if (/\/vid\d*\//i.test(u) && /\.mp4/i.test(u)) return true;
   return false;
 }
 
@@ -129,14 +143,32 @@ function isStreamingSegmentUrl(url) {
   return false;
 }
 
+function looksLikeStreamManifest(url, contentType) {
+  const u = (url || '').toLowerCase();
+  const ct = (contentType || '').toLowerCase();
+  if (ct.includes('mpegurl') || ct.includes('dash+xml') || ct.includes('apple.mpegurl')) return true;
+  if (urlHasExt(u, 'm3u8') || urlHasExt(u, 'm3u') || urlHasExt(u, 'mpd')) return true;
+  // Extension-less HLS/DASH masters common on tube CDNs
+  if (/\/(playlist|master|index|manifest)(?:[_.-][^/?#]*)?(?:\?|#|$)/i.test(u) && !isStreamingSegmentUrl(u)) return true;
+  if (/\/hls\/[^?#]+/i.test(u) && !isStreamingSegmentUrl(u) && !/\.(ts|m4s)(?:\?|#|$)/i.test(u)) return true;
+  return false;
+}
+
 function isPreviewMediaUrl(url) {
   const u = (url || '').toLowerCase();
+  // Related trailers / poster images are never download targets
+  if (/\/tr_\d+p\.mp4/i.test(u)) return true;
+  if (/\/preview_\d+\.(jpg|jpeg|png|webp|gif)/i.test(u)) return true;
+  // Fake site-local videofile stubs (404) – ignore
+  if (/\/videofile\/[^/?#]+\.mp4(?:\?|#|$)/i.test(u) && !/pvvstream\.pro/i.test(u)) return true;
   // Real video files from tube CMS / quality variants are not previews
   if (isTubeCmsVideoUrl(u)) return false;
+  if (/\/vid_\d+p\.mp4/i.test(u)) return false;
   if (/\b(240p|360p|480p|720p|1080p|1440p|2160p|4k)\b/i.test(u)) return false;
   if (urlHasExt(u, 'm3u8') || urlHasExt(u, 'mpd')) return false;
-  // Match preview tokens as path/query parts — avoid over-matching (e.g. bare "icon")
-  return /(?:^|[\/_\-.?&=])(thumbnails?|preview|poster|sprite|placeholder|avatar|favicon|banner)(?:[\/_\-.?&=]|$)/i.test(u);
+  // Match preview / trailer tokens as path or query parts
+  if (/(?:^|[\/_\-.?&=])(thumbnails?|preview|trailer|poster|sprite|placeholder|avatar|favicon|banner)(?:[\/_\-.?&=]|$)/i.test(u)) return true;
+  return false;
 }
 
 function addMediaItem(tabId, item) {
@@ -156,6 +188,30 @@ function addMediaItem(tabId, item) {
     mediaMap.set(item.url, item);
   }
   updateBadge(tabId);
+}
+
+const tabBadgeCounts = new Map(); // tabId -> verified count
+
+function getComputedMediaCount(tabId) {
+  const mediaMap = tabMedia.get(tabId);
+  if (!mediaMap || mediaMap.size === 0) return 0;
+  const items = Array.from(mediaMap.values()).filter(item => {
+    if (!item || !item.url) return false;
+    if (isStreamingSegmentUrl(item.url)) return false;
+    if (isPreviewMediaUrl(item.url)) return false;
+    return true;
+  });
+  if (items.length === 0) return 0;
+
+  // Real player playlist sources take priority
+  const playlistItems = items.filter(i => i.fromPlaylist);
+  if (playlistItems.length > 0) {
+    const uniqueUrls = new Set(playlistItems.map(i => i.url));
+    return uniqueUrls.size;
+  }
+
+  const uniqueUrls = new Set(items.map(i => i.url));
+  return uniqueUrls.size;
 }
 
 async function persistActiveDownloads() {
@@ -200,8 +256,12 @@ function updateBadge(tabId) {
     return;
   }
   if (tabId) {
-    const mediaMap = tabMedia.get(tabId);
-    const count = mediaMap ? mediaMap.size : 0;
+    let count = 0;
+    if (tabBadgeCounts.has(tabId)) {
+      count = tabBadgeCounts.get(tabId);
+    } else {
+      count = getComputedMediaCount(tabId);
+    }
     if (count > 0) {
       chrome.action.setBadgeText({ tabId, text: count.toString() });
       chrome.action.setBadgeBackgroundColor({ tabId, color: '#2563eb' });
@@ -229,6 +289,13 @@ chrome.webRequest.onHeadersReceived.addListener(
         const name = header.name.toLowerCase();
         if (name === 'content-type') contentType = (header.value || '').toLowerCase();
         else if (name === 'content-length') contentLength = parseInt(header.value, 10) || 0;
+        else if (name === 'content-range') {
+          const match = /\/(\d+)/.exec(header.value || '');
+          if (match && match[1]) {
+            const totalBytes = parseInt(match[1], 10) || 0;
+            if (totalBytes > 0) contentLength = totalBytes;
+          }
+        }
         else if (name === 'content-disposition') {
           const match = /filename\*?=['"]?(?:UTF-\d['"]*)?([^;\r\n"']*)['"]?/i.exec(header.value || '');
           if (match && match[1]) contentDispositionFilename = decodeURIComponent(match[1]);
@@ -247,14 +314,15 @@ chrome.webRequest.onHeadersReceived.addListener(
     const hasMediaExt = MEDIA_EXTENSIONS.some(ext => urlHasExt(urlLower, ext));
     const hasDispositionVideo = contentDispositionFilename && MEDIA_EXTENSIONS.some(ext => contentDispositionFilename.toLowerCase().endsWith('.'+ext));
     const looksLikeTubeVideo = isTubeCmsVideoUrl(url);
+    const looksLikeManifest = looksLikeStreamManifest(url, contentType);
 
-    if (contentLength > 0 && contentLength < 15000 && !urlLower.includes('.m3u8') && !urlLower.includes('.mpd') && !urlLower.includes('.m3u') && !looksLikeTubeVideo) return;
+    if (contentLength > 0 && contentLength < 15000 && !looksLikeManifest && !urlLower.includes('.m3u8') && !urlLower.includes('.mpd') && !urlLower.includes('.m3u') && !looksLikeTubeVideo) return;
 
     if (isStreamingSegmentUrl(url) || isPreviewMediaUrl(url)) return;
 
-    if (isMediaMime || hasMediaExt || hasDispositionVideo || looksLikeTubeVideo) {
+    if (isMediaMime || hasMediaExt || hasDispositionVideo || looksLikeTubeVideo || looksLikeManifest) {
       // Never show file size for streaming manifests - 6.5KB is the playlist, not the video (would be false info for a 21min video)
-      const isManifest = urlLower.includes('.m3u8') || urlLower.includes('.m3u') || urlLower.includes('.mpd') || urlLower.includes('.m4s') || urlLower.includes('.fmp4') || (contentType.includes('mpegurl') || contentType.includes('dash+xml'));
+      const isManifest = looksLikeManifest || urlLower.includes('.m3u8') || urlLower.includes('.m3u') || urlLower.includes('.mpd') || urlLower.includes('.m4s') || urlLower.includes('.fmp4') || (contentType.includes('mpegurl') || contentType.includes('dash+xml'));
       const format = getFormat(url, contentType);
       const STREAM_FORMATS = new Set(['M3U8','M3U','MPD','M4S','FMP4','TS','M2TS']);
       const isStreamFormat = STREAM_FORMATS.has(format);
@@ -262,7 +330,7 @@ chrome.webRequest.onHeadersReceived.addListener(
       const reliableRaw = (!isManifest && !isStreamFormat && contentLength > 0) ? contentLength : 0;
       addMediaItem(details.tabId, {
         url, filename: getCleanFilename(url, contentDispositionFilename, contentType),
-        format: format, size: reliableSize,
+        format: looksLikeManifest && format === 'MP4' ? 'M3U8' : format, size: reliableSize,
         rawSize: reliableRaw, contentType, initiator: details.initiator || '',
         discoveredAt: Date.now()
       });
@@ -272,20 +340,54 @@ chrome.webRequest.onHeadersReceived.addListener(
   ['responseHeaders']
 );
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (changeInfo.status === 'loading') {
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url) {
     tabMedia.set(tabId, new Map());
+    tabBadgeCounts.delete(tabId);
     updateBadge(tabId);
+  }
+  if ((changeInfo.status === 'complete' || changeInfo.status === 'loading') && tab && tab.url && /^https?:/i.test(tab.url)) {
+    if (typeof fvdIsBlockedUrl === 'function' && fvdIsBlockedUrl(tab.url)) return;
+    // Install MAIN-world hook early so HLS and player sources are captured while the user watches
+    ensureContentScript(tabId).catch(() => {});
   }
 });
 
-chrome.tabs.onRemoved.addListener((tabId) => tabMedia.delete(tabId));
+chrome.tabs.onRemoved.addListener((tabId) => {
+  tabMedia.delete(tabId);
+  tabBadgeCounts.delete(tabId);
+});
 
-// === Offscreen Document Management (defensive - fixes background.js:0 anonymous function on older Chrome) ===
+// === Offscreen Document Management ===
+// Chrome: chrome.offscreen API. Firefox: hidden iframe in background-page.html (no offscreen API).
 async function ensureOffscreenDocument() {
   try {
+    // Firefox / event-page path: offscreen.html is loaded in #fvd-offscreen iframe
+    if (typeof document !== 'undefined') {
+      const frame = document.getElementById('fvd-offscreen');
+      if (frame) {
+        if (frame.dataset.ready === '1') return;
+        await new Promise((resolve) => {
+          const done = () => {
+            frame.dataset.ready = '1';
+            resolve();
+          };
+          try {
+            if (frame.contentDocument && frame.contentDocument.readyState === 'complete') {
+              done();
+              return;
+            }
+          } catch (e) {}
+          frame.addEventListener('load', done, { once: true });
+          // Safety timeout so downloads are not blocked forever
+          setTimeout(done, 1500);
+        });
+        return;
+      }
+    }
+
     if (!chrome.offscreen || typeof chrome.offscreen.hasDocument !== 'function') {
-      console.warn('[FVD] chrome.offscreen not available - requires Chrome 109+');
+      console.warn('[FVD] chrome.offscreen not available');
       return;
     }
     if (await chrome.offscreen.hasDocument()) return;
@@ -364,6 +466,46 @@ function scheduleDownloadCleanup(extId) {
   }, 45000);
 }
 
+// Review prompts at download milestones 1, 5 and 10 (popup reads pendingReviewMilestone).
+const REVIEW_MILESTONES = [1, 5, 10];
+const reviewCountedDownloadIds = new Set();
+
+async function maybeFlagReviewPrompt(downloadId) {
+  try {
+    if (downloadId) {
+      if (reviewCountedDownloadIds.has(downloadId)) return;
+      reviewCountedDownloadIds.add(downloadId);
+      // Avoid unbounded growth in the service worker
+      if (reviewCountedDownloadIds.size > 200) {
+        reviewCountedDownloadIds.clear();
+        reviewCountedDownloadIds.add(downloadId);
+      }
+    }
+
+    const data = await chrome.storage.local.get([
+      'successfulDownloadCount',
+      'reviewPromptsShown',
+      'pendingReviewMilestone'
+    ]);
+    const count = (Number(data.successfulDownloadCount) || 0) + 1;
+    const shown = Array.isArray(data.reviewPromptsShown) ? data.reviewPromptsShown : [];
+    const updates = { successfulDownloadCount: count };
+
+    if (!data.pendingReviewMilestone) {
+      for (const m of REVIEW_MILESTONES) {
+        if (count >= m && !shown.includes(m)) {
+          updates.pendingReviewMilestone = m;
+          break;
+        }
+      }
+    }
+
+    await chrome.storage.local.set(updates);
+  } catch (e) {
+    console.warn('[FVD] review prompt flag:', e && e.message ? e.message : e);
+  }
+}
+
 function completeTrackedDownload(extId) {
   const dl = activeDownloads.get(extId);
   if (!dl) return;
@@ -372,6 +514,7 @@ function completeTrackedDownload(extId) {
   activeDownloads.set(extId, dl);
   persistActiveDownloads();
   emitDownloadProgress(dl);
+  maybeFlagReviewPrompt(extId);
 
   Promise.resolve(
     saveDownloadToHistory({
@@ -403,26 +546,64 @@ chrome.downloads.onChanged.addListener((delta) => {
   const dl = activeDownloads.get(extId);
   if (!dl) return;
 
-  if (delta.bytesReceived && delta.totalBytes) {
+  // Chrome often sends bytesReceived and totalBytes in separate onChanged events.
+  // Remember total size so later byte updates can compute percent.
+  if (delta.totalBytes && typeof delta.totalBytes.current === 'number' && delta.totalBytes.current > 0) {
+    dl.downloadTotalBytes = delta.totalBytes.current;
+  }
+  if (delta.fileSize && typeof delta.fileSize.current === 'number' && delta.fileSize.current > 0) {
+    dl.downloadTotalBytes = Math.max(dl.downloadTotalBytes || 0, delta.fileSize.current);
+  }
+
+  if (delta.bytesReceived && typeof delta.bytesReceived.current === 'number') {
     const received = delta.bytesReceived.current || 0;
-    const total = delta.totalBytes.current || 0;
+    dl.totalBytes = received;
+    const total = dl.downloadTotalBytes || 0;
     if (total > 0) {
       dl.percent = Math.min(99, Math.round((received / total) * 100));
-      dl.totalBytes = received;
-      activeDownloads.set(extId, dl);
-      emitDownloadProgress(dl);
+    } else if (received > 0) {
+      // Unknown Content-Length: show activity instead of staying stuck at 15%
+      // Rough curve from ~15% toward 90% as bytes grow
+      const approx = 15 + Math.min(75, Math.floor(Math.log10(received + 10) * 15));
+      dl.percent = Math.max(dl.percent || 15, Math.min(90, approx));
+    }
+    activeDownloads.set(extId, dl);
+    persistActiveDownloads();
+    emitDownloadProgress(dl);
+    if (dl.status === 'downloading') {
+      chrome.action.setBadgeText({ text: `${dl.percent}%` });
+      chrome.action.setBadgeBackgroundColor({ color: '#3b82f6' });
     }
   }
 
   if (delta.state && delta.state.current === 'complete') {
+    stopChromeDownloadPoll(delta.id);
     chromeDownloadMap.delete(delta.id);
     completeTrackedDownload(extId);
-  } else if (delta.error) {
+  } else if (delta.error || (delta.state && delta.state.current === 'interrupted')) {
+    stopChromeDownloadPoll(delta.id);
     chromeDownloadMap.delete(delta.id);
-    failTrackedDownload(extId, delta.error.current || 'Download failed');
-  } else if (delta.state && delta.state.current === 'interrupted') {
-    chromeDownloadMap.delete(delta.id);
-    failTrackedDownload(extId, 'Download interrupted');
+    const errText = (delta.error && delta.error.current) || (delta.state && delta.state.current) || 'Download interrupted';
+    if (!dl.triedOffscreenFallback && (errText.includes('FORBIDDEN') || errText.includes('FAILED') || errText.includes('UNAUTHORIZED') || errText.includes('BAD_CONTENT') || errText.includes('interrupted'))) {
+      dl.triedOffscreenFallback = true;
+      activeDownloads.set(extId, dl);
+      console.warn('[FVD] Native download error (' + errText + '), falling back to offscreen fetch with referer for ' + extId);
+      ensureOffscreenDocument().then(() => {
+        chrome.runtime.sendMessage({
+          type: 'START_OFFSCREEN_GENERIC',
+          downloadId: extId,
+          url: dl.url,
+          filename: dl.filename,
+          pageReferer: dl.pageReferer || null
+        }).catch(() => {
+          failTrackedDownload(extId, errText);
+        });
+      }).catch(() => {
+        failTrackedDownload(extId, errText);
+      });
+    } else {
+      failTrackedDownload(extId, errText);
+    }
   }
 });
 
@@ -430,10 +611,40 @@ async function ensureContentScript(tabId) {
   try {
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
+      world: 'MAIN',
+      files: ['page-hook.js']
+    });
+  } catch (e) {
+    console.warn('[FVD] page-hook inject:', e && e.message ? e.message : e);
+  }
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
       files: ['blocked-hosts.js', 'content.js']
     });
   } catch (e) {
     console.warn('[FVD] ensureContentScript:', e && e.message ? e.message : e);
+  }
+}
+
+async function collectMainWorldMedia(tabId) {
+  try {
+    const results = await chrome.scripting.executeScript({
+      target: { tabId },
+      world: 'MAIN',
+      func: () => {
+        try {
+          if (typeof globalThis.__FVD_COLLECT_PAGE_MEDIA__ === 'function') {
+            return globalThis.__FVD_COLLECT_PAGE_MEDIA__();
+          }
+        } catch (e) {}
+        return { hls: [], standard: [], model: [], perf: [] };
+      }
+    });
+    return (results && results[0] && results[0].result) || null;
+  } catch (e) {
+    console.warn('[FVD] collectMainWorldMedia:', e && e.message ? e.message : e);
+    return null;
   }
 }
 
@@ -446,13 +657,82 @@ async function saveFileViaDownloads(blobUrl, filename) {
   });
 }
 
-async function saveUrlViaDownloads(fileUrl, filename) {
+async function saveUrlViaDownloads(fileUrl, filename, pageReferer) {
   const safeName = (filename || 'video.mp4').replace(/[/\\?%*:|"<>]/g, '_').replace(/^\/+/, '');
-  return chrome.downloads.download({
+  const options = {
     url: fileUrl,
     filename: safeName,
     saveAs: await shouldPromptForSave()
-  });
+  };
+  if (pageReferer && /^https?:\/\//i.test(pageReferer)) {
+    options.headers = [{ name: 'Referer', value: pageReferer }];
+  }
+  return chrome.downloads.download(options);
+}
+
+// Poll chrome.downloads for progress — onChanged alone often misses byte updates.
+const chromeDownloadPollers = new Map(); // chromeDlId -> intervalId
+
+function stopChromeDownloadPoll(chromeDlId) {
+  const t = chromeDownloadPollers.get(chromeDlId);
+  if (t) {
+    clearInterval(t);
+    chromeDownloadPollers.delete(chromeDlId);
+  }
+}
+
+function startChromeDownloadPoll(chromeDlId, extId) {
+  stopChromeDownloadPoll(chromeDlId);
+  const tick = async () => {
+    try {
+      if (!chromeDownloadMap.has(chromeDlId)) {
+        stopChromeDownloadPoll(chromeDlId);
+        return;
+      }
+      const items = await chrome.downloads.search({ id: chromeDlId });
+      const item = items && items[0];
+      if (!item) return;
+      const dl = activeDownloads.get(extId);
+      if (!dl || dl.status === 'completed' || dl.status === 'error' || dl.status === 'cancelled') {
+        stopChromeDownloadPoll(chromeDlId);
+        return;
+      }
+
+      if (item.totalBytes > 0) dl.downloadTotalBytes = item.totalBytes;
+      else if (item.fileSize > 0) dl.downloadTotalBytes = item.fileSize;
+
+      const received = item.bytesReceived || 0;
+      if (received > 0) dl.totalBytes = received;
+
+      const total = dl.downloadTotalBytes || 0;
+      let pct = dl.percent || 15;
+      if (total > 0 && received >= 0) {
+        pct = Math.min(99, Math.round((received / total) * 100));
+      } else if (received > 0) {
+        const approx = 15 + Math.min(75, Math.floor(Math.log10(received + 10) * 15));
+        pct = Math.max(pct, Math.min(90, approx));
+      }
+
+      if (pct !== dl.percent || received !== (dl._lastPolledBytes || 0)) {
+        dl.percent = pct;
+        dl._lastPolledBytes = received;
+        activeDownloads.set(extId, dl);
+        emitDownloadProgress(dl);
+        if (dl.status === 'downloading') {
+          chrome.action.setBadgeText({ text: `${dl.percent}%` });
+          chrome.action.setBadgeBackgroundColor({ color: '#3b82f6' });
+        }
+      }
+
+      if (item.state === 'complete' || item.state === 'interrupted') {
+        stopChromeDownloadPoll(chromeDlId);
+      }
+    } catch (e) {
+      // ignore transient poll errors
+    }
+  };
+  chromeDownloadPollers.set(chromeDlId, setInterval(tick, 400));
+  tick();
 }
 
 async function saveDownloadToHistory(item) {
@@ -487,7 +767,11 @@ async function purgeExpiredHistory() {
     console.warn('[FVD] purgeExpiredHistory:', e && e.message ? e.message : e);
   }
 }
-try { purgeExpiredHistory(); restoreActiveDownloads(); } catch(e) {}
+try {
+  purgeExpiredHistory();
+  restoreActiveDownloads();
+  chrome.action.setBadgeText({ text: '' }).catch(() => {});
+} catch(e) {}
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
@@ -495,8 +779,14 @@ chrome.runtime.onInstalled.addListener((details) => {
       useDefaultDownloadFolder: false,
       useCustomDirectory: false,
       askSaveEachTime: false,
-      autoDelete24h: true
+      autoDelete24h: true,
+      showWelcomeTip: true
     });
+    try {
+      chrome.tabs.create({ url: chrome.runtime.getURL('welcome.html') });
+    } catch (e) {
+      console.warn('[FVD] Could not open welcome page', e);
+    }
   }
 });
 
@@ -597,7 +887,7 @@ async function startHlsDownload(downloadId, playlistUrl, filename, pageReferer) 
     } catch (e) {
       // Fallback to direct download if offscreen not available
       console.warn('[FVD] HLS offscreen failed, fallback:', e && e.message);
-      activeDownloads.set(downloadId, { ...activeDownloads.get(downloadId), status: 'error', error: 'Offscreen not available - update Chrome to 109+' });
+      activeDownloads.set(downloadId, { ...activeDownloads.get(downloadId), status: 'error', error: 'Download engine not available. Update your browser and try again.' });
       updateBadge();
     }
   } catch (e) { console.error('[FVD] startHlsDownload', e); }
@@ -632,7 +922,7 @@ async function startDashDownload(downloadId, mpdUrl, filename, pageReferer) {
       activeDownloads.set(downloadId, {
         ...activeDownloads.get(downloadId),
         status: 'error',
-        error: 'Offscreen not available - update Chrome to 109+'
+        error: 'Download engine not available. Update your browser and try again.'
       });
       updateBadge();
     }
@@ -670,6 +960,7 @@ async function startBlobDownload(downloadId, tabId, blobUrl, filename) {
       activeDownloads.set(downloadId, dlState);
       persistActiveDownloads();
       emitDownloadProgress(dlState);
+      maybeFlagReviewPrompt(downloadId);
       saveDownloadToHistory({
         filename,
         url: blobUrl,
@@ -704,19 +995,21 @@ async function startGenericDownload(downloadId, fileUrl, filename, pageReferer) 
     status: 'downloading', completed: 0, total: 1, percent: 5,
     totalDurationSec: 0, downloadedDurationSec: 0,
     totalDurationFormatted: '', downloadedDurationFormatted: '',
-    error: null, totalBytes: 0
+    error: null, totalBytes: 0,
+    pageReferer: pageReferer || null
   };
   activeDownloads.set(downloadId, dlState);
   updateBadge();
   persistActiveDownloads();
 
   try {
-    const chromeDlId = await saveUrlViaDownloads(fileUrl, filename);
+    const chromeDlId = await saveUrlViaDownloads(fileUrl, filename, pageReferer);
     chromeDownloadMap.set(chromeDlId, downloadId);
     dlState.percent = 15;
     activeDownloads.set(downloadId, dlState);
     persistActiveDownloads();
     emitDownloadProgress(dlState);
+    startChromeDownloadPoll(chromeDlId, downloadId);
   } catch (primaryErr) {
     console.warn('[FVD] chrome.downloads failed, trying offscreen fetch:', primaryErr && primaryErr.message);
     try {
@@ -793,19 +1086,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const tabId = sender.tab ? sender.tab.id : null;
     if (tabId && Array.isArray(message.items)) {
       message.items.forEach(item => {
+        const format = item.format || getFormat(item.url, '');
         addMediaItem(tabId, {
-          url: item.url, filename: item.filename || getCleanFilename(item.url, '', ''),
-          format: item.format || getFormat(item.url, ''), size: item.size || '',
-          duration: item.duration || '', rawSize: 0, contentType: 'video/mp4',
+          url: item.url,
+          filename: item.filename || getCleanFilename(item.url, '', ''),
+          format,
+          size: item.size || '',
+          duration: item.duration || '',
+          rawSize: 0,
+          contentType: format === 'M3U8' ? 'application/vnd.apple.mpegurl' : 'video/mp4',
+          fromPlaylist: !!item.fromPlaylist,
+          quality: item.quality || '',
           discoveredAt: Date.now()
         });
       });
+      tabBadgeCounts.set(tabId, message.items.length);
+      updateBadge(tabId);
     }
     sendResponse({ status: 'ok' });
+  }
+  else if (message.type === 'COLLECT_MAIN_WORLD') {
+    collectMainWorldMedia(message.tabId)
+      .then((data) => sendResponse({ ok: true, data }))
+      .catch(() => sendResponse({ ok: false, data: null }));
+    return true;
   }
   else if (message.type === 'CLEAR_MEDIA') {
     if (message.tabId) {
       tabMedia.set(message.tabId, new Map());
+      tabBadgeCounts.set(message.tabId, 0);
+      updateBadge(message.tabId);
+    }
+    sendResponse({ status: 'ok' });
+  }
+  else if (message.type === 'SET_TAB_BADGE_COUNT') {
+    if (message.tabId != null) {
+      const count = Math.max(0, Number(message.count) || 0);
+      tabBadgeCounts.set(message.tabId, count);
       updateBadge(message.tabId);
     }
     sendResponse({ status: 'ok' });
@@ -906,6 +1223,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         chrome.action.setBadgeText({ text: '💾' });
       } else if (message.state.status === 'completed') {
         chrome.action.setBadgeText({ text: '✅' });
+        maybeFlagReviewPrompt(message.state.id);
         setTimeout(() => updateBadge(), 5000);
       } else if (message.state.status === 'error') {
         chrome.action.setBadgeText({ text: '❌' });

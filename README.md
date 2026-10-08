@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg"><img src="https://img.shields.io/badge/Download-Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=0B57D0" alt="Download on Chrome Web Store" /></a>
-  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.3.2-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.3.2" /></a>
+  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.3.7-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.3.7" /></a>
   <a href="https://developer.chrome.com/docs/extensions/mv3/"><img src="https://img.shields.io/badge/Manifest-V3-FF6D00?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=E65100" alt="Manifest V3" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-00BFA5?style=for-the-badge&logo=creativecommons&logoColor=white&labelColor=00897B" alt="License CC BY-NC 4.0" /></a>
   <a href="https://ko-fi.com/s/72a48b875e"><img src="https://img.shields.io/badge/Pro-EUR%2010.99%20lifetime-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white&labelColor=D32F2F" alt="Buy Pro on Ko-fi" /></a>
@@ -211,6 +211,10 @@ Privacy policy: [nrn-world.github.io/FlashVideoDownloader/privacy.html](https://
 
 | Version | Highlights |
 |---|---|
+| **3.3.7** | Universal video player detection (Video.js, JWPlayer, schema.org VideoObject, OpenGraph, tube CMS `/vid2/`), page Referer passing for CDN downloads with 403 fallback to offscreen download, and exact toolbar badge sync matching popup video count |
+| **3.3.5** | Detect DRM-protected streams and stop with a clear message instead of downloading a file that can only play as black or distorted picture with no sound. Encrypted DASH representations are skipped, a clear variant is used when the manifest offers one, and the stream is refused after a single small request rather than after gigabytes |
+| **3.3.4** | Fix all media formats being missed: real video files under `/preview/` paths are no longer treated as thumbnails, `<a download>` links are scanned, off-screen and non-MP4 containers (AVI/MKV/FLV/3GP/WMV) are detected and listed, and all detected items are shown instead of the top 3. Repaired corrupted locale files (emoji + Swedish characters) that blocked the extension from loading |
+| **3.3.3** | Review prompt at download milestones; fix download % stuck at 15%; realtime progress UI |
 | **3.3.2** | Fix service-worker message handling that showed as an error in `chrome://extensions` |
 | **3.3.1** | Freemium: Free 1 download/hour; Pro lifetime via Ko-fi (EUR 10.99) |
 | **3.3.0** | First Pro/Free split (later priced at EUR 10.99 on Ko-fi) |

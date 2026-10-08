@@ -44,6 +44,27 @@ function getDl(id) {
   return activeDownloadsMap.get(id) || null;
 }
 
+// Behåll original container-typ via filändelse så att t.ex. .avi/.mkv/.flv inte
+// sparas som video/mp4 (det gör att filen felaktas av spelare och system).
+const CONTAINER_MIME_BY_EXT = {
+  mp4: 'video/mp4', m4v: 'video/x-m4v', fmp4: 'video/mp4', m4s: 'video/iso.segment',
+  webm: 'video/webm', ogv: 'video/ogg', ogg: 'video/ogg',
+  mkv: 'video/x-matroska', avi: 'video/x-msvideo', mov: 'video/quicktime',
+  flv: 'video/x-flv', f4v: 'video/x-f4v', wmv: 'video/x-ms-wmv', asf: 'video/x-ms-asf',
+  '3gp': 'video/3gpp', '3g2': 'video/3gpp2', ts: 'video/mp2t', m2ts: 'video/mp2t',
+  mts: 'video/mp2t', vob: 'video/mpeg', mpg: 'video/mpeg', mpeg: 'video/mpeg',
+  m2v: 'video/mpeg', divx: 'video/x-msvideo',
+  mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav',
+  oga: 'audio/ogg', opus: 'audio/ogg', flac: 'audio/flac', wma: 'audio/x-ms-wma'
+};
+
+function mimeForContainer(filename) {
+  const lower = String(filename || '').toLowerCase();
+  const dot = lower.lastIndexOf('.');
+  if (dot < 0) return 'video/mp4';
+  return CONTAINER_MIME_BY_EXT[lower.slice(dot + 1)] || 'video/mp4';
+}
+
 function formatDurationSeconds(sec) {
   if (!sec || isNaN(sec) || sec <= 0) return '';
   const h = Math.floor(sec / 3600);
@@ -205,6 +226,87 @@ function mergeHlsBuffers(buffers, segments) {
     return remuxTsSegmentsToMp4(tsOnly);
   }
   return new Blob(buffers.filter(Boolean), { type: 'video/mp4' });
+}
+
+// === DRM detection ===
+// An encrypted stream can never become a playable file: the decryption key lives
+// on the service's licence server, not in the stream. Downloading one only wastes
+// the user's time and bandwidth, so we detect it and stop instead of saving a
+// broken file. This is detection only - we do not and cannot decrypt anything.
+const DRM_PROTECTED_ERROR = 'This stream is encrypted (DRM-protected), so it cannot be downloaded. The file would play as black or distorted picture with no sound. Please find a version of this video that is not encrypted.';
+
+// DASH schemeIdUri values that mean the payload is encrypted
+const DRM_SCHEME_URIS = [
+  'urn:mpeg:dash:mp4protection:2011',              // Common Encryption (cenc / cbcs)
+  'urn:mpeg:dash:mp4protection:2012',
+  'urn:mpeg:dash:2649:2013',                       // PlayReady
+  'urn:uuid:edef8ba9-79d6-4ace-a3c8-27dcd51d21ed', // Widevine
+  'urn:uuid:9a04f079-9840-4286-ab92-e65be0885f95', // PlayReady
+  'urn:uuid:94ce86fb-07ff-4f43-adb8-93d2fa968ca2', // Widevine
+  'urn:uuid:1077efec-c0b2-4d02-ace3-3c1e52e2fb4f', // Widevine
+  'urn:uuid:d08a4f18-10f3-4a50-bbb4-cfd0d5b5fcc0', // PlayReady
+  'urn:uuid:e2719d58-a985-b3c9-781a-b030af78d30e', // ClearKey - still needs a key we do not have
+  'urn:mpeg:dash:13818:1:ca_descriptor:2011',
+  'com.apple.streamingkeydelivery'                 // FairPlay
+];
+
+function isDrmScheme(schemeIdUri) {
+  const s = String(schemeIdUri || '').trim().toLowerCase();
+  if (!s) return false;
+  return DRM_SCHEME_URIS.some(k => s === k || s.startsWith(k));
+}
+
+function directContentProtection(el) {
+  const out = [];
+  if (!el || !el.childNodes) return out;
+  for (const child of el.childNodes) {
+    if (child.nodeType === 1 && child.nodeName && child.nodeName.toLowerCase() === 'contentprotection') out.push(child);
+  }
+  return out;
+}
+
+// ContentProtection is inherited down the tree:
+// MPD > Period > AdaptationSet > Representation
+function isRepresentationEncrypted(rep) {
+  let node = rep;
+  while (node && node.nodeType === 1) {
+    if ((node.nodeName || '').toLowerCase() === 'mpd') return false;
+    for (const cp of directContentProtection(node)) {
+      if (isDrmScheme(cp.getAttribute('schemeIdUri'))) return true;
+    }
+    node = node.parentElement;
+  }
+  return false;
+}
+
+// Detect an encrypted fragmented-MP4 stream from the bytes we downloaded.
+// Init segments declare it with 'encv' (encrypted sample entry) plus 'cenc' /
+// 'tenc'; media fragments carry 'senc' / 'saiz' instead, which is all we have to
+// go on for HLS, where no init segment is fetched. None of these 4CCs ever occur
+// in a clear stream, so this cannot misfire on unencrypted content.
+const FMP4_ENCRYPTION_MARKERS = [
+  [0x65, 0x6e, 0x63, 0x76], // encv  encrypted sample entry (init)
+  [0x63, 0x65, 0x6e, 0x63], // cenc  Common Encryption scheme (init)
+  [0x74, 0x65, 0x6e, 0x63], // tenc  track encryption box (init)
+  [0x73, 0x65, 0x6e, 0x63], // senc  sample encryption (fragment)
+  [0x73, 0x61, 0x69, 0x7a], // saiz  sample aux info sizes (fragment)
+  [0x70, 0x73, 0x73, 0x68]  // pssh  protection system header (DRM)
+];
+
+function isEncryptedFmp4(buffer) {
+  if (!buffer) return false;
+  let bytes;
+  if (buffer instanceof ArrayBuffer) bytes = new Uint8Array(buffer);
+  else if (ArrayBuffer.isView(buffer)) bytes = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  else return false;
+  const limit = Math.min(bytes.length, 65536);
+  outer:
+  for (let i = 0; i + 4 <= limit; i++) {
+    for (const m of FMP4_ENCRYPTION_MARKERS) {
+      if (bytes[i] === m[0] && bytes[i + 1] === m[1] && bytes[i + 2] === m[2] && bytes[i + 3] === m[3]) return true;
+    }
+  }
+  return false;
 }
 
 function hexToBytes(hex) {
@@ -541,6 +643,12 @@ async function runHlsDownload(downloadId, playlistUrl, filename, pageReferer) {
       throw new Error(`Segment ${missing[0]} fetch failed (${missing.length} missing)`);
     }
 
+    // For fMP4 playlists buffers[0] is the first fragment. If it carries CENC
+    // markers, remuxing would only produce an unplayable file.
+    if (!segments.some(s => /\.ts(\?|#|$)/i.test(s.url)) && isEncryptedFmp4(buffers[0])) {
+      throw new Error(DRM_PROTECTED_ERROR);
+    }
+
     // 4. Merge
     dl.status = 'merging';
     dl.percent = 100;
@@ -614,14 +722,7 @@ async function runBufferDownload(downloadId, buffer, filename) {
   reportProgressFor(dl);
 
   try {
-    const lowerName = filename.toLowerCase();
-    let mime = 'video/mp4';
-    if (lowerName.endsWith('.webm')) mime = 'video/webm';
-    else if (lowerName.endsWith('.mkv')) mime = 'video/x-matroska';
-    else if (lowerName.endsWith('.avi')) mime = 'video/x-msvideo';
-    else if (lowerName.endsWith('.mp3')) mime = 'audio/mpeg';
-
-    const mergedBlob = new Blob([buffer], { type: mime });
+    const mergedBlob = new Blob([buffer], { type: mimeForContainer(filename) });
     dl.totalBytes = mergedBlob.size;
     dl.status = 'merging';
     reportProgressFor(dl);
@@ -665,18 +766,27 @@ function parseDashMpd(xmlText, mpdUrl) {
   const reps = Array.from(doc.querySelectorAll('Representation'));
   let best = null;
   let bestBw = -1;
+  let sawEncrypted = false;
   for (const rep of reps) {
     const mime = (rep.getAttribute('mimeType') || rep.parentElement?.getAttribute('mimeType') || '').toLowerCase();
     const contentType = (rep.parentElement?.getAttribute('contentType') || '').toLowerCase();
     const isVideo = mime.includes('video') || contentType === 'video' || (!mime && !contentType);
     if (!isVideo && mime.includes('audio')) continue;
+    // Never pick an encrypted representation - the result could never be played
+    if (isRepresentationEncrypted(rep)) {
+      sawEncrypted = true;
+      continue;
+    }
     const bw = parseInt(rep.getAttribute('bandwidth') || '0', 10);
     if (bw >= bestBw) {
       bestBw = bw;
       best = rep;
     }
   }
-  if (!best) throw new Error('No video representation found in MPD.');
+  if (!best) {
+    if (sawEncrypted) throw new Error(DRM_PROTECTED_ERROR);
+    throw new Error('No video representation found in MPD.');
+  }
 
   const adapt = best.parentElement;
   const segmentTemplate =
@@ -808,6 +918,25 @@ async function runDashDownload(downloadId, mpdUrl, filename, pageReferer) {
     dl.total = total;
     reportProgressFor(dl);
 
+    // Probe the init segment before pulling the rest of the stream. It is only a
+    // few KB, and it tells us straight away whether the payload is encrypted -
+    // otherwise a 2 hour stream would download gigabytes of unusable video before
+    // anything realises the result cannot be played. If the probe itself fails we
+    // carry on and let the post-download check catch it.
+    if (total > 1) {
+      let probe = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const r = await fetchWithReferer(segmentUrls[0], { cache: 'no-store', signal: fetchSignal, ...refererOpt });
+          if (r.ok) { probe = await r.arrayBuffer(); break; }
+        } catch (e) {
+          if (e && e.name === 'AbortError') throw e;
+        }
+        if (attempt < 2) await sleepMs(300 * (attempt + 1));
+      }
+      if (isEncryptedFmp4(probe)) throw new Error(DRM_PROTECTED_ERROR);
+    }
+
     const buffers = new Array(total);
     let completed = 0;
     let totalLoadedBytes = 0;
@@ -874,6 +1003,10 @@ async function runDashDownload(downloadId, mpdUrl, filename, pageReferer) {
     missing = [];
     for (let i = 0; i < total; i++) if (!buffers[i]) missing.push(i);
     if (missing.length) throw new Error(`DASH segment ${missing[0]} fetch failed (${missing.length} missing)`);
+
+    // The MPD may not declare ContentProtection even when the payload is
+    // encrypted, so check the init segment we actually received (buffers[0])
+    if (isEncryptedFmp4(buffers[0])) throw new Error(DRM_PROTECTED_ERROR);
 
     dl.status = 'merging';
     dl.percent = 100;
@@ -1008,16 +1141,7 @@ async function runGenericDownload(downloadId, fileUrl, filename, pageReferer) {
 
     // Bygg Blob – behåll original container-typ via filändelse
     const blobParts = chunks.map(c => c instanceof Uint8Array ? c : new Uint8Array(c));
-    const lowerName = filename.toLowerCase();
-    let mime = 'video/mp4';
-    if (lowerName.endsWith('.avi')) mime = 'video/x-msvideo';
-    else if (lowerName.endsWith('.mkv')) mime = 'video/x-matroska';
-    else if (lowerName.endsWith('.webm')) mime = 'video/webm';
-    else if (lowerName.endsWith('.mov')) mime = 'video/quicktime';
-    else if (lowerName.endsWith('.flv')) mime = 'video/x-flv';
-    else if (lowerName.endsWith('.wmv')) mime = 'video/x-ms-wmv';
-    else if (lowerName.endsWith('.mp3')) mime = 'audio/mpeg';
-    const mergedBlob = new Blob(blobParts, { type: mime });
+    const mergedBlob = new Blob(blobParts, { type: mimeForContainer(filename) });
     dl.totalBytes = mergedBlob.size;
     console.log(`[FVD Offscreen] Generic merged ${mergedBlob.size} bytes`);
 

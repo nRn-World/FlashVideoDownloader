@@ -6,10 +6,10 @@
     "message": "FVD"
   },
   "appDescription": {
-    "message": "Detect and download open videos (MP4, WEBM, M3U8) from the active tab. Free: 1 download/hour. Does not bypass DRM."
+    "message": "Detect and save open videos (MP4, WEBM, M3U8) from the page you are viewing. Preview, pause, local history. No DRM bypass."
   },
   "appVersion": {
-    "message": "v3.3.2"
+    "message": "v3.3.5"
   },
   "searchPlaceholder": {
     "message": "Search detected videos..."
@@ -27,7 +27,7 @@
     "message": "No videos detected yet"
   },
   "noVideosDesc": {
-    "message": "Start playing the video on the web page to capture the stream automatically!"
+    "message": "Play the video on the page first · then open this popup. Streams are captured automatically from network traffic."
   },
   "loading": {
     "message": "Sniffing web page and network..."
@@ -219,7 +219,7 @@
     "message": "After paying on Ko-fi, copy the license key from the thank-you page and paste it below."
   },
   "licenseKeyPlaceholder": {
-    "message": "FVD-PRO-XXXX-XXXX"
+    "message": "FVD-PRO-XXXX-XXXX-XXXX-XXXX"
   },
   "activateLicense": {
     "message": "Activate"

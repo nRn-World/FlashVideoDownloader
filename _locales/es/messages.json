@@ -6,10 +6,10 @@
     "message": "FVD"
   },
   "appDescription": {
-    "message": "Detect and download open videos (MP4, WEBM, M3U8) from the active tab. Free: 1 download/hour. Does not bypass DRM."
+    "message": "Detect and save open videos (MP4, WEBM, M3U8) from the page you are viewing. Preview, pause, local history. No DRM bypass."
   },
   "appVersion": {
-    "message": "v3.3.2"
+    "message": "v3.3.5"
   },
   "searchPlaceholder": {
     "message": "Search detected videos..."
@@ -213,7 +213,7 @@
     "message": "Enter License Key"
   },
   "licenseKeyPlaceholder": {
-    "message": "FVD-PRO-XXXX-XXXX"
+    "message": "FVD-PRO-XXXX-XXXX-XXXX-XXXX"
   },
   "activateLicense": {
     "message": "Activate"

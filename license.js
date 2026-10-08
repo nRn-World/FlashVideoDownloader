@@ -1,4 +1,4 @@
-// Flash Video Downloader - License & Pro Feature Manager (v3.3.2)
+﻿// Flash Video Downloader - License & Pro Feature Manager (v3.3.5)
 
 const LICENSE_STORAGE_KEY = 'fvd_pro_license';
 const PRO_STATUS_KEY = 'fvd_pro_status';
@@ -41,7 +41,7 @@ async function validateLicenseFormat(key) {
   }
 
   if (!looksLikeLicenseKey(normalized)) {
-    return { valid: false, error: 'Invalid format. Expected: FVD-PRO-XXXX-XXXX' };
+    return { valid: false, error: 'Invalid format. Expected: FVD-PRO-XXXX-XXXX-XXXX-XXXX' };
   }
 
   const digest = await hashLicenseKey(normalized);
