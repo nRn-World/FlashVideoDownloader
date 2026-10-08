@@ -20,6 +20,7 @@ INCLUDE_FILES = [
     "content.js",
     "page-hook.js",
     "license.js",
+    "ads.js",
     "popup.html",
     "popup.js",
     "popup.css",
@@ -29,6 +30,7 @@ INCLUDE_FILES = [
     "storage-handles.js",
     "privacy.html",
     "welcome.html",
+    "download-success.html",
     "LICENSE",
     "THIRD_PARTY_NOTICES.txt",
 ]
@@ -160,6 +162,7 @@ def verify() -> None:
         "offscreen.html",
         "offscreen.js",
         "popup.js",
+        "ads.js",
         "firefox-importscripts-shim.js",
     }
     missing = sorted(required - names)

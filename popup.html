@@ -13,7 +13,7 @@
         <img src="icons/icon32.png" alt="FVD" class="logo-img" />
         <div class="brand-text">
           <h1 id="txt-app-title">Flash Video Downloader</h1>
-          <span class="version" id="txt-app-version">v3.3.7</span>
+          <span class="version" id="txt-app-version">v3.3.8</span>
         </div>
       </div>
       <div class="header-actions">
@@ -50,6 +50,11 @@
           <button class="tab-btn" data-filter="video"><span id="tab-video-text">Video</span></button>
           <button class="tab-btn" data-filter="stream"><span id="tab-stream-text">Streams</span></button>
         </div>
+      </div>
+
+      <!-- Ad slot (Free users only — hidden for Pro) -->
+      <div id="ad-slot-container" class="ad-slot hidden" aria-label="Advertisement">
+        <!-- Rendered dynamically by ads.js -->
       </div>
 
       <!-- Video List -->
@@ -217,7 +222,7 @@
               </svg>
             </button>
           </div>
-          <p class="credits-version" id="txt-settings-version">v3.3.7</p>
+          <p class="credits-version" id="txt-settings-version">v3.3.8</p>
         </div>
 
         <div class="settings-footer-btn">
@@ -229,7 +234,7 @@
     <!-- Footer -->
     <footer class="app-footer" id="app-footer">
       <span id="txt-footer">Captures MP4, WEBM, FLV, M3U8 & more</span>
-      <span id="txt-footer-version" class="footer-version">v3.3.7</span>
+      <span id="txt-footer-version" class="footer-version">v3.3.8</span>
     </footer>
   </div>
 
@@ -274,9 +279,46 @@
     </div>
   </div>
 
+  <!-- Sponsor Download Modal (Free users only) -->
+  <div id="sponsor-dl-modal" class="modal-overlay hidden">
+    <div class="modal-box sponsor-modal-box">
+      <div class="sponsor-modal-header">
+        <div class="sponsor-modal-title-row">
+          <h3 id="txt-sponsor-title" data-i18n="sponsorModalTitle">Download Options</h3>
+        </div>
+        <p id="txt-sponsor-desc" data-i18n="sponsorModalDesc">Choose how you want to download this video.</p>
+      </div>
+      <div class="sponsor-dl-options">
+        <button id="btn-sponsor-fast" class="btn-sponsor-option btn-sponsor-fast-opt">
+          <div class="sponsor-opt-left">
+            <div class="sponsor-speed-badge fast-badge"><span class="fast-bolt">&#x2607;</span> <span id="txt-fast-badge" data-i18n="sponsorFastBadge">FAST</span></div>
+            <span class="sponsor-opt-label" id="txt-fast-label" data-i18n="sponsorFastLabel">Fast Download</span>
+            <span class="sponsor-opt-sub" id="txt-fast-sub" data-i18n="sponsorFastSub">Opens a sponsor offer in background</span>
+          </div>
+          <div class="sponsor-speed-info">
+            <span class="speed-value fast-speed">~5 MB/s</span>
+            <span class="speed-label" id="txt-fast-speed-label" data-i18n="sponsorSpeedLabel">est. speed</span>
+          </div>
+        </button>
+        <button id="btn-sponsor-normal" class="btn-sponsor-option btn-sponsor-normal-opt">
+          <div class="sponsor-opt-left">
+            <div class="sponsor-speed-badge normal-badge">🐢 <span id="txt-normal-badge" data-i18n="sponsorNormalBadge">NORMAL</span></div>
+            <span class="sponsor-opt-label" id="txt-normal-label" data-i18n="sponsorNormalLabel">Normal Speed</span>
+            <span class="sponsor-opt-sub" id="txt-normal-sub" data-i18n="sponsorNormalSub">Download without sponsor</span>
+          </div>
+          <div class="sponsor-speed-info">
+            <span class="speed-value normal-speed">~2 MB/s</span>
+            <span class="speed-label" id="txt-normal-speed-label" data-i18n="sponsorSpeedLabel">est. speed</span>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="storage-handles.js"></script>
   <script src="license.js"></script>
   <script src="i18n.js"></script>
+  <script src="ads.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

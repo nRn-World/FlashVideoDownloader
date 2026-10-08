@@ -526,6 +526,15 @@ function completeTrackedDownload(extId) {
   ).catch((e) => console.warn('[FVD] history save:', e && e.message ? e.message : e));
   updateBadge();
   scheduleDownloadCleanup(extId);
+
+  // If Free user, open the download success partner page in a new tab
+  if (typeof isProUser === 'function') {
+    isProUser().then((status) => {
+      if (!status || !status.isPro) {
+        chrome.tabs.create({ url: chrome.runtime.getURL('download-success.html') });
+      }
+    }).catch(() => {});
+  }
 }
 
 function failTrackedDownload(extId, message) {
@@ -1032,6 +1041,46 @@ async function startGenericDownload(downloadId, fileUrl, filename, pageReferer) 
   return { ok: true, status: 'started' };
 }
 
+// Parallel chunk downloader — routes to offscreen runChunkedDownload
+// threads=1: normal (single stream), threads=4: fast, threads=8: pro
+async function startChunkedDownload(downloadId, fileUrl, filename, pageReferer, threads) {
+  if (fileUrl && fileUrl.startsWith('blob:')) {
+    return startGenericDownload(downloadId, fileUrl, filename, pageReferer);
+  }
+
+  const gate = await gateDownloadStart();
+  if (!gate.ok) return gate;
+
+  const dlState = {
+    id: downloadId, url: fileUrl, filename: filename,
+    status: 'downloading', completed: 0, total: 1, percent: 5,
+    totalDurationSec: 0, downloadedDurationSec: 0,
+    totalDurationFormatted: '', downloadedDurationFormatted: '',
+    error: null, totalBytes: 0,
+    pageReferer: pageReferer || null
+  };
+  activeDownloads.set(downloadId, dlState);
+  updateBadge();
+  persistActiveDownloads();
+
+  try {
+    await ensureOffscreenDocument();
+    await chrome.runtime.sendMessage({
+      type: 'START_OFFSCREEN_CHUNKED',
+      downloadId: downloadId,
+      url: fileUrl,
+      filename: filename,
+      pageReferer: pageReferer || null,
+      threads: threads || 1
+    });
+  } catch (err) {
+    console.warn('[FVD] Chunked offscreen failed, falling back to generic:', err && err.message);
+    return startGenericDownload(downloadId, fileUrl, filename, pageReferer);
+  }
+
+  return { ok: true, status: 'started' };
+}
+
 function resolvePageReferer(message) {
   if (message.pageReferer) return message.pageReferer;
   if (message.pageUrl) return message.pageUrl;
@@ -1143,6 +1192,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
     startDashDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message))
+      .then((result) => sendResponse(result || { status: 'started' }))
+      .catch(() => sendResponse({ status: 'error' }));
+    return true;
+  }
+  else if (message.type === 'START_CHUNKED_DOWNLOAD') {
+    if (fvdIsBlockedUrl(message.url)) {
+      sendResponse({ status: 'blocked' });
+      return;
+    }
+    startChunkedDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message), message.threads || 1)
       .then((result) => sendResponse(result || { status: 'started' }))
       .catch(() => sendResponse({ status: 'error' }));
     return true;

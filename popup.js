@@ -1,4 +1,4 @@
-// Flash Video Downloader - Popup Script (v3.3.7)
+// Flash Video Downloader - Popup Script (v3.3.8)
 
 document.addEventListener('DOMContentLoaded', async () => {
   const mediaListContainer = document.getElementById('media-list');
@@ -154,6 +154,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (inputLicenseKey) inputLicenseKey.disabled = false;
       if (btnActivateLicense) btnActivateLicense.disabled = false;
     }
+
+    updateAdSlot();
+  }
+
+  // Ad slot — bundled house ads for Free users, never shown to Pro
+  function updateAdSlot() {
+    const container = document.getElementById('ad-slot-container');
+    if (!container || !window.FVDAds) return;
+    window.FVDAds.render(container, { isPro: isProActive, t });
   }
 
   // License activation
@@ -505,6 +514,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderList();
     }
     renderHistory();
+    updateAdSlot();
   }
 
   function openSettingsView() {
@@ -1660,21 +1670,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
           await navigator.clipboard.writeText(item.url);
           const originalText = copyBtn.textContent;
-          copyBtn.textContent = t('copied');
           setTimeout(() => {
             copyBtn.textContent = originalText;
           }, 1500);
         } catch (e) {}
       });
 
+
       const downloadBtn = card.querySelector('.btn-download');
-      downloadBtn.addEventListener('click', async () => {
+
+      // Core download function — threads controls parallel chunk count:
+      //   threads=1 → Normal/Free (single stream)
+      //   threads=4 → Fast (Free + sponsor click)
+      //   threads=8 → Pro (max speed, no modal)
+      async function startActualDownload(threads) {
+        const numThreads = threads || 1;
         const urlLowerDl = item.url.toLowerCase();
         const isDashOnly = item.format === 'MPD' || urlLowerDl.includes('.mpd');
 
         const downloadId = btoa(item.url).replace(/[^a-zA-Z0-9]/g, '').slice(0, 24);
         const progressBox = card.querySelector('.progress-box');
-        // Keep per-card progress hidden — Active Downloads banner shows progress
         if (progressBox) progressBox.classList.add('hidden');
         downloadBtn.disabled = true;
         downloadBtn.textContent = t('downloading');
@@ -1691,7 +1706,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           filename: safeDownloadName,
           pageUrl: activeTabUrl || null,
           pageReferer,
-          tabId: activeTabId
+          tabId: activeTabId,
+          threads: numThreads
         };
 
         let startMessage;
@@ -1708,25 +1724,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             filename: safeDownloadName
           };
         } else {
-          startMessage = { type: 'START_GENERIC_DOWNLOAD', ...common };
+          // Use chunked downloader for all direct video files (MP4, WEBM, etc.)
+          startMessage = { type: 'START_CHUNKED_DOWNLOAD', ...common };
         }
 
         try {
           const res = await chrome.runtime.sendMessage(startMessage);
-          if (!res || res.status === 'blocked') {
-            resetDownloadBtn();
-            return;
-          }
+          if (!res || res.status === 'blocked') { resetDownloadBtn(); return; }
           if (res.status === 'rate_limited') {
             resetDownloadBtn();
             showRateLimitModal(res.minutesRemaining);
             updateRateLimitStatus();
             return;
           }
-          if (res.status === 'concurrent_limit' || res.ok === false) {
-            resetDownloadBtn();
-            return;
-          }
+          if (res.status === 'concurrent_limit' || res.ok === false) { resetDownloadBtn(); return; }
         } catch (e) {
           resetDownloadBtn();
           return;
@@ -1735,6 +1746,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!pollInterval) {
           pollInterval = setInterval(checkOngoingDownloads, 120);
         }
+      }
+
+      downloadBtn.addEventListener('click', async () => {
+        // Pro users: skip modal, max speed (8 threads)
+        if (isProActive) {
+          await startActualDownload(8);
+          return;
+        }
+
+        // Free users: show sponsor choice modal
+        const modal = document.getElementById('sponsor-dl-modal');
+        const btnFast = document.getElementById('btn-sponsor-fast');
+        const btnNormal = document.getElementById('btn-sponsor-normal');
+        if (!modal) { await startActualDownload(1); return; }
+
+        modal.classList.remove('hidden');
+
+        const cleanup = () => {
+          modal.classList.add('hidden');
+          btnFast.replaceWith(btnFast.cloneNode(true));
+          btnNormal.replaceWith(btnNormal.cloneNode(true));
+        };
+
+        // Re-fetch fresh references after cloneNode
+        const getFast = () => document.getElementById('btn-sponsor-fast');
+        const getNormal = () => document.getElementById('btn-sponsor-normal');
+
+        getFast().addEventListener('click', async () => {
+          cleanup();
+          // Open sponsor link in background tab (user doesn't lose focus)
+          chrome.tabs.create({ url: 'https://asiafilm.org/4/9714681b46a69fbd0e4eae6c7542b0c9', active: false });
+          await startActualDownload(4); // 4 parallel chunks = Fast
+        }, { once: true });
+
+        getNormal().addEventListener('click', async () => {
+          cleanup();
+          await startActualDownload(1); // 1 thread = Normal (slower)
+        }, { once: true });
       });
 
       mediaListContainer.appendChild(card);

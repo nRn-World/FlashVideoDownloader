@@ -7,6 +7,8 @@ generate_icons.py
 server.py
 test_player.html
 temp_zip_check/
+local-test/
+dev-preview.html
 
 # Release artifacts
 *.zip

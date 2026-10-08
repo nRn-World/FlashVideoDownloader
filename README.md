@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg"><img src="https://img.shields.io/badge/Download-Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=0B57D0" alt="Download on Chrome Web Store" /></a>
-  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.3.7-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.3.7" /></a>
+  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.3.8-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.3.8" /></a>
   <a href="https://developer.chrome.com/docs/extensions/mv3/"><img src="https://img.shields.io/badge/Manifest-V3-FF6D00?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=E65100" alt="Manifest V3" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-00BFA5?style=for-the-badge&logo=creativecommons&logoColor=white&labelColor=00897B" alt="License CC BY-NC 4.0" /></a>
   <a href="https://ko-fi.com/s/72a48b875e"><img src="https://img.shields.io/badge/Pro-EUR%2010.99%20lifetime-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white&labelColor=D32F2F" alt="Buy Pro on Ko-fi" /></a>
@@ -33,6 +33,7 @@ The extension focuses on **visible page videos**, offers **pause / resume / canc
 | Downloads per hour | **1** | Unlimited |
 | Concurrent downloads | 1 | 3 |
 | Download history | Last 10 | Unlimited |
+| Ads in the popup | Shown | **None** |
 | Price | Free | **EUR 10.99** one-time, lifetime |
 
 Buy Pro on [Ko-fi](https://ko-fi.com/s/72a48b875e). After payment, copy the license key from the thank-you page. Open the extension → **Settings** → **Pro** → paste key → **Activate**.
@@ -79,7 +80,8 @@ Buy Pro on [Ko-fi](https://ko-fi.com/s/72a48b875e). After payment, copy the lice
 | **History** | Last 10 (Free) or unlimited (Pro), optional 24-hour auto-cleanup |
 | **Rate limits** | Free: 1 download per rolling hour, 1 concurrent. Pro: unlimited hourly, 3 concurrent |
 | **Pro** | Optional EUR 10.99 lifetime license via [Ko-fi](https://ko-fi.com/s/72a48b875e) |
-| **Privacy** | On-demand content script injection · no analytics · blocked-host list |
+| **Ads** | Free users see lightweight bundled house ads in the popup; Pro sees none |
+| **Privacy** | On-demand content script injection · no analytics · no ad networks · blocked-host list |
 
 ---
 
@@ -100,10 +102,12 @@ git clone https://github.com/nRn-World/FlashVideoDownloader.git
 cd FlashVideoDownloader
 ```
 
+For a clean build containing only the files that ship to the store (no screenshots or local dev files), run `python prepare_local_test.py` and select the generated `local-test` folder instead of the project root.
+
 1. Open `chrome://extensions/`
 2. Enable **Developer mode**
 3. Click **Load unpacked**
-4. Select the project folder
+4. Select the project folder (or `local-test`)
 5. Pin **Flash Video Downloader** to your toolbar
 
 Do not test on `chrome://` pages (including `chrome://extensions`). Open a normal website, play a video, then open the popup.
@@ -161,12 +165,21 @@ Then click **Reload** on the extension card in `chrome://extensions/`.
 | `content.js` | Visible video DOM scan (on-demand injection) |
 | `popup.js` / `.html` / `.css` | UI, settings, history, progress, Pro upgrade |
 | `license.js` | Pro license check and Free hourly limit |
+| `ads.js` | Free-tier ad slot: your affiliate offers (configurable) with house-ad fallback, hidden for Pro |
 | `blocked-hosts.js` | DRM / policy-restricted platform blocklist |
 | `storage-handles.js` | File System Access directory handle persistence |
 | `i18n.js` | In-extension translations |
 | `privacy.html` | Privacy policy ([live](https://nrn-world.github.io/FlashVideoDownloader/privacy.html)) |
 | `pages/pro.html` | Pro landing page on GitHub Pages |
 | `workers/fvd-rate-limit.js` | Optional Cloudflare Worker to keep the Free limit after reinstall |
+
+---
+
+## Ads & affiliate links (Free tier)
+
+Free users see a small "Sponsored" banner in the popup; Pro removes it. Program recommendations and a step-by-step walkthrough live in [AFFILIATE-GUIDE.md](AFFILIATE-GUIDE.md). Configure your own offers in `ads.js` → `AFFILIATE_OFFERS`: paste your personal tracking link and keep `enabled: true`. Any offer without an `https://` link is skipped, and the built-in house ads are shown as a fallback until at least one affiliate link is configured. Impressions and clicks are counted locally in `chrome.storage.local` (`fvd_ad_stats`) — nothing is sent anywhere.
+
+> **Note:** Google AdSense may not be used in Chrome extensions (Chrome Web Store *Ads* policy), and Manifest V3 blocks remote scripts, so ads must be your own or delivered server-side.
 
 ---
 
@@ -211,6 +224,7 @@ Privacy policy: [nrn-world.github.io/FlashVideoDownloader/privacy.html](https://
 
 | Version | Highlights |
 |---|---|
+| **3.3.8** | Parallel multi-threaded chunk downloading engine for accelerated speeds, sponsor choice modal for free-tier with localized options in 6 languages, integrated Adsterra Smartlink monetization |
 | **3.3.7** | Universal video player detection (Video.js, JWPlayer, schema.org VideoObject, OpenGraph, tube CMS `/vid2/`), page Referer passing for CDN downloads with 403 fallback to offscreen download, and exact toolbar badge sync matching popup video count |
 | **3.3.5** | Detect DRM-protected streams and stop with a clear message instead of downloading a file that can only play as black or distorted picture with no sound. Encrypted DASH representations are skipped, a clear variant is used when the manifest offers one, and the stream is refused after a single small request rather than after gigabytes |
 | **3.3.4** | Fix all media formats being missed: real video files under `/preview/` paths are no longer treated as thumbnails, `<a download>` links are scanned, off-screen and non-MP4 containers (AVI/MKV/FLV/3GP/WMV) are detected and listed, and all detected items are shown instead of the top 3. Repaired corrupted locale files (emoji + Swedish characters) that blocked the extension from loading |

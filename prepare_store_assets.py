@@ -37,6 +37,7 @@ INCLUDE_FILES = [
     "content.js",
     "page-hook.js",
     "license.js",
+    "ads.js",
     "popup.html",
     "popup.js",
     "popup.css",
@@ -46,6 +47,7 @@ INCLUDE_FILES = [
     "storage-handles.js",
     "privacy.html",
     "welcome.html",
+    "download-success.html",
     "LICENSE",
     "THIRD_PARTY_NOTICES.txt",
 ]
@@ -343,7 +345,7 @@ FORBIDDEN_ZIP_PARTS = (
 
 
 def verify_zip() -> None:
-    required = {"license.js", "manifest.json", "background.js", "popup.js", "i18n.js"}
+    required = {"license.js", "ads.js", "manifest.json", "background.js", "popup.js", "i18n.js"}
     with zipfile.ZipFile(ZIP_NAME, "r") as zf:
         names = zf.namelist()
     missing = [name for name in required if name not in names]

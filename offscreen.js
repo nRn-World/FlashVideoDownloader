@@ -1202,9 +1202,185 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const { downloadId, url, filename, pageReferer } = message;
     runDashDownload(downloadId, url, filename, pageReferer || null);
     sendResponse({ status: 'started' });
+// ============================================================
+// PARALLEL CHUNK DOWNLOADER
+// Splits the file into N equal byte-ranges and fetches them
+// simultaneously. All chunks are concatenated in order into a
+// single Blob so the user always gets one complete file.
+//
+// threads=1  → Normal speed  (single connection, same as generic)
+// threads=4  → Fast (Free + sponsor click)
+// threads=8  → Pro (fastest, no sponsor)
+// ============================================================
+async function runChunkedDownload(downloadId, fileUrl, filename, pageReferer, threads) {
+  const numThreads = Math.max(1, Math.min(threads || 1, 16));
+
+  const dl = {
+    id: downloadId,
+    url: fileUrl,
+    filename: filename,
+    status: 'downloading',
+    completed: 0,
+    total: 1,
+    percent: 0,
+    totalDurationSec: 0,
+    downloadedDurationSec: 0,
+    totalDurationFormatted: '',
+    downloadedDurationFormatted: '',
+    error: null,
+    totalBytes: 0
+  };
+  activeDownloadsMap.set(downloadId, dl);
+  activeDownload = dl;
+  reportProgressFor(dl);
+
+  const fetchSignal = getAbortSignal(downloadId);
+
+  try {
+    // ── Step 1: HEAD request to probe file size & Range support ──
+    let contentLength = 0;
+    let supportsRanges = false;
+
+    try {
+      const headRes = await fetchWithReferer(fileUrl, {
+        method: 'HEAD',
+        cache: 'no-store',
+        signal: fetchSignal,
+        pageReferer: pageReferer || null
+      });
+      contentLength = parseInt(headRes.headers.get('content-length') || '0', 10);
+      const acceptRanges = headRes.headers.get('accept-ranges') || '';
+      supportsRanges = acceptRanges.toLowerCase() === 'bytes' && contentLength > 0;
+    } catch (e) {
+      // HEAD failed or no CORS — fall back to single stream
+      supportsRanges = false;
+    }
+
+    // ── Step 2: If Range not supported or single thread, fall back to stream ──
+    if (!supportsRanges || numThreads === 1) {
+      console.log(`[FVD Chunked] Range not supported or threads=1 → single stream`);
+      // Reuse runGenericDownload directly
+      activeDownloadsMap.delete(downloadId);
+      await runGenericDownload(downloadId, fileUrl, filename, pageReferer);
+      return;
+    }
+
+    console.log(`[FVD Chunked] Splitting ${contentLength} bytes into ${numThreads} parallel chunks`);
+
+    // ── Step 3: Split file into N byte ranges ──
+    const chunkSize = Math.ceil(contentLength / numThreads);
+    const ranges = [];
+    for (let i = 0; i < numThreads; i++) {
+      const start = i * chunkSize;
+      const end = Math.min(start + chunkSize - 1, contentLength - 1);
+      ranges.push({ start, end, index: i });
+    }
+
+    // ── Step 4: Fetch all chunks in parallel ──
+    const chunkBuffers = new Array(numThreads).fill(null);
+    let bytesReceived = 0;
+
+    const fetchChunk = async ({ start, end, index }) => {
+      const chunkRes = await fetchWithReferer(fileUrl, {
+        cache: 'no-store',
+        signal: fetchSignal,
+        pageReferer: pageReferer || null,
+        headers: { 'Range': `bytes=${start}-${end}` }
+      });
+      if (!chunkRes.ok && chunkRes.status !== 206) {
+        throw new Error(`Chunk ${index} failed (HTTP ${chunkRes.status})`);
+      }
+
+      const reader = chunkRes.body ? chunkRes.body.getReader() : null;
+      const parts = [];
+      if (reader) {
+        while (true) {
+          if (dl.status === 'cancelled') { try { await reader.cancel(); } catch(e){} return; }
+          if (dl.status === 'paused') { if (!await waitIfPaused(dl)) return; }
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            parts.push(value);
+            bytesReceived += value.byteLength;
+            dl.totalBytes = bytesReceived;
+            dl.percent = Math.min(99, Math.round((bytesReceived / contentLength) * 100));
+            reportProgressFor(dl);
+          }
+        }
+      } else {
+        const ab = await chunkRes.arrayBuffer();
+        parts.push(new Uint8Array(ab));
+        bytesReceived += ab.byteLength;
+        dl.totalBytes = bytesReceived;
+        dl.percent = Math.min(99, Math.round((bytesReceived / contentLength) * 100));
+        reportProgressFor(dl);
+      }
+      // Concatenate this chunk's parts into one Uint8Array
+      const totalLen = parts.reduce((s, p) => s + p.byteLength, 0);
+      const buf = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const p of parts) {
+        buf.set(p instanceof Uint8Array ? p : new Uint8Array(p), offset);
+        offset += p.byteLength;
+      }
+      chunkBuffers[index] = buf;
+    };
+
+    await Promise.all(ranges.map(fetchChunk));
+
+    if (dl.status === 'cancelled') return;
+
+    // ── Step 5: Merge all chunks IN ORDER into a single Blob ──
+    dl.status = 'merging';
+    dl.percent = 100;
+    reportProgressFor(dl);
+
+    const mergedBlob = new Blob(chunkBuffers.filter(Boolean), { type: mimeForContainer(filename) });
+    dl.totalBytes = mergedBlob.size;
+    console.log(`[FVD Chunked] Merged ${numThreads} chunks → ${mergedBlob.size} bytes`);
+
+    // ── Step 6: Deliver as single file download ──
+    const blobUrl = URL.createObjectURL(mergedBlob);
+    try {
+      await deliverDownload(blobUrl, filename);
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+    }
+
+    dl.status = 'completed';
+    dl.percent = 100;
+    reportProgressFor(dl);
+    cleanupDownloadAbort(downloadId);
+    chrome.runtime.sendMessage({
+      type: 'OFFSCREEN_DOWNLOAD_COMPLETE',
+      downloadId: downloadId,
+      filename: filename,
+      url: fileUrl,
+      size: formatBytes(mergedBlob.size),
+      duration: dl.totalDurationFormatted || 'Video'
+    });
+
+  } catch (err) {
+    cleanupDownloadAbort(downloadId);
+    console.error('[FVD Chunked] Error:', err);
+    if (dl.status === 'cancelled' || err.name === 'AbortError') {
+      activeDownloadsMap.delete(downloadId);
+      return;
+    }
+    // Fallback: retry as single stream
+    console.warn('[FVD Chunked] Falling back to single-stream download');
+    activeDownloadsMap.delete(downloadId);
+    await runGenericDownload(downloadId, fileUrl, filename, pageReferer);
+  }
+}
+
   } else if (message.type === 'START_OFFSCREEN_GENERIC') {
     const { downloadId, url, filename, pageReferer } = message;
     runGenericDownload(downloadId, url, filename, pageReferer || null);
+    sendResponse({ status: 'started' });
+  } else if (message.type === 'START_OFFSCREEN_CHUNKED') {
+    const { downloadId, url, filename, pageReferer, threads } = message;
+    runChunkedDownload(downloadId, url, filename, pageReferer || null, threads || 4);
     sendResponse({ status: 'started' });
   } else if (message.type === 'START_OFFSCREEN_BUFFER') {
     const { downloadId, filename, buffer } = message;

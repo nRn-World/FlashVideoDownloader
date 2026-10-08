@@ -524,6 +524,19 @@ body {
   color: #f87171;
 }
 
+.btn-sponsor {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(234, 88, 12, 0.2));
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+.btn-sponsor:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(234, 88, 12, 0.35));
+  color: #fde68a;
+  transform: translateY(-1px);
+}
+
 .btn-download {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #fff;
@@ -1488,5 +1501,250 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.3px;
   vertical-align: middle;
+}
+
+/* === Ad slot (Free users only — hidden for Pro) === */
+.ad-slot {
+  margin: 0 16px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(139, 92, 246, 0.16));
+  overflow: hidden;
+}
+
+.ad-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px 6px 14px;
+}
+
+.ad-icon {
+  flex: 0 0 auto;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.ad-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ad-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.ad-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.ad-text {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.ad-cta {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--primary-accent);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.ad-cta:hover {
+  background: var(--primary-hover);
+}
+
+.ad-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 5px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ad-close:hover {
+  color: var(--text-primary);
+}
+
+.ad-note {
+  padding: 0 14px 10px 46px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+
+/* === Sponsor Download Modal === */
+.sponsor-modal-box {
+  padding: 22px 20px 20px;
+}
+
+.sponsor-modal-header {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.sponsor-modal-title-row h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 6px;
+}
+
+.sponsor-modal-header p {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.sponsor-dl-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-sponsor-option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.sponsor-opt-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+}
+
+.sponsor-speed-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-bottom: 4px;
+  display: inline-block;
+}
+
+/* Fast badge: bright yellow pill with dark text — stands out on any background */
+.fast-badge {
+  background: #fbbf24;
+  color: #1c1200;
+  font-weight: 900;
+}
+
+.fast-bolt {
+  color: #000000;
+  font-style: normal;
+}
+
+.normal-badge {
+  background: rgba(148, 163, 184, 0.18);
+  color: #94a3b8;
+}
+
+.sponsor-opt-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Sub-text: fully white, not semi-transparent */
+.sponsor-opt-sub {
+  font-size: 0.72rem;
+  color: #ffffff;
+  opacity: 0.88;
+}
+
+.sponsor-speed-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.speed-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+/* Fast speed: bright yellow/gold so it pops on dark blue */
+.fast-speed {
+  color: #fbbf24;
+}
+
+.normal-speed {
+  color: #60a5fa;
+}
+
+.speed-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Fast button: dark blue/indigo gradient — completely different from any orange */
+.btn-sponsor-fast-opt {
+  background: linear-gradient(135deg, #1e40af, #3730a3);
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow: 0 4px 14px rgba(30, 64, 175, 0.5);
+}
+
+.btn-sponsor-fast-opt:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #2563eb, #4338ca);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55);
+  border-color: rgba(99, 102, 241, 0.9);
+}
+
+.btn-sponsor-normal-opt {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(71, 85, 105, 0.5);
+}
+
+.btn-sponsor-normal-opt .sponsor-opt-label {
+  color: #cbd5e1;
+}
+
+.btn-sponsor-normal-opt .sponsor-opt-sub {
+  color: #64748b;
+}
+
+.btn-sponsor-normal-opt:hover {
+  background: rgba(51, 65, 85, 0.9);
+  border-color: rgba(100, 116, 139, 0.7);
 }
 
