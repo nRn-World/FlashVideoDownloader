@@ -316,5 +316,161 @@
   },
   "rateLimitWaitSingular": {
     "message": "Nästa nedladdning om ~1 min"
+  },
+  "version": {
+    "message": "v3.3.9"
+  },
+  "dashNotSupported": {
+    "message": "DASH/MPD-nedladdning stöds inte än. Prova en M3U8- eller direkt MP4-länk istället."
+  },
+  "alreadyHaveLicense": {
+    "message": "Har du redan en licensnyckel?"
+  },
+  "proHook": {
+    "message": "Gratis är begränsat till 1 videonedladdning per {hours} timmar."
+  },
+  "durationHourShort": {
+    "message": "tim"
+  },
+  "durationMinuteShort": {
+    "message": "min"
+  },
+  "proUpsellTitle": {
+    "message": "Pro Lifetime"
+  },
+  "proUpsellCountdown": {
+    "message": "Nästa gratisedladdning om {time}"
+  },
+  "proUpsellReady": {
+    "message": "Din gratisedladdning är redo nu"
+  },
+  "proDiscountBadge": {
+    "message": "{percent} % rabatt"
+  },
+  "proOfferBulletDownloads": {
+    "message": "Obegränsade nedladdningar"
+  },
+  "proOfferBulletConcurrent": {
+    "message": "3 nedladdningar samtidigt"
+  },
+  "proOfferBulletHistory": {
+    "message": "Obegränsad historik"
+  },
+  "proOfferBulletAds": {
+    "message": "Inga annonser"
+  },
+  "proOfferUrgency": {
+    "message": "Begränsat erbjudande — gäller till {date}. Därefter höjs priset."
+  },
+  "proOfferCta": {
+    "message": "Skaffa Lifetime Pro"
+  },
+  "proOfferTrust": {
+    "message": "Ingen prenumeration. Betala en gång — behåll för alltid."
+  },
+  "proOfferRegularHint": {
+    "message": "Ordinarie pris {price}"
+  },
+  "reviewPromptTitle": {
+    "message": "Gillar du Flash Video Downloader?"
+  },
+  "reviewPromptDesc": {
+    "message": "Om du gillar tillägget hjälper ett snabbt 5-stjärnigt betyg i Chrome Web Store jättemycket. Inget krav, tack!"
+  },
+  "reviewPromptForcedDesc": {
+    "message": "Du har laddat ner 10 videor med Flash Video Downloader. Lämna gärna ett snabbt 5-stjärnigt betyg i Chrome Web Store. Det hjälper oss att fortsätta förbättra!"
+  },
+  "reviewPromptLater": {
+    "message": "Inte nu"
+  },
+  "reviewPromptRate": {
+    "message": "Betygsätt i Chrome Web Store"
+  },
+  "adLabel": {
+    "message": "Annons"
+  },
+  "adDismiss": {
+    "message": "Stäng"
+  },
+  "adRemoveWithPro": {
+    "message": "Ta bort reklam med Pro"
+  },
+  "adProTitle": {
+    "message": "Skaffa Pro — obegränsade nedladdningar"
+  },
+  "adProText": {
+    "message": "Gratis är begränsat till 1 nedladdning per {hours} timmar. Pro tar bort gränsen och den här reklamen."
+  },
+  "adTipTitle": {
+    "message": "Stötta utvecklaren"
+  },
+  "adTipText": {
+    "message": "Bjud mig på en kaffe och hjälp till att hålla Flash Video Downloader gratis och ständigt bättre."
+  },
+  "adTipCta": {
+    "message": "Bjud mig på en kaffe"
+  },
+  "adReviewTitle": {
+    "message": "Gillar du tillägget?"
+  },
+  "adReviewText": {
+    "message": "Ett snabbt 5-stjärnigt betyg hjälper fler att hitta Flash Video Downloader."
+  },
+  "adAffiliateLabel": {
+    "message": "Annons · affiliate"
+  },
+  "affVpnTitle": {
+    "message": "Surfa mer privat"
+  },
+  "affVpnText": {
+    "message": "Skydda din uppkoppling med vår VPN-partner."
+  },
+  "affVpnCta": {
+    "message": "Se erbjudandet"
+  },
+  "affCloudTitle": {
+    "message": "Mer molnlagring"
+  },
+  "affCloudText": {
+    "message": "Spara dina nedladdningar säkert i molnet med vår partner."
+  },
+  "affCloudCta": {
+    "message": "Se erbjudandet"
+  },
+  "affToolsTitle": {
+    "message": "Redigera dina videor"
+  },
+  "affToolsText": {
+    "message": "Klipp och konvertera dina klipp med vår videopartner."
+  },
+  "affToolsCta": {
+    "message": "Se erbjudandet"
+  },
+  "sponsorModalTitle": {
+    "message": "Nedladdningsalternativ"
+  },
+  "sponsorModalDesc": {
+    "message": "Välj hur du vill ladda ner den här videon."
+  },
+  "sponsorFastBadge": {
+    "message": "SNABB"
+  },
+  "sponsorFastLabel": {
+    "message": "Snabb nedladdning"
+  },
+  "sponsorFastSub": {
+    "message": "Öppnar ett sponsrat erbjudande i bakgrunden"
+  },
+  "sponsorNormalBadge": {
+    "message": "NORMAL"
+  },
+  "sponsorNormalLabel": {
+    "message": "Normal hastighet"
+  },
+  "sponsorNormalSub": {
+    "message": "Ladda ner utan sponsor"
+  },
+  "sponsorSpeedLabel": {
+    "message": "uppsk. fart"
   }
 }

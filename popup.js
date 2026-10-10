@@ -736,7 +736,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     const proTitleEl = document.getElementById('txt-pro-title');
     const proDescEl = document.getElementById('txt-pro-description');
-    const freeVsProEl = document.getElementById('txt-free-vs-pro');
     const proLifetimeEl = document.getElementById('txt-pro-lifetime');
     const proActiveEl = document.getElementById('txt-pro-active');
     const licenseHintEl = document.getElementById('txt-license-after-purchase');
@@ -744,7 +743,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (proDescEl) proDescEl.textContent = t('proDescription');
     const proHookEl = document.getElementById('txt-pro-hook');
     if (proHookEl) proHookEl.textContent = t('proHook');
-    if (freeVsProEl) freeVsProEl.textContent = t('freeVsPro');
     if (proLifetimeEl) proLifetimeEl.textContent = t('proPriceLifetime');
     if (proActiveEl) proActiveEl.textContent = t('proActive');
     if (licenseHintEl) licenseHintEl.textContent = t('licenseAfterPurchase');

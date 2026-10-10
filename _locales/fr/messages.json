@@ -286,5 +286,191 @@
   },
   "internalPageBlocked": {
     "message": "Cannot detect videos on browser internal pages"
+  },
+  "version": {
+    "message": "v3.3.9"
+  },
+  "dashNotSupported": {
+    "message": "Le téléchargement DASH/MPD n'est pas encore disponible. Essayez un lien M3U8 ou MP4 direct."
+  },
+  "featureHourlyDownloads": {
+    "message": "Téléchargements toutes les {hours} heures"
+  },
+  "limitOnePerHour": {
+    "message": "1"
+  },
+  "alreadyHaveLicense": {
+    "message": "Vous avez déjà une clé de licence ?"
+  },
+  "licenseAfterPurchase": {
+    "message": "Après le paiement Ko-fi, collez la clé de la page de remerciement."
+  },
+  "proHook": {
+    "message": "La version gratuite est limitée à 1 téléchargement vidéo toutes les {hours} heures."
+  },
+  "rateLimitTitle": {
+    "message": "Limite de téléchargement atteinte"
+  },
+  "rateLimitMessagePlural": {
+    "message": "Les utilisateurs gratuits peuvent télécharger 1 vidéo toutes les {hours} heures. Vous pourrez télécharger à nouveau dans {time}."
+  },
+  "rateLimitProPitch": {
+    "message": "⚡ Passez à Pro pour des téléchargements illimités — sans attente !"
+  },
+  "rateLimitClose": {
+    "message": "Compris"
+  },
+  "rateLimitUpgrade": {
+    "message": "Passer à Pro"
+  },
+  "rateLimitReady": {
+    "message": "Prêt à télécharger !"
+  },
+  "rateLimitWaitPlural": {
+    "message": "Prochain téléchargement dans {time}"
+  },
+  "durationHourShort": {
+    "message": "h"
+  },
+  "durationMinuteShort": {
+    "message": "min"
+  },
+  "proUpsellTitle": {
+    "message": "Pro à vie"
+  },
+  "proUpsellCountdown": {
+    "message": "Prochain téléchargement gratuit dans {time}"
+  },
+  "proUpsellReady": {
+    "message": "Votre téléchargement gratuit est prêt"
+  },
+  "proDiscountBadge": {
+    "message": "-{percent} %"
+  },
+  "proOfferBulletDownloads": {
+    "message": "Téléchargements illimités"
+  },
+  "proOfferBulletConcurrent": {
+    "message": "3 téléchargements à la fois"
+  },
+  "proOfferBulletHistory": {
+    "message": "Historique illimité"
+  },
+  "proOfferBulletAds": {
+    "message": "Sans publicité"
+  },
+  "proOfferUrgency": {
+    "message": "Offre limitée — jusqu'au {date}. Le prix augmente ensuite."
+  },
+  "proOfferCta": {
+    "message": "Obtenir Pro à vie"
+  },
+  "proOfferTrust": {
+    "message": "Sans abonnement. Payez une fois — c'est à vous pour toujours."
+  },
+  "proOfferRegularHint": {
+    "message": "Prix habituel {price}"
+  },
+  "reviewPromptTitle": {
+    "message": "Vous aimez Flash Video Downloader ?"
+  },
+  "reviewPromptDesc": {
+    "message": "Si l'extension vous plaît, une note rapide de 5 étoiles sur le Chrome Web Store aide beaucoup. Aucune obligation, merci !"
+  },
+  "reviewPromptForcedDesc": {
+    "message": "Vous avez téléchargé 10 vidéos avec Flash Video Downloader. Merci de laisser une note rapide de 5 étoiles sur le Chrome Web Store. Cela nous aide vraiment à continuer d'améliorer l'extension !"
+  },
+  "reviewPromptLater": {
+    "message": "Pas maintenant"
+  },
+  "reviewPromptRate": {
+    "message": "Noter sur le Chrome Web Store"
+  },
+  "adLabel": {
+    "message": "Publicité"
+  },
+  "adDismiss": {
+    "message": "Fermer"
+  },
+  "adRemoveWithPro": {
+    "message": "Supprimez les publicités avec Pro"
+  },
+  "adProTitle": {
+    "message": "Passez à Pro — téléchargements illimités"
+  },
+  "adProText": {
+    "message": "La version gratuite est limitée à 1 téléchargement toutes les {hours} heures. Pro supprime la limite et cette publicité."
+  },
+  "adTipTitle": {
+    "message": "Soutenez le développeur"
+  },
+  "adTipText": {
+    "message": "Offrez-moi un café et aidez à garder Flash Video Downloader gratuit et en constante amélioration."
+  },
+  "adTipCta": {
+    "message": "Offrez-moi un café"
+  },
+  "adReviewTitle": {
+    "message": "Vous aimez l'extension ?"
+  },
+  "adReviewText": {
+    "message": "Une note rapide de 5 étoiles aide plus de personnes à découvrir Flash Video Downloader."
+  },
+  "adAffiliateLabel": {
+    "message": "Publicité · affiliation"
+  },
+  "affVpnTitle": {
+    "message": "Naviguez plus discrètement"
+  },
+  "affVpnText": {
+    "message": "Protégez votre connexion avec notre partenaire VPN."
+  },
+  "affVpnCta": {
+    "message": "Voir l'offre"
+  },
+  "affCloudTitle": {
+    "message": "Plus de stockage cloud"
+  },
+  "affCloudText": {
+    "message": "Gardez vos téléchargements en sécurité dans le cloud avec notre partenaire."
+  },
+  "affCloudCta": {
+    "message": "Voir l'offre"
+  },
+  "affToolsTitle": {
+    "message": "Montez vos vidéos"
+  },
+  "affToolsText": {
+    "message": "Découpez et convertissez vos clips avec notre partenaire vidéo."
+  },
+  "affToolsCta": {
+    "message": "Voir l'offre"
+  },
+  "sponsorModalTitle": {
+    "message": "Options de Téléchargement"
+  },
+  "sponsorModalDesc": {
+    "message": "Choisissez comment vous souhaitez télécharger cette vidéo."
+  },
+  "sponsorFastBadge": {
+    "message": "RAPIDE"
+  },
+  "sponsorFastLabel": {
+    "message": "Téléchargement Rapide"
+  },
+  "sponsorFastSub": {
+    "message": "Ouvre une offre sponsorisée en arrière-plan"
+  },
+  "sponsorNormalBadge": {
+    "message": "NORMAL"
+  },
+  "sponsorNormalLabel": {
+    "message": "Vitesse Normale"
+  },
+  "sponsorNormalSub": {
+    "message": "Télécharger sans sponsor"
+  },
+  "sponsorSpeedLabel": {
+    "message": "vit. est."
   }
 }

@@ -316,5 +316,161 @@
   },
   "rateLimitWaitSingular": {
     "message": "Next download in ~1 min"
+  },
+  "version": {
+    "message": "v3.3.9"
+  },
+  "dashNotSupported": {
+    "message": "DASH/MPD download is not supported yet. Try an M3U8 or direct MP4 link instead."
+  },
+  "alreadyHaveLicense": {
+    "message": "Already have a license key?"
+  },
+  "proHook": {
+    "message": "Free is limited to 1 video download every {hours} hours."
+  },
+  "durationHourShort": {
+    "message": "h"
+  },
+  "durationMinuteShort": {
+    "message": "min"
+  },
+  "proUpsellTitle": {
+    "message": "Pro Lifetime"
+  },
+  "proUpsellCountdown": {
+    "message": "Next free download in {time}"
+  },
+  "proUpsellReady": {
+    "message": "Your free download is ready now"
+  },
+  "proDiscountBadge": {
+    "message": "{percent}% OFF"
+  },
+  "proOfferBulletDownloads": {
+    "message": "Unlimited downloads"
+  },
+  "proOfferBulletConcurrent": {
+    "message": "3 downloads at once"
+  },
+  "proOfferBulletHistory": {
+    "message": "Unlimited history"
+  },
+  "proOfferBulletAds": {
+    "message": "No ads"
+  },
+  "proOfferUrgency": {
+    "message": "Limited offer — ends {date}. The price goes up afterwards."
+  },
+  "proOfferCta": {
+    "message": "Get Lifetime Pro"
+  },
+  "proOfferTrust": {
+    "message": "No subscription. Pay once — yours forever."
+  },
+  "proOfferRegularHint": {
+    "message": "Regular price {price}"
+  },
+  "reviewPromptTitle": {
+    "message": "Enjoying Flash Video Downloader?"
+  },
+  "reviewPromptDesc": {
+    "message": "If you like the extension, a quick 5-star rating on the Chrome Web Store helps a lot. No pressure, thank you!"
+  },
+  "reviewPromptForcedDesc": {
+    "message": "You've downloaded 10 videos with Flash Video Downloader. A quick 5-star rating on the Chrome Web Store really helps us keep improving!"
+  },
+  "reviewPromptLater": {
+    "message": "Not now"
+  },
+  "reviewPromptRate": {
+    "message": "Rate on Chrome Web Store"
+  },
+  "adLabel": {
+    "message": "Sponsored"
+  },
+  "adDismiss": {
+    "message": "Dismiss"
+  },
+  "adRemoveWithPro": {
+    "message": "Remove ads with Pro"
+  },
+  "adProTitle": {
+    "message": "Go Pro — unlimited downloads"
+  },
+  "adProText": {
+    "message": "Free is limited to 1 download every {hours} hours. Pro removes the limit and this ad."
+  },
+  "adTipTitle": {
+    "message": "Support the developer"
+  },
+  "adTipText": {
+    "message": "Buy me a coffee and help keep Flash Video Downloader free and improving."
+  },
+  "adTipCta": {
+    "message": "Buy me a coffee"
+  },
+  "adReviewTitle": {
+    "message": "Enjoying the extension?"
+  },
+  "adReviewText": {
+    "message": "A quick 5-star rating helps other people find Flash Video Downloader."
+  },
+  "adAffiliateLabel": {
+    "message": "Ad · affiliate"
+  },
+  "affVpnTitle": {
+    "message": "Browse more privately"
+  },
+  "affVpnText": {
+    "message": "Protect your connection with our VPN partner."
+  },
+  "affVpnCta": {
+    "message": "See the offer"
+  },
+  "affCloudTitle": {
+    "message": "More cloud storage"
+  },
+  "affCloudText": {
+    "message": "Keep your downloads safe in the cloud with our partner."
+  },
+  "affCloudCta": {
+    "message": "See the offer"
+  },
+  "affToolsTitle": {
+    "message": "Edit your videos"
+  },
+  "affToolsText": {
+    "message": "Trim and convert your clips with our video partner."
+  },
+  "affToolsCta": {
+    "message": "See the offer"
+  },
+  "sponsorModalTitle": {
+    "message": "Download Options"
+  },
+  "sponsorModalDesc": {
+    "message": "Choose how you want to download this video."
+  },
+  "sponsorFastBadge": {
+    "message": "FAST"
+  },
+  "sponsorFastLabel": {
+    "message": "Fast Download"
+  },
+  "sponsorFastSub": {
+    "message": "Opens a sponsor offer in background"
+  },
+  "sponsorNormalBadge": {
+    "message": "NORMAL"
+  },
+  "sponsorNormalLabel": {
+    "message": "Normal Speed"
+  },
+  "sponsorNormalSub": {
+    "message": "Download without sponsor"
+  },
+  "sponsorSpeedLabel": {
+    "message": "est. speed"
   }
 }
