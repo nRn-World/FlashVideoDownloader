@@ -1192,16 +1192,6 @@ function reportProgress() {
   reportProgressFor(activeDownload);
 }
 
-// Listen for commands from background
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'START_OFFSCREEN_HLS') {
-    const { downloadId, url, filename, pageReferer } = message;
-    runHlsDownload(downloadId, url, filename, pageReferer || null);
-    sendResponse({ status: 'started' });
-  } else if (message.type === 'START_OFFSCREEN_DASH') {
-    const { downloadId, url, filename, pageReferer } = message;
-    runDashDownload(downloadId, url, filename, pageReferer || null);
-    sendResponse({ status: 'started' });
 // ============================================================
 // PARALLEL CHUNK DOWNLOADER
 // Splits the file into N equal byte-ranges and fetches them
@@ -1374,6 +1364,16 @@ async function runChunkedDownload(downloadId, fileUrl, filename, pageReferer, th
   }
 }
 
+// Listen for commands from background
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'START_OFFSCREEN_HLS') {
+    const { downloadId, url, filename, pageReferer } = message;
+    runHlsDownload(downloadId, url, filename, pageReferer || null);
+    sendResponse({ status: 'started' });
+  } else if (message.type === 'START_OFFSCREEN_DASH') {
+    const { downloadId, url, filename, pageReferer } = message;
+    runDashDownload(downloadId, url, filename, pageReferer || null);
+    sendResponse({ status: 'started' });
   } else if (message.type === 'START_OFFSCREEN_GENERIC') {
     const { downloadId, url, filename, pageReferer } = message;
     runGenericDownload(downloadId, url, filename, pageReferer || null);

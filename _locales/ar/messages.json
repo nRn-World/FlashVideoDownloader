@@ -286,5 +286,191 @@
   },
   "internalPageBlocked": {
     "message": "Cannot detect videos on browser internal pages"
+  },
+  "version": {
+    "message": "v3.3.9"
+  },
+  "dashNotSupported": {
+    "message": "تنزيل DASH/MPD غير مدعوم بعد. جرّب رابط M3U8 أو MP4 مباشر."
+  },
+  "featureHourlyDownloads": {
+    "message": "التنزيلات كل {hours} ساعات"
+  },
+  "limitOnePerHour": {
+    "message": "1"
+  },
+  "alreadyHaveLicense": {
+    "message": "هل لديك مفتاح ترخيص؟"
+  },
+  "licenseAfterPurchase": {
+    "message": "بعد الدفع عبر Ko-fi الصق المفتاح من صفحة الشكر."
+  },
+  "proHook": {
+    "message": "الحساب المجاني محدود بتنزيل فيديو واحد كل {hours} ساعات."
+  },
+  "rateLimitTitle": {
+    "message": "تم بلوغ حد التنزيل"
+  },
+  "rateLimitMessagePlural": {
+    "message": "يمكن للمستخدمين المجانيين تنزيل فيديو واحد كل {hours} ساعات. يمكنك التنزيل مرة أخرى خلال {time}."
+  },
+  "rateLimitProPitch": {
+    "message": "⚡ ترقَّ إلى Pro لتنزيلات غير محدودة — بدون انتظار!"
+  },
+  "rateLimitClose": {
+    "message": "حسناً"
+  },
+  "rateLimitUpgrade": {
+    "message": "الترقية إلى Pro"
+  },
+  "rateLimitReady": {
+    "message": "جاهز للتنزيل!"
+  },
+  "rateLimitWaitPlural": {
+    "message": "التنزيل التالي خلال {time}"
+  },
+  "durationHourShort": {
+    "message": "س"
+  },
+  "durationMinuteShort": {
+    "message": "د"
+  },
+  "proUpsellTitle": {
+    "message": "Pro مدى الحياة"
+  },
+  "proUpsellCountdown": {
+    "message": "التنزيل المجاني التالي خلال {time}"
+  },
+  "proUpsellReady": {
+    "message": "تنزيلك المجاني جاهز الآن"
+  },
+  "proDiscountBadge": {
+    "message": "خصم {percent}%"
+  },
+  "proOfferBulletDownloads": {
+    "message": "تنزيلات غير محدودة"
+  },
+  "proOfferBulletConcurrent": {
+    "message": "3 تنزيلات في وقت واحد"
+  },
+  "proOfferBulletHistory": {
+    "message": "سجل غير محدود"
+  },
+  "proOfferBulletAds": {
+    "message": "بدون إعلانات"
+  },
+  "proOfferUrgency": {
+    "message": "عرض محدود — ينتهي في {date}. يرتفع السعر بعد ذلك."
+  },
+  "proOfferCta": {
+    "message": "احصل على Pro مدى الحياة"
+  },
+  "proOfferTrust": {
+    "message": "بدون اشتراك. ادفع مرة واحدة وتبقى لك للأبد."
+  },
+  "proOfferRegularHint": {
+    "message": "السعر العادي {price}"
+  },
+  "reviewPromptTitle": {
+    "message": "هل أعجبك Flash Video Downloader؟"
+  },
+  "reviewPromptDesc": {
+    "message": "إذا أعجبتك الإضافة، فإن تقييماً سريعاً بـ 5 نجوم في Chrome Web Store يساعد كثيراً. بلا ضغط، شكراً!"
+  },
+  "reviewPromptForcedDesc": {
+    "message": "لقد نزّلت 10 فيديوهات باستخدام Flash Video Downloader. يرجى ترك تقييم سريع بـ 5 نجوم في Chrome Web Store. هذا يساعدنا كثيراً على الاستمرار في التحسين!"
+  },
+  "reviewPromptLater": {
+    "message": "ليس الآن"
+  },
+  "reviewPromptRate": {
+    "message": "قيّم في Chrome Web Store"
+  },
+  "adLabel": {
+    "message": "إعلان"
+  },
+  "adDismiss": {
+    "message": "إغلاق"
+  },
+  "adRemoveWithPro": {
+    "message": "أزل الإعلانات مع Pro"
+  },
+  "adProTitle": {
+    "message": "ترقَّ إلى Pro — تنزيلات غير محدودة"
+  },
+  "adProText": {
+    "message": "النسخة المجانية محدودة بتنزيل واحد كل {hours} ساعات. يزيل Pro هذا الحد وهذا الإعلان."
+  },
+  "adTipTitle": {
+    "message": "ادعم المطوّر"
+  },
+  "adTipText": {
+    "message": "اشترِ لي قهوة وساعد في إبقاء Flash Video Downloader مجانياً وفي تطوّر مستمر."
+  },
+  "adTipCta": {
+    "message": "اشترِ لي قهوة"
+  },
+  "adReviewTitle": {
+    "message": "هل أعجبتك الإضافة؟"
+  },
+  "adReviewText": {
+    "message": "تقييم سريع بخمس نجوم يساعد المزيد من الناس على اكتشاف Flash Video Downloader."
+  },
+  "adAffiliateLabel": {
+    "message": "إعلان · رابط تسويقي"
+  },
+  "affVpnTitle": {
+    "message": "تصفّح بمزيد من الخصوصية"
+  },
+  "affVpnText": {
+    "message": "احمِ اتصالك مع شريكنا في الشبكة الافتراضية."
+  },
+  "affVpnCta": {
+    "message": "شاهد العرض"
+  },
+  "affCloudTitle": {
+    "message": "مساحة تخزين سحابية أكبر"
+  },
+  "affCloudText": {
+    "message": "احفظ تنزيلاتك بأمان في السحابة مع شريكنا."
+  },
+  "affCloudCta": {
+    "message": "شاهد العرض"
+  },
+  "affToolsTitle": {
+    "message": "حرّر فيديوهاتك"
+  },
+  "affToolsText": {
+    "message": "اقتطع وحوّل مقاطعك مع شريكنا في الفيديو."
+  },
+  "affToolsCta": {
+    "message": "شاهد العرض"
+  },
+  "sponsorModalTitle": {
+    "message": "خيارات التنزيل"
+  },
+  "sponsorModalDesc": {
+    "message": "اختر كيف تريد تنزيل هذا الفيديو."
+  },
+  "sponsorFastBadge": {
+    "message": "سريع"
+  },
+  "sponsorFastLabel": {
+    "message": "تنزيل سريع"
+  },
+  "sponsorFastSub": {
+    "message": "يفتح عرض رعاية في الخلفية"
+  },
+  "sponsorNormalBadge": {
+    "message": "عادي"
+  },
+  "sponsorNormalLabel": {
+    "message": "سرعة عادية"
+  },
+  "sponsorNormalSub": {
+    "message": "تنزيل بدون رعاية"
+  },
+  "sponsorSpeedLabel": {
+    "message": "سرعة تقريبية"
   }
 }

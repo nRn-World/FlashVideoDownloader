@@ -286,5 +286,191 @@
   },
   "internalPageBlocked": {
     "message": "Cannot detect videos on browser internal pages"
+  },
+  "version": {
+    "message": "v3.3.9"
+  },
+  "dashNotSupported": {
+    "message": "DASH/MPD indirme henüz desteklenmiyor. M3U8 veya doğrudan MP4 bağlantısı deneyin."
+  },
+  "featureHourlyDownloads": {
+    "message": "{hours} saatte indirme"
+  },
+  "limitOnePerHour": {
+    "message": "1"
+  },
+  "alreadyHaveLicense": {
+    "message": "Lisans anahtarınız var mı?"
+  },
+  "licenseAfterPurchase": {
+    "message": "Ko-fi ödemesinden sonra teşekkür sayfasındaki anahtarı yapıştırın."
+  },
+  "proHook": {
+    "message": "Ücretsiz hesaplar {hours} saatte yalnızca 1 video indirebilir."
+  },
+  "rateLimitTitle": {
+    "message": "İndirme sınırına ulaşıldı"
+  },
+  "rateLimitMessagePlural": {
+    "message": "Ücretsiz kullanıcılar {hours} saatte 1 video indirebilir. {time} sonra tekrar indirebilirsiniz."
+  },
+  "rateLimitProPitch": {
+    "message": "⚡ Sınırsız indirme için Pro'ya yükseltin — bekleme yok!"
+  },
+  "rateLimitClose": {
+    "message": "Tamam"
+  },
+  "rateLimitUpgrade": {
+    "message": "Pro'ya yükselt"
+  },
+  "rateLimitReady": {
+    "message": "İndirmeye hazır!"
+  },
+  "rateLimitWaitPlural": {
+    "message": "Sonraki indirme {time} sonra"
+  },
+  "durationHourShort": {
+    "message": "sa"
+  },
+  "durationMinuteShort": {
+    "message": "dk"
+  },
+  "proUpsellTitle": {
+    "message": "Ömür Boyu Pro"
+  },
+  "proUpsellCountdown": {
+    "message": "Sonraki ücretsiz indirme {time} sonra"
+  },
+  "proUpsellReady": {
+    "message": "Ücretsiz indirmen şimdi hazır"
+  },
+  "proDiscountBadge": {
+    "message": "%{percent} İNDİRİM"
+  },
+  "proOfferBulletDownloads": {
+    "message": "Sınırsız indirme"
+  },
+  "proOfferBulletConcurrent": {
+    "message": "Aynı anda 3 indirme"
+  },
+  "proOfferBulletHistory": {
+    "message": "Sınırsız geçmiş"
+  },
+  "proOfferBulletAds": {
+    "message": "Reklamsız"
+  },
+  "proOfferUrgency": {
+    "message": "Sınırlı teklif — {date} tarihine kadar. Sonrasında fiyat artar."
+  },
+  "proOfferCta": {
+    "message": "Ömür Boyu Pro Al"
+  },
+  "proOfferTrust": {
+    "message": "Abonelik yok. Bir kez öde — sonsuza kadar senin."
+  },
+  "proOfferRegularHint": {
+    "message": "Normal fiyat {price}"
+  },
+  "reviewPromptTitle": {
+    "message": "Flash Video Downloader'ı beğendiniz mi?"
+  },
+  "reviewPromptDesc": {
+    "message": "Eklentiyi beğendiyseniz Chrome Web Store'da hızlı bir 5 yıldız puanı çok yardımcı olur. Zorunlu değil, teşekkürler!"
+  },
+  "reviewPromptForcedDesc": {
+    "message": "Flash Video Downloader ile 10 video indirdiniz. Lütfen Chrome Web Store'da hızlı bir 5 yıldız puan bırakın. Geliştirmeye devam etmemize çok yardımcı olur!"
+  },
+  "reviewPromptLater": {
+    "message": "Şimdi değil"
+  },
+  "reviewPromptRate": {
+    "message": "Chrome Web Store'da puanla"
+  },
+  "adLabel": {
+    "message": "Reklam"
+  },
+  "adDismiss": {
+    "message": "Kapat"
+  },
+  "adRemoveWithPro": {
+    "message": "Pro ile reklamı kaldır"
+  },
+  "adProTitle": {
+    "message": "Pro'ya geç — sınırsız indirme"
+  },
+  "adProText": {
+    "message": "Ücretsiz sürüm {hours} saatte 1 indirmeyle sınırlıdır. Pro bu sınırı ve bu reklamı kaldırır."
+  },
+  "adTipTitle": {
+    "message": "Geliştiriciyi destekle"
+  },
+  "adTipText": {
+    "message": "Bana bir kahve ısmarla; Flash Video Downloader ücretsiz kalsın ve gelişmeye devam etsin."
+  },
+  "adTipCta": {
+    "message": "Bir kahve ısmarla"
+  },
+  "adReviewTitle": {
+    "message": "Eklentiyi beğendin mi?"
+  },
+  "adReviewText": {
+    "message": "Hızlı bir 5 yıldız değerlendirmesi, daha fazla kişinin Flash Video Downloader'ı bulmasına yardımcı olur."
+  },
+  "adAffiliateLabel": {
+    "message": "Reklam · iş ortaklığı"
+  },
+  "affVpnTitle": {
+    "message": "Daha gizli gezinin"
+  },
+  "affVpnText": {
+    "message": "VPN iş ortağımızla bağlantınızı koruyun."
+  },
+  "affVpnCta": {
+    "message": "Teklifi gör"
+  },
+  "affCloudTitle": {
+    "message": "Daha fazla bulut depolama"
+  },
+  "affCloudText": {
+    "message": "İndirdiklerinizi iş ortağımızla bulutta güvende tutun."
+  },
+  "affCloudCta": {
+    "message": "Teklifi gör"
+  },
+  "affToolsTitle": {
+    "message": "Videolarınızı düzenleyin"
+  },
+  "affToolsText": {
+    "message": "Kliplerinizi video iş ortağımızla kesin ve dönüştürün."
+  },
+  "affToolsCta": {
+    "message": "Teklifi gör"
+  },
+  "sponsorModalTitle": {
+    "message": "İndirme Seçenekleri"
+  },
+  "sponsorModalDesc": {
+    "message": "Bu videoyu nasıl indirmek istediğinizi seçin."
+  },
+  "sponsorFastBadge": {
+    "message": "HIZLI"
+  },
+  "sponsorFastLabel": {
+    "message": "Hızlı İndirme"
+  },
+  "sponsorFastSub": {
+    "message": "Arka planda sponsor teklifi açar"
+  },
+  "sponsorNormalBadge": {
+    "message": "NORMAL"
+  },
+  "sponsorNormalLabel": {
+    "message": "Normal Hız"
+  },
+  "sponsorNormalSub": {
+    "message": "Sponsorsuz indir"
+  },
+  "sponsorSpeedLabel": {
+    "message": "tahm. hız"
   }
 }
