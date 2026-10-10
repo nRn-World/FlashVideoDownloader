@@ -1,4 +1,4 @@
-// Flash Video Downloader - Background Service Worker (v3.3.7)
+// Flash Video Downloader - Background Service Worker (v3.3.9)
 // HLS downloads are delegated to offscreen.js which has full DOM/Blob/ObjectURL access.
 
 importScripts('blocked-hosts.js');
@@ -826,7 +826,7 @@ async function canStartNewDownload() {
 function notifyRateLimit(minutesRemaining) {
   chrome.runtime.sendMessage({
     type: 'RATE_LIMIT_REACHED',
-    minutesRemaining: minutesRemaining || 60,
+    minutesRemaining: minutesRemaining || FREE_RATE_WINDOW_MINUTES,
     requiresUpgrade: true
   }).catch(() => {});
 }
@@ -839,7 +839,8 @@ function notifyConcurrentLimit() {
   }).catch(() => {});
 }
 
-// Enforce Free: 1/hour + 1 concurrent. Consumes the hourly slot only when start is allowed.
+// Enforce Free: 1 per window + 1 concurrent. Consumes the slot only when start is allowed.
+// The window length lives in license.js (FREE_RATE_WINDOW_HOURS).
 async function gateDownloadStart() {
   try {
     if (!(await canStartNewDownload())) {
@@ -848,8 +849,8 @@ async function gateDownloadStart() {
     }
 
     if (typeof consumeFreeDownloadSlot !== 'function') {
-      notifyRateLimit(60);
-      return { ok: false, status: 'rate_limited', minutesRemaining: 60 };
+      notifyRateLimit(FREE_RATE_WINDOW_MINUTES);
+      return { ok: false, status: 'rate_limited', minutesRemaining: FREE_RATE_WINDOW_MINUTES };
     }
 
     const rate = await consumeFreeDownloadSlot();
@@ -858,15 +859,15 @@ async function gateDownloadStart() {
       return {
         ok: false,
         status: 'rate_limited',
-        minutesRemaining: rate.minutesRemaining || 60
+        minutesRemaining: rate.minutesRemaining || FREE_RATE_WINDOW_MINUTES
       };
     }
 
     return { ok: true, status: 'started' };
   } catch (e) {
     console.warn('[FVD] Download gate failed:', e);
-    notifyRateLimit(60);
-    return { ok: false, status: 'rate_limited', minutesRemaining: 60 };
+    notifyRateLimit(FREE_RATE_WINDOW_MINUTES);
+    return { ok: false, status: 'rate_limited', minutesRemaining: FREE_RATE_WINDOW_MINUTES };
   }
 }
 

@@ -223,6 +223,238 @@ body {
   color: #34d399;
 }
 
+/* ==========================================================================
+   Pro offer card in the main view (Free users, while the limit counts down)
+   ========================================================================== */
+.pro-upsell-banner {
+  position: relative;
+  margin: 10px 16px;
+  padding: 13px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(129, 140, 248, 0.42);
+  background:
+    radial-gradient(120% 130% at 100% 0%, rgba(139, 92, 246, 0.3), rgba(139, 92, 246, 0) 58%),
+    linear-gradient(152deg, rgba(29, 78, 216, 0.34), rgba(15, 23, 42, 0.72));
+  box-shadow: 0 8px 22px rgba(2, 6, 23, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.pro-upsell-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.pro-upsell-icon {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.45);
+}
+
+.pro-upsell-title {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #e0e7ff;
+}
+
+/* Discount badge — hidden automatically once the campaign has ended */
+.pro-upsell-badge,
+.pro-save-badge {
+  margin-left: auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  color: #1c1917;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 9px rgba(249, 115, 22, 0.4);
+}
+
+.pro-save-badge {
+  margin-left: 0;
+}
+
+.pro-offer-price {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+
+.pro-offer-was,
+.price-was {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.pro-offer-now {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgba(59, 130, 246, 0.5);
+}
+
+.pro-offer-lifetime {
+  flex-basis: 100%;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: #a5b4fc;
+  letter-spacing: 0.2px;
+}
+
+.pro-offer-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 10px;
+}/* Compact card — used while the affiliate banner is on screen too. The feature
+   list and the trust line are dropped (Settings shows the same comparison) and
+   the price line is tightened so the video list keeps its space. */
+.pro-upsell-banner.compact {
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+.pro-upsell-banner.compact .pro-offer-list,
+.pro-upsell-banner.compact .pro-offer-trust {
+  display: none;
+}
+
+.pro-upsell-banner.compact .pro-offer-lifetime {
+  flex-basis: auto;
+  font-size: 0.62rem;
+}
+
+.pro-upsell-banner.compact .pro-offer-now {
+  font-size: 1.3rem;
+}
+
+.pro-upsell-banner.compact .pro-offer-urgency {
+  padding: 5px 8px;
+}
+
+.pro-offer-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.67rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.pro-offer-item::before {
+  content: "✓";
+  color: #34d399;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Free-tier countdown that explains why the offer is on screen */
+.pro-offer-countdown {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fbbf24;
+  letter-spacing: 0.1px;
+}
+
+.pro-upsell-banner.ready .pro-offer-countdown {
+  color: #34d399;
+}
+
+/* Deadline chip */
+.pro-offer-urgency {
+  margin: 0;
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-upsell-buy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 11px 14px;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #3b82f6, #6d28d9);
+  color: #fff;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.38);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.btn-upsell-buy:hover {
+  filter: brightness(1.07);
+  transform: translateY(-1px);
+  box-shadow: 0 9px 24px rgba(99, 102, 241, 0.5);
+}
+
+.btn-upsell-buy:active {
+  transform: translateY(0);
+}
+
+.pro-offer-trust {
+  margin: 0;
+  font-size: 0.62rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* Settings Pro box: regular price + discount badge beside the current price */
+.pro-price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.price-was.hidden,
+.pro-save-badge.hidden,
+.pro-offer-was.hidden,
+.pro-upsell-badge.hidden {
+  display: none;
+}
+
+/* Discount line inside the "Download limit reached" modal */
+.rate-limit-offer {
+  margin: 8px 0 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  color: #fbbf24;
+}
+
 #search-input {
   width: 100%;
   padding: 8px 12px;
@@ -1510,6 +1742,15 @@ body {
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(139, 92, 246, 0.16));
   overflow: hidden;
+  /* The popup flex layout must never squash the banner: the video list is the
+     item that shrinks (and scrolls), so ad impressions are never lost. */
+  flex-shrink: 0;
+}
+
+/* While the Pro offer card is below, the ad's own "Remove ads with Pro" line is
+   redundant — the card right underneath sells exactly that. */
+.ad-slot.share-with-offer .ad-note {
+  display: none;
 }
 
 .ad-card {

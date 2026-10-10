@@ -56,12 +56,17 @@ FEATURES
 • 6 languages (English, Svenska, Español, Français, Türkçe, العربية)
 
 FREE TIER
-• 1 download per rolling hour
+• 1 download every 2 hours
 • 1 download at a time
 • Last 10 downloads in history
 
+ADS
+• The Free tier shows small, bundled promotional banners inside the popup
+• No ad networks, no third-party code, no tracking
+• Pro removes all ads
+
 PRO (optional, EUR 10.99 one-time lifetime via Ko-fi)
-• Unlimited hourly downloads
+• Unlimited downloads
 • Up to 3 concurrent downloads
 • Unlimited local history
 Buy on Ko-fi, then enter your license key under Settings → Pro.
@@ -94,12 +99,22 @@ FUNKTIONER
 • 6 språk
 
 GRATIS
-• 1 nedladdning per rullande timme
+• 1 nedladdning varannan timme (rullande 2-timmarsfönster)
 • 1 nedladdning i taget
 • Senaste 10 i historiken
 
+ANNONSER & AFFILIATE-LÄNKAR
+• Gratisnivån visar en liten, inbyggd reklambanner i popupen
+• Bannern kan vara en affiliate-länk (partnerskap) till ett tredjepartsprogram.
+  Om du klickar och köper något kan utvecklaren få en provision — utan extra kostnad för dig.
+• Klick öppnar partnerns webbplats i en ny flik; tillägget skickar inga uppgifter till partnern
+• Inga annonsnätverk, ingen tredjepartskod, ingen spårning
+• Alla banners är märkta "Annons · affiliate" och kan stängas med ✕
+• Pro tar bort all reklam
+
+
 PRO (valfritt, EUR 10.99 engångs via Ko-fi)
-• Obegränsade nedladdningar per timme
+• Obegränsade nedladdningar
 • Upp till 3 samtidiga nedladdningar
 • Obegränsad lokal historik
 Köp på Ko-fi och ange licensnyckel under Inställningar → Pro.

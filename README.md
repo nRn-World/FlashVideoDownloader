@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg"><img src="https://img.shields.io/badge/Download-Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=0B57D0" alt="Download on Chrome Web Store" /></a>
-  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.3.8-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.3.8" /></a>
+  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.3.9-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.3.9" /></a>
   <a href="https://developer.chrome.com/docs/extensions/mv3/"><img src="https://img.shields.io/badge/Manifest-V3-FF6D00?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=E65100" alt="Manifest V3" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-00BFA5?style=for-the-badge&logo=creativecommons&logoColor=white&labelColor=00897B" alt="License CC BY-NC 4.0" /></a>
   <a href="https://ko-fi.com/s/72a48b875e"><img src="https://img.shields.io/badge/Pro-EUR%2010.99%20lifetime-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white&labelColor=D32F2F" alt="Buy Pro on Ko-fi" /></a>
@@ -30,7 +30,7 @@ The extension focuses on **visible page videos**, offers **pause / resume / canc
 | | Free | Pro |
 |---|---|---|
 | Detect, preview, pause / resume / cancel | Yes | Yes |
-| Downloads per hour | **1** | Unlimited |
+| Downloads every 2 hours | **1** | Unlimited |
 | Concurrent downloads | 1 | 3 |
 | Download history | Last 10 | Unlimited |
 | Ads in the popup | Shown | **None** |
@@ -78,10 +78,10 @@ Buy Pro on [Ko-fi](https://ko-fi.com/s/72a48b875e). After payment, copy the lice
 | **Save location** | Ask each time, or save all videos to a folder you pick on your computer |
 | **Languages** | English, Svenska, Türkçe, Español, Français, العربية |
 | **History** | Last 10 (Free) or unlimited (Pro), optional 24-hour auto-cleanup |
-| **Rate limits** | Free: 1 download per rolling hour, 1 concurrent. Pro: unlimited hourly, 3 concurrent |
+| **Rate limits** | Free: 1 download every 2 hours, 1 concurrent. Pro: unlimited, 3 concurrent |
 | **Pro** | Optional EUR 10.99 lifetime license via [Ko-fi](https://ko-fi.com/s/72a48b875e) |
-| **Ads** | Free users see lightweight bundled house ads in the popup; Pro sees none |
-| **Privacy** | On-demand content script injection · no analytics · no ad networks · blocked-host list |
+| **Ads** | Free users see a small bundled "Sponsored" banner (an affiliate offer, or a house ad as fallback); Pro sees none |
+| **Privacy** | On-demand content script injection · no analytics · no third-party code inside the extension · blocked-host list |
 
 ---
 
@@ -164,7 +164,7 @@ Then click **Reload** on the extension card in `chrome://extensions/`.
 | `offscreen.js` | HLS/generic download engine, blob merge, file delivery |
 | `content.js` | Visible video DOM scan (on-demand injection) |
 | `popup.js` / `.html` / `.css` | UI, settings, history, progress, Pro upgrade |
-| `license.js` | Pro license check and Free hourly limit |
+| `license.js` | Pro license check and Free download window (1 per 2 hours) |
 | `ads.js` | Free-tier ad slot: your affiliate offers (configurable) with house-ad fallback, hidden for Pro |
 | `blocked-hosts.js` | DRM / policy-restricted platform blocklist |
 | `storage-handles.js` | File System Access directory handle persistence |
@@ -224,6 +224,7 @@ Privacy policy: [nrn-world.github.io/FlashVideoDownloader/privacy.html](https://
 
 | Version | Highlights |
 |---|---|
+| **3.3.9** | Pro offer card on the front page (50 % launch price, crossed-out regular price, live countdown, lifetime license), free tier relaxed to 1 download every 2 hours, and the affiliate banner keeps its space next to the card |
 | **3.3.8** | Parallel multi-threaded chunk downloading engine for accelerated speeds, sponsor choice modal for free-tier with localized options in 6 languages, integrated Adsterra Smartlink monetization |
 | **3.3.7** | Universal video player detection (Video.js, JWPlayer, schema.org VideoObject, OpenGraph, tube CMS `/vid2/`), page Referer passing for CDN downloads with 403 fallback to offscreen download, and exact toolbar badge sync matching popup video count |
 | **3.3.5** | Detect DRM-protected streams and stop with a clear message instead of downloading a file that can only play as black or distorted picture with no sound. Encrypted DASH representations are skipped, a clear variant is used when the manifest offers one, and the stream is refused after a single small request rather than after gigabytes |

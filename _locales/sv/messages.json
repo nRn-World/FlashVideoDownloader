@@ -171,7 +171,7 @@
     "message": "Parallella nedladdningar"
   },
   "featureHourlyDownloads": {
-    "message": "Nedladdningar per timme"
+    "message": "Nedladdningar per 2 timmar"
   },
   "featureHistory": {
     "message": "Nedladdningshistorik"
@@ -297,13 +297,10 @@
     "message": "Nedladdningsgräns nådd"
   },
   "rateLimitMessagePlural": {
-    "message": "Gratisanvändare kan ladda ner 1 video per timme. Du kan ladda ner igen om {minutes} minuter."
-  },
-  "rateLimitMessageSingular": {
-    "message": "Gratisanvändare kan ladda ner 1 video per timme. Du kan ladda ner igen om ungefär 1 minut."
+    "message": "Gratisanvändare kan ladda ner 1 video per 2 timmar. Försök igen senare."
   },
   "rateLimitProPitch": {
-    "message": "⚡ Uppgradera till Pro för obegränsade nedladdningar — inga timgränser!"
+    "message": "⚡ Uppgradera till Pro för obegränsade nedladdningar — ingen väntetid!"
   },
   "rateLimitClose": {
     "message": "Okej"

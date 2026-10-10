@@ -1,12 +1,16 @@
-﻿// Flash Video Downloader - License & Pro Feature Manager (v3.3.5)
+﻿// Flash Video Downloader - License & Pro Feature Manager (v3.3.9)
 
 const LICENSE_STORAGE_KEY = 'fvd_pro_license';
 const PRO_STATUS_KEY = 'fvd_pro_status';
 const DOWNLOAD_TIMESTAMPS_KEY = 'fvd_download_timestamps';
 
-// Free tier: 1 download per rolling hour
+// Free tier: 1 download per rolling window. Change FREE_RATE_WINDOW_HOURS and the
+// whole product follows: the UI copy reads {hours} from this value, and both the
+// popup and background.js use the derived constants below.
 const FREE_DOWNLOAD_LIMIT = 1;
-const FREE_RATE_WINDOW_MS = 60 * 60 * 1000;
+const FREE_RATE_WINDOW_HOURS = 2;
+const FREE_RATE_WINDOW_MINUTES = FREE_RATE_WINDOW_HOURS * 60;
+const FREE_RATE_WINDOW_MS = FREE_RATE_WINDOW_HOURS * 60 * 60 * 1000;
 
 // Survives uninstall (Chrome wipes local storage). Paste your Worker URL after deploy.
 // Example: 'https://fvd-rate-limit.YOURNAME.workers.dev/'
@@ -199,7 +203,7 @@ async function consumeRemoteFreeSlot() {
       return {
         skipped: false,
         allowed: false,
-        minutesRemaining: data.minutesRemaining || 60
+        minutesRemaining: data.minutesRemaining || FREE_RATE_WINDOW_MINUTES
       };
     }
     return { skipped: false, allowed: true };
@@ -230,7 +234,7 @@ async function canStartDownload() {
       allowed: false,
       tier: 'free',
       reason: 'rate_limit',
-      minutesRemaining: 60
+      minutesRemaining: FREE_RATE_WINDOW_MINUTES
     };
   }
 }
@@ -258,8 +262,8 @@ async function consumeFreeDownloadSlotInner() {
       allowed: false,
       tier: 'free',
       reason: 'rate_limit',
-      minutesRemaining: remote.minutesRemaining || 60,
-      nextAllowedAt: now + (remote.minutesRemaining || 60) * 60 * 1000
+      minutesRemaining: remote.minutesRemaining || FREE_RATE_WINDOW_MINUTES,
+      nextAllowedAt: now + (remote.minutesRemaining || FREE_RATE_WINDOW_MINUTES) * 60 * 1000
     };
   }
 
@@ -268,7 +272,7 @@ async function consumeFreeDownloadSlotInner() {
   return { allowed: true, tier: 'free' };
 }
 
-// Consume the Free hourly slot when a download actually starts.
+// Consume the Free window slot when a download actually starts.
 async function consumeFreeDownloadSlot() {
   const run = consumeSlotChain.then(() => consumeFreeDownloadSlotInner(), () => consumeFreeDownloadSlotInner());
   consumeSlotChain = run.catch(() => {});

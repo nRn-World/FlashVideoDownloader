@@ -13,7 +13,7 @@
         <img src="icons/icon32.png" alt="FVD" class="logo-img" />
         <div class="brand-text">
           <h1 id="txt-app-title">Flash Video Downloader</h1>
-          <span class="version" id="txt-app-version">v3.3.8</span>
+          <span class="version" id="txt-app-version">v3.3.9</span>
         </div>
       </div>
       <div class="header-actions">
@@ -57,6 +57,34 @@
         <!-- Rendered dynamically by ads.js -->
       </div>
 
+      <!-- Pro offer card: shown to Free users while the free-window countdown runs -->
+      <div id="pro-upsell-banner" class="pro-upsell-banner hidden">
+        <div class="pro-upsell-head">
+          <span class="pro-upsell-icon" aria-hidden="true">⚡</span>
+          <h3 class="pro-upsell-title" id="txt-pro-upsell-title">Pro Lifetime</h3>
+          <span class="pro-upsell-badge" id="txt-offer-badge">50% OFF</span>
+        </div>
+
+        <div class="pro-offer-price">
+          <span class="pro-offer-was" id="txt-offer-was">€21.98</span>
+          <span class="pro-offer-now" id="txt-offer-now">€10.99</span>
+          <span class="pro-offer-lifetime" id="txt-offer-lifetime">One-time payment · Lifetime license</span>
+        </div>
+
+        <div class="pro-offer-list">
+          <span class="pro-offer-item" data-i18n="proOfferBulletDownloads">Unlimited downloads</span>
+          <span class="pro-offer-item" data-i18n="proOfferBulletConcurrent">3 downloads at once</span>
+          <span class="pro-offer-item" data-i18n="proOfferBulletHistory">Unlimited history</span>
+          <span class="pro-offer-item" data-i18n="proOfferBulletAds">No ads</span>
+        </div>
+
+        <p class="pro-offer-countdown" id="txt-pro-upsell-countdown"></p>
+        <p class="pro-offer-urgency" id="txt-offer-urgency"></p>
+
+        <button type="button" id="btn-upsell-buy" class="btn-upsell-buy">Get Lifetime Pro · €10.99</button>
+        <p class="pro-offer-trust" data-i18n="proOfferTrust">No subscription. Pay once — yours forever.</p>
+      </div>
+
       <!-- Video List -->
       <main class="media-container">
         <div id="media-list" class="media-list">
@@ -87,7 +115,7 @@
             <div class="pro-badge-icon">⚡</div>
             <div class="pro-header-text">
               <h3 class="pro-title" id="txt-pro-title">Flash Video Downloader Pro</h3>
-              <p class="pro-subtitle" id="txt-pro-description">Pay once. Download without the hourly limit.</p>
+              <p class="pro-subtitle" id="txt-pro-description">Pay once. No waiting between downloads.</p>
             </div>
           </div>
 
@@ -100,7 +128,7 @@
           </div>
 
           <div id="pro-sales-block">
-            <p class="pro-hook" id="txt-pro-hook">Free is limited to 1 video download per hour.</p>
+            <p class="pro-hook" id="txt-pro-hook">Free is limited to 1 video download every 2 hours.</p>
             <div id="pro-comparison-table" class="pro-comparison">
               <table class="comparison-table">
                 <thead>
@@ -112,7 +140,7 @@
                 </thead>
                 <tbody>
                   <tr class="pro-row-hook">
-                    <td data-i18n="featureHourlyDownloads">Downloads per hour</td>
+                    <td data-i18n="featureHourlyDownloads">Downloads every 2 hours</td>
                     <td class="cell-free-limit"><span data-i18n="limitOnePerHour">1</span></td>
                     <td class="cell-pro-unlock"><span data-i18n="limitUnlimited">Unlimited</span></td>
                   </tr>
@@ -132,8 +160,12 @@
 
             <div id="pro-purchase-box" class="pro-purchase-box">
               <div class="pro-price">
-                <span class="price-amount" id="txt-pro-price">€10.99</span>
-                <span class="price-lifetime" id="txt-pro-lifetime">One-time · lifetime access</span>
+                <div class="pro-price-row">
+                  <span class="price-was" id="txt-pro-price-was">€21.98</span>
+                  <span class="price-amount" id="txt-pro-price">€10.99</span>
+                  <span class="pro-save-badge" id="txt-pro-save-badge">50% OFF</span>
+                </div>
+                <span class="price-lifetime" id="txt-pro-lifetime">One-time payment · Lifetime license</span>
               </div>
               <a href="#" id="btn-buy-pro" class="btn-buy-pro" target="_blank" rel="noopener noreferrer">
                 <span data-i18n="buyPro">Buy Pro License</span>
@@ -222,7 +254,7 @@
               </svg>
             </button>
           </div>
-          <p class="credits-version" id="txt-settings-version">v3.3.8</p>
+          <p class="credits-version" id="txt-settings-version">v3.3.9</p>
         </div>
 
         <div class="settings-footer-btn">
@@ -234,7 +266,7 @@
     <!-- Footer -->
     <footer class="app-footer" id="app-footer">
       <span id="txt-footer">Captures MP4, WEBM, FLV, M3U8 & more</span>
-      <span id="txt-footer-version" class="footer-version">v3.3.8</span>
+      <span id="txt-footer-version" class="footer-version">v3.3.9</span>
     </footer>
   </div>
 
@@ -255,9 +287,10 @@
     <div class="modal-box">
       <div class="modal-icon-warning">⏱️</div>
       <h3 id="txt-rate-limit-title" data-i18n="rateLimitTitle">Download Limit Reached</h3>
-      <p id="txt-rate-limit-message" data-i18n="rateLimitMessagePlural">Free users can download 1 video per hour. You can download again in <strong id="txt-rate-limit-minutes">X</strong> minutes.</p>
+      <p id="txt-rate-limit-message">Free users can download 1 video every 2 hours. You can download again in 1 h 59 min.</p>
       <div class="rate-limit-upgrade-box">
-        <p class="rate-limit-pro-pitch" data-i18n="rateLimitProPitch">⚡ Upgrade to Pro for unlimited downloads — no hourly limits!</p>
+        <p class="rate-limit-pro-pitch" data-i18n="rateLimitProPitch">⚡ Upgrade to Pro for unlimited downloads — no waiting!</p>
+        <p class="rate-limit-offer" id="txt-rate-limit-offer"></p>
       </div>
       <div class="modal-actions">
         <button id="btn-rate-limit-close" class="btn-modal btn-modal-cancel" data-i18n="rateLimitClose">Got it</button>

@@ -1,9 +1,9 @@
-// Cloudflare Worker — Free-tier 1 download / 60 minutes (survives extension reinstall)
+// Cloudflare Worker — Free-tier 1 download / 2 hours (survives extension reinstall)
 // Dashboard: Workers & Pages → Create → paste this file. No KV bind required.
 //
 // After deploy, copy the workers.dev URL into FREE_RATE_LIMIT_API in license.js
 
-const WINDOW_MS = 60 * 60 * 1000;
+const WINDOW_MS = 2 * 60 * 60 * 1000;
 
 function corsHeaders() {
   return {
@@ -61,7 +61,7 @@ export default {
       cacheKey,
       new Response(String(now), {
         headers: {
-          'Cache-Control': 'public, max-age=3600',
+          'Cache-Control': 'public, max-age=7200',
           'Content-Type': 'text/plain'
         }
       })

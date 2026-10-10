@@ -1,4 +1,4 @@
-// Flash Video Downloader - Popup Script (v3.3.8)
+// Flash Video Downloader - Popup Script (v3.3.9)
 
 document.addEventListener('DOMContentLoaded', async () => {
   const mediaListContainer = document.getElementById('media-list');
@@ -37,6 +37,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnDeactivateLicense = document.getElementById('btn-deactivate-license');
   const licenseResultMessage = document.getElementById('license-result-message');
 
+  // Pro upsell banner (main view)
+  const proUpsellBanner = document.getElementById('pro-upsell-banner');
+  const txtProUpsellTitle = document.getElementById('txt-pro-upsell-title');
+  const txtProUpsellCountdown = document.getElementById('txt-pro-upsell-countdown');
+  const txtOfferBadge = document.getElementById('txt-offer-badge');
+  const txtOfferWas = document.getElementById('txt-offer-was');
+  const txtOfferNow = document.getElementById('txt-offer-now');
+  const txtOfferLifetime = document.getElementById('txt-offer-lifetime');
+  const txtOfferUrgency = document.getElementById('txt-offer-urgency');
+  const btnUpsellBuy = document.getElementById('btn-upsell-buy');
+  // Same campaign, shown in Settings and in the "limit reached" modal
+  const txtProPrice = document.getElementById('txt-pro-price');
+  const txtProPriceWas = document.getElementById('txt-pro-price-was');
+  const txtProSaveBadge = document.getElementById('txt-pro-save-badge');
+  const txtRateLimitOffer = document.getElementById('txt-rate-limit-offer');
+
   let currentLang = 'en'; // Default English
   let allMedia = [];
   let currentFilter = 'all';
@@ -57,6 +73,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   let isProActive = false;
   let featureLimits = {};
   let rateLimitStatusInterval = null;
+  // Free-tier upsell: shown in the main view while the next free download is pending
+  let upsellNextAllowedAt = 0;
+  let upsellTickInterval = null;
+
+  // ---------------------------------------------------------------------------
+  // Pro price campaign — the single place to change what the popup advertises.
+  //
+  // Keep this in sync with the Ko-fi product: `promoPrice` must be the price the
+  // buyer actually pays today and `regularPrice` the price charged from `endsOn`
+  // onwards. Once the date has passed the popup automatically drops the discount
+  // badge and shows the regular price, so the card never promises a stale deal.
+  // Set `enabled: false` to switch the whole campaign off.
+  // ---------------------------------------------------------------------------
+  const PRO_OFFER = {
+    enabled: true,
+    discountPercent: 50,
+    regularPrice: '€21.98',
+    promoPrice: '€10.99',
+    endsOn: '2026-12-31T23:59:59'
+  };
+
+  // false = the affiliate banner keeps running next to the offer card, so no ad
+  // clicks are lost. The card then shows a compact version (no feature list) to
+  // leave room for the video list. Set to true to give the card the whole screen.
+  const HIDE_ADS_WHILE_OFFER_SHOWN = false;
 
   const CHECKOUT_URL = 'https://ko-fi.com/s/72a48b875e';
   const STORE_REVIEWS_URL = 'https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg/reviews';
@@ -98,12 +139,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Hide for Pro users
     if (isProActive) {
       rateLimitStatusEl.classList.add('hidden');
+      hideProUpsell();
       return;
     }
     
     try {
       if (typeof canStartDownload === 'function') {
         const check = await canStartDownload();
+        updateProUpsell(check);
         
         if (check.allowed) {
           // Ready to download
@@ -115,20 +158,203 @@ document.addEventListener('DOMContentLoaded', async () => {
           rateLimitStatusEl.classList.remove('hidden');
           rateLimitStatusEl.classList.remove('ready');
           
-          if (check.minutesRemaining > 1) {
-            rateLimitStatusText.textContent = t('rateLimitWaitPlural').replace('{minutes}', check.minutesRemaining);
-          } else {
-            rateLimitStatusText.textContent = t('rateLimitWaitSingular');
-          }
+          rateLimitStatusText.textContent =
+            t('rateLimitWaitPlural').replace('{time}', formatDuration(check.minutesRemaining));
         } else {
           // Unknown state, hide
+          rateLimitStatusEl.classList.add('hidden');
+        }
+
+        // The offer card counts the same timer down, so never stack two of them.
+        if (proUpsellBanner && !proUpsellBanner.classList.contains('hidden')) {
           rateLimitStatusEl.classList.add('hidden');
         }
       }
     } catch (e) {
       console.warn('[FVD] Rate limit status check failed:', e);
       rateLimitStatusEl.classList.add('hidden');
+      hideProUpsell();
     }
+  }
+
+  // --- Pro upsell banner in the main view -----------------------------------
+  // Free users see a direct Ko-fi purchase link on the front page once they have
+  // downloaded their first video, while the Free download window counts down. The button
+  // is a one-click shortcut so nobody has to dig into Settings to buy Pro.
+
+  function formatUpsellTime(ms) {
+    const totalSec = Math.max(0, Math.ceil(ms / 1000));
+    const hours = Math.floor(totalSec / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const seconds = totalSec % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    // A 2-hour wait has to read as "1:59:58", not "119:58".
+    if (hours > 0) return hours + ':' + pad(minutes) + ':' + pad(seconds);
+    if (minutes > 0) return minutes + ':' + pad(seconds);
+    return seconds + 's';
+  }
+
+  // "1 h 59 min" / "45 min" / "2 h" — short units come from i18n.
+  function formatDuration(totalMinutes) {
+    const minutes = Math.max(1, Math.round(Number(totalMinutes) || 0));
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    const hourUnit = t('durationHourShort');
+    const minuteUnit = t('durationMinuteShort');
+    if (hours <= 0) return rest + ' ' + minuteUnit;
+    if (rest === 0) return hours + ' ' + hourUnit;
+    return hours + ' ' + hourUnit + ' ' + rest + ' ' + minuteUnit;
+  }
+
+  function isProOfferActive() {
+    if (!PRO_OFFER.enabled) return false;
+    const end = Date.parse(PRO_OFFER.endsOn);
+    return !Number.isNaN(end) && Date.now() <= end;
+  }
+
+  function currentProPrice() {
+    return isProOfferActive() ? PRO_OFFER.promoPrice : PRO_OFFER.regularPrice;
+  }
+
+  function formatOfferDate() {
+    const end = new Date(PRO_OFFER.endsOn);
+    if (Number.isNaN(end.getTime())) return '';
+    try {
+      return end.toLocaleDateString(currentLang, { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) {
+      return end.toISOString().slice(0, 10);
+    }
+  }
+
+  // Single source of truth for every price the popup shows.
+  function applyProOfferPricing() {
+    const offerActive = isProOfferActive();
+    const price = currentProPrice();
+    const badgeText = t('proDiscountBadge').replace('{percent}', String(PRO_OFFER.discountPercent));
+
+    // Main-view offer card
+    if (txtOfferNow) txtOfferNow.textContent = price;
+    if (txtOfferWas) {
+      txtOfferWas.textContent = PRO_OFFER.regularPrice;
+      txtOfferWas.title = t('proOfferRegularHint').replace('{price}', PRO_OFFER.regularPrice);
+      txtOfferWas.classList.toggle('hidden', !offerActive);
+    }
+    if (txtOfferBadge) {
+      txtOfferBadge.textContent = badgeText;
+      txtOfferBadge.classList.toggle('hidden', !offerActive);
+    }
+    if (txtOfferLifetime) txtOfferLifetime.textContent = t('proPriceLifetime');
+    if (txtOfferUrgency) {
+      txtOfferUrgency.textContent = offerActive
+        ? t('proOfferUrgency').replace('{date}', formatOfferDate())
+        : '';
+      txtOfferUrgency.classList.toggle('hidden', !offerActive);
+    }
+    if (btnUpsellBuy) btnUpsellBuy.textContent = t('proOfferCta') + ' \u00b7 ' + price;
+
+    // Settings → Pro box
+    if (txtProPrice) txtProPrice.textContent = price;
+    if (txtProPriceWas) {
+      txtProPriceWas.textContent = PRO_OFFER.regularPrice;
+      txtProPriceWas.classList.toggle('hidden', !offerActive);
+    }
+    if (txtProSaveBadge) {
+      txtProSaveBadge.textContent = badgeText;
+      txtProSaveBadge.classList.toggle('hidden', !offerActive);
+    }
+
+    // "Download limit reached" modal
+    if (txtRateLimitOffer) {
+      txtRateLimitOffer.textContent = offerActive
+        ? badgeText + ' \u00b7 ' + t('proPriceLifetime') + ' \u00b7 ' + price
+        : '';
+      txtRateLimitOffer.classList.toggle('hidden', !offerActive);
+    }
+  }
+
+  function applyProUpsellText() {
+    if (txtProUpsellTitle) txtProUpsellTitle.textContent = t('proUpsellTitle');
+    applyProOfferPricing();
+  }
+
+  function updateUpsellCountdownText() {
+    if (!txtProUpsellCountdown) return;
+    if (!upsellNextAllowedAt) {
+      txtProUpsellCountdown.textContent = '';
+      return;
+    }
+    const remaining = upsellNextAllowedAt - Date.now();
+    if (remaining <= 0) {
+      txtProUpsellCountdown.textContent = t('proUpsellReady');
+      if (proUpsellBanner) proUpsellBanner.classList.add('ready');
+      return;
+    }
+    txtProUpsellCountdown.textContent = t('proUpsellCountdown').replace('{time}', formatUpsellTime(remaining));
+  }
+
+  function startUpsellTick() {
+    if (upsellTickInterval) return;
+    upsellTickInterval = setInterval(updateUpsellCountdownText, 1000);
+  }
+
+  function stopUpsellTick() {
+    if (upsellTickInterval) {
+      clearInterval(upsellTickInterval);
+      upsellTickInterval = null;
+    }
+  }
+
+  // Only re-render the ad slot when the card actually appears or disappears,
+  // otherwise the rotating banner would re-count an impression every tick.
+  function setProUpsellVisible(visible) {
+    if (!proUpsellBanner) return;
+    const wasVisible = !proUpsellBanner.classList.contains('hidden');
+    proUpsellBanner.classList.toggle('hidden', !visible);
+    if (wasVisible !== visible) updateAdSlot();
+  }
+
+  function hideProUpsell() {
+    setProUpsellVisible(false);
+    upsellNextAllowedAt = 0;
+    stopUpsellTick();
+  }
+
+  function updateProUpsell(check) {
+    if (!proUpsellBanner) return;
+
+    const waiting = check && check.allowed === false && check.reason === 'rate_limit';
+
+    // Free users only. The waiting window IS the moment that matters — it is the
+    // Free download slot having been used — so the card follows the rate limit
+    // itself rather than a download counter that can lag behind.
+    if (isProActive || !waiting) {
+      hideProUpsell();
+      return;
+    }
+
+    if (check.nextAllowedAt) {
+      upsellNextAllowedAt = check.nextAllowedAt;
+    } else if (check.minutesRemaining) {
+      upsellNextAllowedAt = Date.now() + check.minutesRemaining * 60 * 1000;
+    } else {
+      upsellNextAllowedAt = 0;
+    }
+
+    if (proUpsellBanner.classList.contains('hidden')) {
+      proUpsellBanner.classList.remove('ready');
+    }
+    applyProUpsellText();
+    updateUpsellCountdownText();
+    setProUpsellVisible(true);
+    startUpsellTick();
+  }
+
+  // One-click purchase straight from the front page
+  if (btnUpsellBuy) {
+    btnUpsellBuy.addEventListener('click', () => {
+      try { chrome.tabs.create({ url: CHECKOUT_URL }); } catch (e) {}
+      try { window.close(); } catch (e) {}
+    });
   }
 
   function updateProUI() {
@@ -162,6 +388,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   function updateAdSlot() {
     const container = document.getElementById('ad-slot-container');
     if (!container || !window.FVDAds) return;
+
+    const offerVisible = !!proUpsellBanner && !proUpsellBanner.classList.contains('hidden');
+    const sharesScreen = offerVisible && !HIDE_ADS_WHILE_OFFER_SHOWN;
+    // Sharing the screen with the ad: drop the feature list that the Settings
+    // comparison table already covers, so the video list keeps its space.
+    if (proUpsellBanner) {
+      proUpsellBanner.classList.toggle('compact', sharesScreen);
+    }
+    container.classList.toggle('share-with-offer', sharesScreen);
+
+    if (HIDE_ADS_WHILE_OFFER_SHOWN && offerVisible) {
+      window.FVDAds.hide(container);
+      return;
+    }
     window.FVDAds.render(container, { isPro: isProActive, t });
   }
 
@@ -281,8 +521,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         maybeShowReviewPrompt();
       }
     } else if (msg.type === 'RATE_LIMIT_REACHED') {
-      // Free user hit hourly download limit
+      // Free user hit the download window limit — show the offer card right away
       showRateLimitModal(msg.minutesRemaining);
+      updateRateLimitStatus();
     } else if (msg.type === 'DOWNLOAD_LIMIT_REACHED') {
       // Free user hit concurrent download limit (kept for backwards compatibility)
       if (msg.message) {
@@ -299,6 +540,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const hasSavedFolder = stored.useDefaultDownloadFolder === true && stored.useCustomDirectory === true;
   if (chkAskEachTime) chkAskEachTime.checked = stored.askSaveEachTime === true && !hasSavedFolder;
   updateSelectedFolderLabel(hasSavedFolder ? (stored.customDirectoryName || '') : '');
+  updateRateLimitStatus();
 
   function updateSelectedFolderLabel(name) {
     if (!txtSelectedFolder) return;
@@ -312,10 +554,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateFolderOptionsVisibility();
 
   function t(key) {
-    if (i18n[currentLang] && i18n[currentLang][key]) {
-      return i18n[currentLang][key];
-    }
-    return i18n['en'][key] || key;
+    const raw = (i18n[currentLang] && i18n[currentLang][key]) || i18n['en'][key] || key;
+    // {hours} always reflects the real free-tier window (FREE_RATE_WINDOW_HOURS in
+    // license.js), so the copy can never drift away from what the code enforces.
+    return String(raw).replace('{hours}', String(FREE_RATE_WINDOW_HOURS));
   }
 
   function isRestrictedTabUrl(url) {
@@ -495,7 +737,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const proTitleEl = document.getElementById('txt-pro-title');
     const proDescEl = document.getElementById('txt-pro-description');
     const freeVsProEl = document.getElementById('txt-free-vs-pro');
-    const proPriceEl = document.getElementById('txt-pro-price');
     const proLifetimeEl = document.getElementById('txt-pro-lifetime');
     const proActiveEl = document.getElementById('txt-pro-active');
     const licenseHintEl = document.getElementById('txt-license-after-purchase');
@@ -504,7 +745,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const proHookEl = document.getElementById('txt-pro-hook');
     if (proHookEl) proHookEl.textContent = t('proHook');
     if (freeVsProEl) freeVsProEl.textContent = t('freeVsPro');
-    if (proPriceEl) proPriceEl.textContent = t('proPrice');
     if (proLifetimeEl) proLifetimeEl.textContent = t('proPriceLifetime');
     if (proActiveEl) proActiveEl.textContent = t('proActive');
     if (licenseHintEl) licenseHintEl.textContent = t('licenseAfterPurchase');
@@ -515,6 +755,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     renderHistory();
     updateAdSlot();
+    applyProUpsellText();
+    updateUpsellCountdownText();
   }
 
   function openSettingsView() {
@@ -551,21 +793,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const modal = document.getElementById('rate-limit-modal');
     if (!modal) return;
     
-    const txtMinutes = document.getElementById('txt-rate-limit-minutes');
     const txtRateMessage = document.getElementById('txt-rate-limit-message');
-    
-    if (txtMinutes && minutesRemaining) {
-      txtMinutes.textContent = minutesRemaining;
-    }
-    
+
     if (txtRateMessage) {
-      if (minutesRemaining > 1) {
-        txtRateMessage.textContent = t('rateLimitMessagePlural').replace('{minutes}', minutesRemaining);
-      } else {
-        txtRateMessage.textContent = t('rateLimitMessageSingular');
-      }
+      txtRateMessage.textContent = t('rateLimitMessagePlural')
+        .replace('{time}', formatDuration(minutesRemaining || FREE_RATE_WINDOW_MINUTES));
     }
-    
+
     modal.classList.remove('hidden');
   }
   

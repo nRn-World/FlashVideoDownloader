@@ -27,13 +27,13 @@ This document outlines the testing steps for the new freemium features in v3.3.0
 4. **Expected:** Download starts successfully
 5. **Expected:** Free users can download 1 video at a time
 
-### Test: Hourly rate limit (Free: 1/hour)
+### Test: Free rate limit (1 download per 2 hours)
 1. Download one video successfully (wait for completion)
 2. Immediately try to download a second video
 3. **Expected:** Rate limit modal appears
-4. **Expected:** Message: "Free users can download 1 video per hour. You can download again in ~X minutes."
+4. **Expected:** Message: "Free users can download 1 video every 2 hours. You can download again in X h Y min."
 5. **Expected:** "Upgrade to Pro" button visible
-6. **After 60 minutes:** Second download should work
+6. **After 2 hours:** Second download should work
 
 ### Test: Concurrent download limit (Free)
 1. Start downloading one video
@@ -86,7 +86,7 @@ Pro keys are **never** stored in this repo. Use the key from the local file `kof
 
 ### Test: Pro features unlocked
 After activating Pro:
-1. **Hourly downloads:** Download multiple videos within same hour → all should proceed (no rate limit)
+1. **Rate limit:** Download multiple videos in a row → all should proceed (no rate limit)
 2. **Concurrent downloads:** Start 3 downloads at once → all should proceed
 3. **History:** Unlimited history (no 10-item cap)
 
@@ -168,8 +168,8 @@ Robin must configure before publishing:
 
 ## Summary
 
-- ✅ Free tier: Core download functionality intact (1 download/hour, 1 concurrent)
-- ✅ Pro tier: Unlimited hourly, 3+ concurrent, batch, unlimited history, export
+- ✅ Free tier: Core download functionality intact (1 download per 2 hours, 1 concurrent)
+- ✅ Pro tier: Unrestricted downloads, 3+ concurrent, batch, unlimited history, export
 - ✅ License: plaintext key is not in git; only Ko-fi buyers see it
 - ✅ UI: Pro section polished, comparison table clear, rate limit modal
 - ✅ Docs: README, STORE_LISTING, privacy.html updated

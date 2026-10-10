@@ -171,7 +171,7 @@
     "message": "Concurrent downloads"
   },
   "featureHourlyDownloads": {
-    "message": "Downloads per hour"
+    "message": "Downloads every 2 hours"
   },
   "featureHistory": {
     "message": "Download history"
@@ -297,13 +297,10 @@
     "message": "Download Limit Reached"
   },
   "rateLimitMessagePlural": {
-    "message": "Free users can download 1 video per hour. You can download again in {minutes} minutes."
-  },
-  "rateLimitMessageSingular": {
-    "message": "Free users can download 1 video per hour. You can download again in about 1 minute."
+    "message": "Free users can download 1 video every 2 hours. Try again later."
   },
   "rateLimitProPitch": {
-    "message": "⚡ Upgrade to Pro for unlimited downloads — no hourly limits!"
+    "message": "⚡ Upgrade to Pro for unlimited downloads — no waiting!"
   },
   "rateLimitClose": {
     "message": "Got it"
