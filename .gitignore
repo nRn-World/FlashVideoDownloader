@@ -9,6 +9,7 @@ test_player.html
 temp_zip_check/
 local-test/
 dev-preview.html
+dev-preview-offer.html
 
 # Release artifacts
 *.zip

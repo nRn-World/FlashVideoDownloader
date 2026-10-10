@@ -13,7 +13,7 @@
         <img src="icons/icon32.png" alt="FVD" class="logo-img" />
         <div class="brand-text">
           <h1 id="txt-app-title">Flash Video Downloader</h1>
-          <span class="version" id="txt-app-version">v3.3.9</span>
+          <span class="version" id="txt-app-version">v3.4.0</span>
         </div>
       </div>
       <div class="header-actions">
@@ -52,12 +52,8 @@
         </div>
       </div>
 
-      <!-- Ad slot (Free users only — hidden for Pro) -->
-      <div id="ad-slot-container" class="ad-slot hidden" aria-label="Advertisement">
-        <!-- Rendered dynamically by ads.js -->
-      </div>
-
-      <!-- Pro offer card: shown to Free users while the free-window countdown runs -->
+      <!-- Pro offer card: shown to Free users while the free-window countdown runs.
+           It sits above the ad slot so the offer is what the eye lands on first. -->
       <div id="pro-upsell-banner" class="pro-upsell-banner hidden">
         <div class="pro-upsell-head">
           <span class="pro-upsell-icon" aria-hidden="true">⚡</span>
@@ -83,6 +79,26 @@
 
         <button type="button" id="btn-upsell-buy" class="btn-upsell-buy">Get Lifetime Pro · €10.99</button>
         <p class="pro-offer-trust" data-i18n="proOfferTrust">No subscription. Pay once — yours forever.</p>
+
+        <!-- License activation without a detour through Settings -->
+        <div class="pro-offer-license">
+          <button type="button" id="btn-offer-license-toggle" class="btn-offer-license-toggle" aria-expanded="false" aria-controls="offer-license-panel">
+            <span data-i18n="alreadyHaveLicense">Already have a license key?</span>
+          </button>
+          <div class="pro-offer-license-panel hidden" id="offer-license-panel">
+            <div class="license-input-row">
+              <input type="text" id="input-license-key-offer" class="license-input" placeholder="FVD-PRO-XXXX-XXXX-XXXX-XXXX" maxlength="36" autocomplete="off" spellcheck="false" />
+              <button type="button" id="btn-activate-license-offer" class="btn-activate" data-i18n="activateLicense">Activate</button>
+            </div>
+            <p class="license-hint hidden" id="offer-license-message"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ad slot (Free users only — hidden for Pro). Below the offer card: the
+           banner keeps its space, but the offer is read first. -->
+      <div id="ad-slot-container" class="ad-slot hidden" aria-label="Advertisement">
+        <!-- Rendered dynamically by ads.js -->
       </div>
 
       <!-- Video List -->
@@ -254,7 +270,7 @@
               </svg>
             </button>
           </div>
-          <p class="credits-version" id="txt-settings-version">v3.3.9</p>
+          <p class="credits-version" id="txt-settings-version">v3.4.0</p>
         </div>
 
         <div class="settings-footer-btn">
@@ -266,7 +282,7 @@
     <!-- Footer -->
     <footer class="app-footer" id="app-footer">
       <span id="txt-footer">Captures MP4, WEBM, FLV, M3U8 & more</span>
-      <span id="txt-footer-version" class="footer-version">v3.3.9</span>
+      <span id="txt-footer-version" class="footer-version">v3.4.0</span>
     </footer>
   </div>
 

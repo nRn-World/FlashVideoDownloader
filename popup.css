@@ -429,6 +429,51 @@ body {
   color: var(--text-muted);
 }
 
+/* Front-page offer card: license activation without a detour through Settings.
+   Stays visible in compact mode — a returning buyer is exactly the one who
+already has a key. */
+.pro-offer-license {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-offer-license-toggle {
+  align-self: center;
+  padding: 2px;
+  background: none;
+  border: none;
+  color: #93c5fd;
+  font-size: 0.67rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.btn-offer-license-toggle:hover {
+  color: #bfdbfe;
+}
+
+.pro-offer-license-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pro-offer-license-panel .license-input,
+.pro-offer-license-panel .btn-activate {
+  padding: 7px 9px;
+  font-size: 0.68rem;
+}
+
+.pro-offer-license-panel .btn-activate {
+  padding: 7px 12px;
+}
+
 /* Settings Pro box: regular price + discount badge beside the current price */
 .pro-price-row {
   display: flex;
@@ -1747,10 +1792,16 @@ body {
   flex-shrink: 0;
 }
 
-/* While the Pro offer card is below, the ad's own "Remove ads with Pro" line is
-   redundant — the card right underneath sells exactly that. */
+/* While the Pro offer card is on screen, the ad's own "Remove ads with Pro" line
+   is redundant — the card directly above it sells exactly that. */
 .ad-slot.share-with-offer .ad-note {
   display: none;
+}
+
+/* The ad follows the offer card there, so it needs its own gap: without this the
+   two cards sit flush against each other. */
+.ad-slot.share-with-offer {
+  margin-top: 10px;
 }
 
 .ad-card {

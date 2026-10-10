@@ -1,4 +1,4 @@
-// Flash Video Downloader - Background Service Worker (v3.3.9)
+// Flash Video Downloader - Background Service Worker (v3.4.0)
 // HLS downloads are delegated to offscreen.js which has full DOM/Blob/ObjectURL access.
 
 importScripts('blocked-hosts.js');

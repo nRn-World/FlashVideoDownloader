@@ -1,4 +1,4 @@
-// Flash Video Downloader - Popup Script (v3.3.9)
+// Flash Video Downloader - Popup Script (v3.4.0)
 
 document.addEventListener('DOMContentLoaded', async () => {
   const mediaListContainer = document.getElementById('media-list');
@@ -47,6 +47,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const txtOfferLifetime = document.getElementById('txt-offer-lifetime');
   const txtOfferUrgency = document.getElementById('txt-offer-urgency');
   const btnUpsellBuy = document.getElementById('btn-upsell-buy');
+  // License entry inside the front-page offer card (same code, no Settings detour)
+  const offerLicenseToggle = document.getElementById('btn-offer-license-toggle');
+  const offerLicensePanel = document.getElementById('offer-license-panel');
+  const offerLicenseMessage = document.getElementById('offer-license-message');
+  const inputLicenseKeyOffer = document.getElementById('input-license-key-offer');
+  const btnActivateLicenseOffer = document.getElementById('btn-activate-license-offer');
   // Same campaign, shown in Settings and in the "limit reached" modal
   const txtProPrice = document.getElementById('txt-pro-price');
   const txtProPriceWas = document.getElementById('txt-pro-price-was');
@@ -310,7 +316,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!proUpsellBanner) return;
     const wasVisible = !proUpsellBanner.classList.contains('hidden');
     proUpsellBanner.classList.toggle('hidden', !visible);
+    if (!visible) collapseOfferLicense();
     if (wasVisible !== visible) updateAdSlot();
+  }
+
+  // Reset the front-page license field whenever the card goes away, so a stale
+  // key or error message never reappears on the next rate-limit window.
+  function collapseOfferLicense() {
+    if (offerLicensePanel) offerLicensePanel.classList.add('hidden');
+    if (offerLicenseToggle) offerLicenseToggle.setAttribute('aria-expanded', 'false');
+    if (inputLicenseKeyOffer) inputLicenseKeyOffer.value = '';
+    setLicenseMessage(offerLicenseMessage, '', '');
   }
 
   function hideProUpsell() {
@@ -354,6 +370,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnUpsellBuy.addEventListener('click', () => {
       try { chrome.tabs.create({ url: CHECKOUT_URL }); } catch (e) {}
       try { window.close(); } catch (e) {}
+    });
+  }
+
+  // "Already have a license key?" on the front page — expand, paste, activate.
+  // Sits below the buy button so a returning buyer never has to open Settings.
+  if (offerLicenseToggle) {
+    offerLicenseToggle.addEventListener('click', () => {
+      const expanding = !!offerLicensePanel && offerLicensePanel.classList.contains('hidden');
+      if (offerLicensePanel) offerLicensePanel.classList.toggle('hidden', !expanding);
+      offerLicenseToggle.setAttribute('aria-expanded', expanding ? 'true' : 'false');
+      if (expanding && inputLicenseKeyOffer) inputLicenseKeyOffer.focus();
+    });
+  }
+
+  if (btnActivateLicenseOffer) {
+    btnActivateLicenseOffer.addEventListener('click', () => {
+      activateLicenseKey(inputLicenseKeyOffer, btnActivateLicenseOffer, offerLicenseMessage);
+    });
+  }
+
+  if (inputLicenseKeyOffer) {
+    inputLicenseKeyOffer.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        activateLicenseKey(inputLicenseKeyOffer, btnActivateLicenseOffer, offerLicenseMessage);
+      }
     });
   }
 
@@ -405,56 +447,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.FVDAds.render(container, { isPro: isProActive, t });
   }
 
-  // License activation
+  // License activation (Settings → Pro) — the same helper the front-page
+  // offer card uses, so both entry points behave identically.
   if (btnActivateLicense) {
-    btnActivateLicense.addEventListener('click', async () => {
-      const key = inputLicenseKey.value.trim();
-      
-      if (!key) {
-        showLicenseMessage('Please enter a license key', 'error');
-        return;
-      }
-
-      btnActivateLicense.disabled = true;
-      btnActivateLicense.textContent = '...';
-
-      try {
-        if (typeof activateLicense === 'function') {
-          const result = await activateLicense(key);
-          
-          if (result.success) {
-            showLicenseMessage(t('licenseActivated'), 'success');
-            isProActive = true;
-            
-            if (typeof getFeatureLimits === 'function') {
-              featureLimits = await getFeatureLimits();
-            }
-            
-            updateProUI();
-            
-            // Stop rate limit status updates for Pro users
-            if (rateLimitStatusInterval) {
-              clearInterval(rateLimitStatusInterval);
-              rateLimitStatusInterval = null;
-            }
-            
-            // Hide rate limit status immediately
-            const rateLimitStatusEl = document.getElementById('rate-limit-status');
-            if (rateLimitStatusEl) rateLimitStatusEl.classList.add('hidden');
-            
-            setTimeout(() => {
-              showLicenseMessage('', '');
-            }, 3000);
-          } else {
-            showLicenseMessage(result.error || t('licenseInvalid'), 'error');
-          }
-        }
-      } catch (e) {
-        showLicenseMessage(t('licenseInvalid'), 'error');
-      } finally {
-        btnActivateLicense.disabled = false;
-        btnActivateLicense.textContent = t('activateLicense');
-      }
+    btnActivateLicense.addEventListener('click', () => {
+      activateLicenseKey(inputLicenseKey, btnActivateLicense, licenseResultMessage);
     });
   }
 
@@ -486,15 +483,67 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       } catch (e) {
         console.warn('[FVD] Deactivate failed:', e);
-      }
-    });
+      }          });
   }
 
   function showLicenseMessage(message, type) {
-    if (!licenseResultMessage) return;
-    licenseResultMessage.textContent = message;
-    licenseResultMessage.className = 'license-hint';
-    if (type) licenseResultMessage.classList.add(type);
+    setLicenseMessage(licenseResultMessage, message, type);
+  }
+
+  // Shared license activation — Settings → Pro and the front-page offer card call
+  // this, so both paths validate, store and refresh Pro state identically.
+  async function activateLicenseKey(inputEl, btn, messageEl) {
+    if (!inputEl || !btn) return false;
+
+    const key = inputEl.value.trim();
+    if (!key) {
+      setLicenseMessage(messageEl, 'Please enter a license key', 'error');
+      return false;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    try {
+      if (typeof activateLicense === 'function') {
+        const result = await activateLicense(key);
+
+        if (result.success) {
+          setLicenseMessage(messageEl, t('licenseActivated'), 'success');
+          isProActive = true;
+
+          if (typeof getFeatureLimits === 'function') {
+            featureLimits = await getFeatureLimits();
+          }
+
+          updateProUI();
+          inputEl.value = '';
+
+          // Refreshing the Free-tier state right away would hide the offer card
+          // instantly and wipe the confirmation, so let the message be readable first.
+          setTimeout(updateRateLimitStatus, 1800);
+          setTimeout(() => setLicenseMessage(messageEl, '', ''), 3000);
+          return true;
+        }
+
+        setLicenseMessage(messageEl, result.error || t('licenseInvalid'), 'error');
+      }
+    } catch (e) {
+      setLicenseMessage(messageEl, t('licenseInvalid'), 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = t('activateLicense');
+    }
+
+    return false;
+  }
+
+  function setLicenseMessage(messageEl, message, type) {
+    if (!messageEl) return;
+    messageEl.textContent = message;
+    messageEl.className = 'license-hint';
+    if (type) messageEl.classList.add(type);
+    messageEl.classList.toggle('hidden', !message);
   }
 
   // Set checkout URL
@@ -749,6 +798,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (proActiveEl) proActiveEl.textContent = t('proActive');
     if (licenseHintEl) licenseHintEl.textContent = t('licenseAfterPurchase');
     if (inputLicenseKey) inputLicenseKey.placeholder = t('licenseKeyPlaceholder');
+    if (inputLicenseKeyOffer) inputLicenseKeyOffer.placeholder = t('licenseKeyPlaceholder');
 
     if (viewSettings.classList.contains('hidden')) {
       renderList();
