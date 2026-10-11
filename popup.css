@@ -1092,8 +1092,13 @@ already has a key. */
   color: var(--text-muted);
 }
 
+/* Pinned footer of the settings panel. It sits outside .settings-container
+   (the scroll area), so the back button stays on screen without scrolling. */
 .settings-footer-btn {
-  margin-top: 8px;
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.85);
 }
 
 .btn-primary-action {

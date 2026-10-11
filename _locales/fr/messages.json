@@ -288,7 +288,7 @@
     "message": "Cannot detect videos on browser internal pages"
   },
   "version": {
-    "message": "v3.3.9"
+    "message": "v3.4.1"
   },
   "dashNotSupported": {
     "message": "Le téléchargement DASH/MPD n'est pas encore disponible. Essayez un lien M3U8 ou MP4 direct."

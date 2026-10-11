@@ -318,7 +318,7 @@
     "message": "Next download in ~1 min"
   },
   "version": {
-    "message": "v3.3.9"
+    "message": "v3.4.1"
   },
   "dashNotSupported": {
     "message": "DASH/MPD download is not supported yet. Try an M3U8 or direct MP4 link instead."

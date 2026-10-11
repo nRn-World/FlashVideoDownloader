@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg"><img src="https://img.shields.io/badge/Download-Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=0B57D0" alt="Download on Chrome Web Store" /></a>
-  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.4.0-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.4.0" /></a>
+  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.4.1-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.4.1" /></a>
   <a href="https://developer.chrome.com/docs/extensions/mv3/"><img src="https://img.shields.io/badge/Manifest-V3-FF6D00?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=E65100" alt="Manifest V3" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-00BFA5?style=for-the-badge&logo=creativecommons&logoColor=white&labelColor=00897B" alt="License CC BY-NC 4.0" /></a>
   <a href="https://ko-fi.com/s/72a48b875e"><img src="https://img.shields.io/badge/Pro-EUR%2010.99%20lifetime-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white&labelColor=D32F2F" alt="Buy Pro on Ko-fi" /></a>
@@ -224,6 +224,7 @@ Privacy policy: [nrn-world.github.io/FlashVideoDownloader/privacy.html](https://
 
 | Version | Highlights |
 |---|---|
+| **3.4.1** | The Back button in Settings is now pinned outside the scrolling area, so returning to the video list is always one click away instead of hiding below the Pro card, history and credits; the header gear toggles back to the video list too. Adds `Strict-Transport-Security` and `Referrer-Policy` to the optional rate-limit worker. |
 | **3.4.0** | License key entry in the front-page Pro card (**Already have a license key?**) so a buyer no longer has to open Settings, the offer card moved above the affiliate banner so it is read first, and a successful activation is confirmed on screen before the card closes |
 | **3.3.9** | Pro offer card on the front page (50 % launch price, crossed-out regular price, live countdown, lifetime license), free tier relaxed to 1 download every 2 hours, and the affiliate banner keeps its space next to the card |
 | **3.3.8** | Parallel multi-threaded chunk downloading engine for accelerated speeds, sponsor choice modal for free-tier with localized options in 6 languages, integrated Adsterra Smartlink monetization |

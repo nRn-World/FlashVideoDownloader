@@ -318,7 +318,7 @@
     "message": "Nästa nedladdning om ~1 min"
   },
   "version": {
-    "message": "v3.3.9"
+    "message": "v3.4.1"
   },
   "dashNotSupported": {
     "message": "DASH/MPD-nedladdning stöds inte än. Prova en M3U8- eller direkt MP4-länk istället."

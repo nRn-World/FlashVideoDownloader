@@ -1,4 +1,4 @@
-// Flash Video Downloader - Popup Script (v3.4.0)
+// Flash Video Downloader - Popup Script (v3.4.1)
 
 document.addEventListener('DOMContentLoaded', async () => {
   const mediaListContainer = document.getElementById('media-list');
@@ -2180,9 +2180,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Settings view toggle
+  // Settings view toggle. The gear lives in the always-visible header, so
+  // clicking it again is the shortest way back to the video list.
   btnSettingsToggle.addEventListener('click', () => {
-    openSettingsView();
+    if (viewSettings.classList.contains('hidden')) {
+      openSettingsView();
+    } else {
+      openMainView();
+    }
   });
 
   btnBackMain.addEventListener('click', () => {
