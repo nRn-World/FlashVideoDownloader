@@ -20,6 +20,10 @@ function loadScript(filename, mockGlobals = {}) {
     code += '\n; this.FVD_TERMS_VERSION = FVD_TERMS_VERSION; this.FVD_TERMS_ACK_KEY = FVD_TERMS_ACK_KEY;';
   }
 
+  // A caller may override individual chrome APIs; anything it does not mention
+  // keeps the default stub, so a test only describes what it cares about.
+  const { chrome: chromeOverrides, ...restGlobals } = mockGlobals;
+
   const context = {
     console,
     Math,
@@ -60,8 +64,10 @@ function loadScript(filename, mockGlobals = {}) {
       action: { setBadgeText: async () => {}, setBadgeBackgroundColor: async () => {} },
       downloads: { onChanged: { addListener: () => {} } }
     },
-    ...mockGlobals
+    ...restGlobals
   };
+
+  if (chromeOverrides) Object.assign(context.chrome, chromeOverrides);
 
   context.globalThis = context;
   context.window = context;
@@ -390,4 +396,58 @@ test('i18n.js - verify all 6 locales have complete key coverage', () => {
     }
     assert.equal(missing.length, 0, `Locale ${loc} is missing keys: ${missing.join(', ')}`);
   }
+});
+
+test('background.js - no page is scanned before the terms are accepted', async () => {
+  // Behavioural check rather than a source check: drive the real tabs.onUpdated
+  // listener and watch what it asks chrome.scripting to do. Prose assertions on
+  // the file text would not catch the injection moving behind a path the test
+  // never reads.
+  async function injectionsOnNavigation({ termsAccepted }) {
+    const executed = [];
+    const onUpdated = [];
+
+    loadScript('background.js', {
+      fvdIsBlockedUrl: () => false,
+      termsAcceptanceRequired: async () => !termsAccepted,
+      FREE_RATE_WINDOW_MINUTES: 120,
+      canStartNewDownload: async () => true,
+      consumeFreeDownloadSlot: async () => ({ allowed: true, minutesRemaining: 0 }),
+      chrome: {
+        tabs: {
+          onUpdated: { addListener: (fn) => onUpdated.push(fn) },
+          onRemoved: { addListener: () => {} }
+        },
+        scripting: {
+          executeScript: async (arg) => { executed.push(arg); return []; }
+        }
+      }
+    });
+
+    assert.equal(onUpdated.length, 1, 'background.js must register exactly one tabs.onUpdated listener');
+    onUpdated[0](7, { status: 'complete' }, { url: 'https://example.com/watch?v=1' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    return executed;
+  }
+
+  // A user who has never seen the terms must not have their browsing inspected:
+  // no MAIN-world hook, no content script, no media capture.
+  const beforeAcceptance = await injectionsOnNavigation({ termsAccepted: false });
+  assert.equal(
+    beforeAcceptance.length,
+    0,
+    'a page must not be scanned or hooked before the user accepts the terms'
+  );
+
+  // Once accepted, the MAIN-world hook and the isolated content script must both
+  // be injected again, or HLS and player sources would stop being captured.
+  const afterAcceptance = await injectionsOnNavigation({ termsAccepted: true });
+  assert.equal(
+    afterAcceptance.length,
+    2,
+    'once accepted, both the MAIN-world hook and the isolated content script must be injected'
+  );
+  const injectedFiles = afterAcceptance.flatMap((arg) => arg.files || []);
+  assert.ok(injectedFiles.includes('page-hook.js'), 'the MAIN-world hook must be injected');
+  assert.ok(injectedFiles.includes('content.js'), 'the isolated content script must be injected');
 });

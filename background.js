@@ -341,6 +341,47 @@ chrome.webRequest.onHeadersReceived.addListener(
   ['responseHeaders']
 );
 
+// ── Terms gate for page injection ─────────────────────────────────────────────
+// The content script must not reach a page before the user has accepted the
+// Agreement, or the extension would already be scanning and capturing media for
+// someone who has never seen the terms. The download gate in gateDownloadStart()
+// stops the saving, but not this scan, so both are needed.
+//
+// The state is cached so the common path stays synchronous: a storage read on
+// every navigation would delay the MAIN-world hook past the first media request,
+// which is exactly what the hook exists to capture. chrome.storage.local survives
+// an update, so an existing user keeps their record; a reinstall clears storage
+// and the gate is up again.
+let fvdTermsAcceptedCache = null;
+
+if (chrome.storage && chrome.storage.onChanged) {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes[FVD_TERMS_ACK_KEY]) return;
+    fvdTermsAcceptedCache = termsRecordSatisfies(changes[FVD_TERMS_ACK_KEY].newValue, FVD_TERMS_VERSION);
+  });
+}
+
+async function termsAcceptedForInjection() {
+  if (fvdTermsAcceptedCache !== null) return fvdTermsAcceptedCache;
+  try {
+    fvdTermsAcceptedCache = !(await termsAcceptanceRequired());
+  } catch (e) {
+    // Fail open, the same rule terms-gate.js applies: never lock a user out of
+    // their browser because storage misbehaved.
+    console.warn('[FVD] Could not read the terms acknowledgement:', e);
+    fvdTermsAcceptedCache = true;
+  }
+  return fvdTermsAcceptedCache;
+}
+
+async function injectContentScriptAfterAcceptance(tabId) {
+  try {
+    if (await termsAcceptedForInjection()) await ensureContentScript(tabId);
+  } catch (e) {
+    console.warn('[FVD] content script injection skipped:', e && e.message ? e.message : e);
+  }
+}
+
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.url) {
     tabMedia.set(tabId, new Map());
@@ -350,7 +391,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if ((changeInfo.status === 'complete' || changeInfo.status === 'loading') && tab && tab.url && /^https?:/i.test(tab.url)) {
     if (typeof fvdIsBlockedUrl === 'function' && fvdIsBlockedUrl(tab.url)) return;
     // Install MAIN-world hook early so HLS and player sources are captured while the user watches
-    ensureContentScript(tabId).catch(() => {});
+    injectContentScriptAfterAcceptance(tabId);
   }
 });
 
