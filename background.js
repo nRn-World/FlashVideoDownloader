@@ -1,8 +1,9 @@
-// Flash Video Downloader - Background Service Worker (v3.4.1)
+// Flash Video Downloader - Background Service Worker (v3.5.0)
 // HLS downloads are delegated to offscreen.js which has full DOM/Blob/ObjectURL access.
 
 importScripts('blocked-hosts.js');
 importScripts('license.js');
+importScripts('terms-gate.js');
 
 const tabMedia = new Map();
 const activeDownloads = new Map();
@@ -839,10 +840,26 @@ function notifyConcurrentLimit() {
   }).catch(() => {});
 }
 
+function notifyTermsRequired() {
+  chrome.runtime.sendMessage({
+    type: 'TERMS_ACCEPTANCE_REQUIRED',
+    termsVersion: typeof FVD_TERMS_VERSION === 'string' ? FVD_TERMS_VERSION : null
+  }).catch(() => {});
+}
+
 // Enforce Free: 1 per window + 1 concurrent. Consumes the slot only when start is allowed.
 // The window length lives in license.js (FREE_RATE_WINDOW_HOURS).
 async function gateDownloadStart() {
   try {
+    // Terms of Service first: every download type (HLS, DASH, chunked, generic,
+    // blob) funnels through here, and this is the one place the popup cannot skip.
+    // Checked before the concurrency/rate-limit checks so a refused start never
+    // burns the user's free download slot.
+    if (typeof termsAcceptanceRequired === 'function' && await termsAcceptanceRequired()) {
+      notifyTermsRequired();
+      return { ok: false, status: 'terms_required' };
+    }
+
     if (!(await canStartNewDownload())) {
       notifyConcurrentLimit();
       return { ok: false, status: 'concurrent_limit' };

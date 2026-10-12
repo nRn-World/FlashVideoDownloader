@@ -17,5 +17,5 @@ echo Ready for Chrome Web Store upload:
 echo   ZIP: Flash Video Downloader.zip
 echo   Screenshots: Screenshots\store\*-1280x800.png
 echo.
-echo Remember: publish privacy.html online before submitting.
+echo Remember: publish privacy.html and terms.html online before submitting.
 pause

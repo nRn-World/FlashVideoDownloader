@@ -1,6 +1,62 @@
-// Flash Video Downloader - Popup Script (v3.4.1)
+// Flash Video Downloader - Popup Script (v3.5.0)
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // ── Terms of Service gate ────────────────────────────────────────────────
+  // The popup is unusable until the terms are accepted: the check below runs
+  // before any other initialisation, so no listener, timer or media scan is set
+  // up while the gate is up. background.js enforces the same rule in
+  // gateDownloadStart(), so a download cannot start even if this UI is bypassed.
+  const termsGateEl = document.getElementById('terms-gate');
+  const btnTermsGateAccept = document.getElementById('btn-terms-gate-accept');
+  let termsGateResolver = null;
+
+  // The gate is the first thing a user sees, before applyLanguage() has run, so
+  // it translates its own strings from the stored language.
+  async function localizeTermsGate() {
+    if (!termsGateEl) return;
+    let lang = 'en';
+    try {
+      const stored = await chrome.storage.local.get(['appLanguage']);
+      if (stored && stored.appLanguage && i18n[stored.appLanguage]) lang = stored.appLanguage;
+    } catch (e) { /* fall back to the English defaults in the markup */ }
+    termsGateEl.querySelectorAll('[data-i18n]').forEach((el) => {
+      const key = el.getAttribute('data-i18n');
+      if (!key) return;
+      el.textContent = (i18n[lang] && i18n[lang][key]) || i18n.en[key] || key;
+    });
+  }
+
+  function showTermsGate() {
+    if (termsGateResolver) return termsGateResolver;
+    if (!termsGateEl || !btnTermsGateAccept) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      termsGateResolver = resolve;
+      localizeTermsGate().then(() => termsGateEl.classList.remove('hidden'));
+      btnTermsGateAccept.addEventListener('click', async () => {
+        btnTermsGateAccept.disabled = true;
+        try {
+          await acceptTerms();
+        } catch (e) {
+          // Fail open: never lock a user out because storage failed.
+          console.warn('[FVD] Could not store the terms acceptance:', e);
+        }
+        termsGateEl.classList.add('hidden');
+        const done = termsGateResolver;
+        termsGateResolver = null;
+        if (done) done(true);
+      }, { once: true });
+    });
+  }
+
+  async function requireTermsAcceptance() {
+    if (typeof termsAcceptanceRequired !== 'function') return true;
+    if (!(await termsAcceptanceRequired())) return true;
+    return showTermsGate();
+  }
+
+  // Everything below this line waits for an accepted record.
+  await requireTermsAcceptance();
+
   const mediaListContainer = document.getElementById('media-list');
   const emptyState = document.getElementById('empty-state');
   const loadingState = document.getElementById('loading-state');
@@ -84,20 +140,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   let upsellTickInterval = null;
 
   // ---------------------------------------------------------------------------
-  // Pro price campaign — the single place to change what the popup advertises.
+  // Pro price — the single place that decides what the popup charges and shows.
   //
-  // Keep this in sync with the Ko-fi product: `promoPrice` must be the price the
-  // buyer actually pays today and `regularPrice` the price charged from `endsOn`
-  // onwards. Once the date has passed the popup automatically drops the discount
-  // badge and shows the regular price, so the card never promises a stale deal.
-  // Set `enabled: false` to switch the whole campaign off.
+  // There is deliberately NO compare-at ("was") price, no percentage badge and no
+  // urgency line by default. Announcing a reduction against a price that was never
+  // charged is misleading marketing: Swedish marknadsföringslagen (10 §) and the EU
+  // Omnibus Directive (Directive (EU) 2019/2161) require the reference to be the
+  // LOWEST price actually applied during the 30 days before the reduction. That is
+  // also what Chrome Web Store reviews treat as a deceptive pricing claim.
+  //
+  // To run a real reduction: set compareAtPrice to the lowest price you actually
+  // charged in the previous 30 days, discountPercent to the real reduction, and
+  // endsOn to the last day. The struck-through price, the badge, the save badge and
+  // the urgency line then switch themselves on, and off again once endsOn passes.
   // ---------------------------------------------------------------------------
   const PRO_OFFER = {
-    enabled: true,
-    discountPercent: 50,
-    regularPrice: '€21.98',
-    promoPrice: '€10.99',
-    endsOn: '2026-12-31T23:59:59'
+    price: '€10.99',
+    compareAtPrice: '',
+    discountPercent: 0,
+    endsOn: ''
   };
 
   // false = the affiliate banner keeps running next to the offer card, so no ad
@@ -212,17 +273,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     return hours + ' ' + hourUnit + ' ' + rest + ' ' + minuteUnit;
   }
 
+  // True only when a real reduction is configured AND still running.
   function isProOfferActive() {
-    if (!PRO_OFFER.enabled) return false;
+    if (!PRO_OFFER.compareAtPrice || !PRO_OFFER.discountPercent || !PRO_OFFER.endsOn) return false;
     const end = Date.parse(PRO_OFFER.endsOn);
     return !Number.isNaN(end) && Date.now() <= end;
   }
 
   function currentProPrice() {
-    return isProOfferActive() ? PRO_OFFER.promoPrice : PRO_OFFER.regularPrice;
+    return PRO_OFFER.price;
   }
 
   function formatOfferDate() {
+    if (!PRO_OFFER.endsOn) return '';
     const end = new Date(PRO_OFFER.endsOn);
     if (Number.isNaN(end.getTime())) return '';
     try {
@@ -241,12 +304,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Main-view offer card
     if (txtOfferNow) txtOfferNow.textContent = price;
     if (txtOfferWas) {
-      txtOfferWas.textContent = PRO_OFFER.regularPrice;
-      txtOfferWas.title = t('proOfferRegularHint').replace('{price}', PRO_OFFER.regularPrice);
+      txtOfferWas.textContent = offerActive ? PRO_OFFER.compareAtPrice : '';
+      txtOfferWas.title = offerActive
+        ? t('proOfferRegularHint').replace('{price}', PRO_OFFER.compareAtPrice)
+        : '';
       txtOfferWas.classList.toggle('hidden', !offerActive);
     }
     if (txtOfferBadge) {
-      txtOfferBadge.textContent = badgeText;
+      // Never write a discount into the badge unless a reduction is genuinely
+      // running — otherwise a hidden element still reads "0% OFF".
+      txtOfferBadge.textContent = offerActive ? badgeText : '';
       txtOfferBadge.classList.toggle('hidden', !offerActive);
     }
     if (txtOfferLifetime) txtOfferLifetime.textContent = t('proPriceLifetime');
@@ -261,20 +328,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Settings → Pro box
     if (txtProPrice) txtProPrice.textContent = price;
     if (txtProPriceWas) {
-      txtProPriceWas.textContent = PRO_OFFER.regularPrice;
+      txtProPriceWas.textContent = offerActive ? PRO_OFFER.compareAtPrice : '';
       txtProPriceWas.classList.toggle('hidden', !offerActive);
     }
     if (txtProSaveBadge) {
-      txtProSaveBadge.textContent = badgeText;
+      txtProSaveBadge.textContent = offerActive ? badgeText : '';
       txtProSaveBadge.classList.toggle('hidden', !offerActive);
     }
 
-    // "Download limit reached" modal
+    // "Download limit reached" modal — always states the price, and only mentions
+    // a reduction when one is genuinely running.
     if (txtRateLimitOffer) {
       txtRateLimitOffer.textContent = offerActive
         ? badgeText + ' \u00b7 ' + t('proPriceLifetime') + ' \u00b7 ' + price
-        : '';
-      txtRateLimitOffer.classList.toggle('hidden', !offerActive);
+        : t('proPriceLifetime') + ' \u00b7 ' + price;
+      txtRateLimitOffer.classList.remove('hidden');
     }
   }
 
@@ -578,6 +646,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (msg.message) {
         alert(msg.message);
       }
+    } else if (msg.type === 'TERMS_ACCEPTANCE_REQUIRED') {
+      // Background refused a start because the terms are not accepted yet.
+      requireTermsAcceptance();
     }
   });
 
@@ -2013,6 +2084,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
           const res = await chrome.runtime.sendMessage(startMessage);
           if (!res || res.status === 'blocked') { resetDownloadBtn(); return; }
+          if (res.status === 'terms_required') {
+            // Background refused the start (terms-gate.js). Show the gate again
+            // and let the user accept; the download can be retried afterwards.
+            resetDownloadBtn();
+            await requireTermsAcceptance();
+            return;
+          }
           if (res.status === 'rate_limited') {
             resetDownloadBtn();
             showRateLimitModal(res.minutesRemaining);

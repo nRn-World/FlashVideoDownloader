@@ -9,7 +9,7 @@
     "message": "Detect and save open videos (MP4, WEBM, M3U8) from the page you are viewing. Preview, pause, local history. No DRM bypass."
   },
   "appVersion": {
-    "message": "v3.3.5"
+    "message": "v3.5.0"
   },
   "searchPlaceholder": {
     "message": "Search detected videos..."
@@ -204,7 +204,7 @@
     "message": "One-time payment: EUR 10.99"
   },
   "proPriceLifetime": {
-    "message": "Lifetime access — pay once, use forever"
+    "message": "دفعة واحدة · ترخيص مدى الحياة (راجع الشروط)"
   },
   "buyPro": {
     "message": "Buy Pro License"
@@ -288,7 +288,7 @@
     "message": "Cannot detect videos on browser internal pages"
   },
   "version": {
-    "message": "v3.4.1"
+    "message": "v3.5.0"
   },
   "dashNotSupported": {
     "message": "تنزيل DASH/MPD غير مدعوم بعد. جرّب رابط M3U8 أو MP4 مباشر."
@@ -336,7 +336,7 @@
     "message": "د"
   },
   "proUpsellTitle": {
-    "message": "Pro مدى الحياة"
+    "message": "Pro"
   },
   "proUpsellCountdown": {
     "message": "التنزيل المجاني التالي خلال {time}"
@@ -360,13 +360,13 @@
     "message": "بدون إعلانات"
   },
   "proOfferUrgency": {
-    "message": "عرض محدود — ينتهي في {date}. يرتفع السعر بعد ذلك."
+    "message": "سعر مخفّض حتى {date}."
   },
   "proOfferCta": {
-    "message": "احصل على Pro مدى الحياة"
+    "message": "احصل على Pro"
   },
   "proOfferTrust": {
-    "message": "بدون اشتراك. ادفع مرة واحدة وتبقى لك للأبد."
+    "message": "بدون اشتراك. دفعة واحدة."
   },
   "proOfferRegularHint": {
     "message": "السعر العادي {price}"

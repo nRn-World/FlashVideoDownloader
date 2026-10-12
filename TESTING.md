@@ -133,10 +133,66 @@ After activating Pro:
 - **Expected:** Pro license disclosure section present
 - **Expected:** States "no payment info collected by extension"
 
+### Test: terms.html (End User License Agreement)
+- Open `terms.html`
+- **Expected:** Sections present for licence grant (Free and Pro), restrictions, no warranty, no compensation
+  (section 9), limitation of liability (section 10), no refunds (section 11), indemnification, governing law
+- **Expected:** Section 11 states that all sales are final and that the buyer loses the statutory right of withdrawal
+- **Expected:** Anchor `terms.html#refunds` scrolls to the no-refund section
+- **Expected:** Section 19 explains the relation to the CC BY-NC 4.0 source-code licence
+- **Expected:** No plaintext license key anywhere on the page
+
 ### Test: pro.html
 - Open `pages/pro.html` (GitHub Pages URL)
 - **Expected:** Full Pro landing page with pricing, comparison, activation steps
 - **Expected:** Activation steps; no plaintext license key on the page
+- **Expected:** “All sales are final — the Pro licence is non-refundable” notice is visible beside the buy button, above the fold
+- **Expected:** FAQ includes refund and “what if it stops working” entries, both linking to `../terms.html`
+
+---
+
+## 7b. In-extension legal disclosure
+
+### Test: first-run welcome page
+1. Remove and reinstall the extension (or clear `chrome.storage.local`)
+2. **Expected:** `welcome.html` opens and shows the “Important — please read before you start” box
+3. **Expected:** Box states: as-is, no developer responsibility, no refunds, no compensation if it stops working
+4. **Expected:** “I have read and accept the Terms” button stores `fvd_terms_ack` and shows the acceptance date
+5. Reopen `welcome.html` → **Expected:** button already shows “Terms accepted ✓”
+
+### Test: the popup cannot be used without accepting (hard gate)
+1. Clear `chrome.storage.local` (`fvd_terms_ack` must be gone), then open the popup
+2. **Expected:** the Terms of Service overlay covers the whole popup: fixed position, full height, on top of everything
+3. **Expected:** behind it nothing has initialised — no video list, no spinner result, no active downloads
+4. **Expected:** the popup sends no messages to the background while the gate is up (check the service worker console)
+5. **Expected:** the “I accept the Terms of Service” button is enabled and “Read the full Terms of Service” opens `terms.html`
+6. Click **I accept the Terms of Service**
+7. **Expected:** overlay disappears, the popup initialises normally (videos appear) with no reload needed
+8. **Expected:** `chrome.storage.local.fvd_terms_ack` = `{ accepted: true, version: "1.0", acceptedAt: "..." }`
+9. Close and reopen the popup → **Expected:** no gate, it goes straight to the video list
+
+### Test: the download path is gated even if the UI is bypassed
+1. With `fvd_terms_ack` removed, open the popup on a page with a video
+2. In the service worker console run:
+   `chrome.storage.local.remove('fvd_terms_ack')`
+3. Trigger a download in the popup
+4. **Expected:** the download does not start, the gate re-appears, and the background returns `status: "terms_required"`
+5. Accept in the gate, then download again → **Expected:** it downloads normally
+
+### Test: a new terms version forces re-acceptance
+1. Bump `FVD_TERMS_VERSION` in `terms-gate.js` (and the `Version:` line in `terms.html`)
+2. Reload the extension and open the popup
+3. **Expected:** the gate reappears even though an older acceptance is stored
+4. Restore the version afterwards
+
+### Test: popup legal disclosures
+1. Open the popup as a Free user with the offer card visible
+2. **Expected:** The Pro offer card shows the non-refundable notice and a link to `terms.html`
+3. Open **Settings** → **Terms & liability** section
+4. **Expected:** Short liability summary plus “Open the full Terms of Service” button that opens `terms.html`
+5. **Expected:** The footer shows “Terms of Service · No refunds” and opens `terms.html`
+6. Open **Settings → Pro** → **Expected:** the same notice sits directly under the buy button, before payment
+7. Switch language and repeat → **Expected:** all 6 locales show translated Terms strings (no raw keys)
 
 ---
 
@@ -164,6 +220,13 @@ Robin must configure before publishing:
 3. **Privacy Policy URL:** Verify accessible at:
    `https://nrn-world.github.io/FlashVideoDownloader/privacy.html`
 
+4. **Terms of Service URL:** Verify accessible at:
+   `https://nrn-world.github.io/FlashVideoDownloader/terms.html`
+   Paste the same URL into the Chrome Web Store and AMO listings, and into the Ko-fi product page, **before** taking payments.
+
+5. **Ko-fi product page:** the shop description must state that all sales are final and link the no-refund policy,
+   and the thank-you page should repeat it. Without that, the withdrawal waiver in section 11 is harder to rely on.
+
 ---
 
 ## Summary
@@ -172,8 +235,12 @@ Robin must configure before publishing:
 - ✅ Pro tier: Unrestricted downloads, 3+ concurrent, batch, unlimited history, export
 - ✅ License: plaintext key is not in git; only Ko-fi buyers see it
 - ✅ UI: Pro section polished, comparison table clear, rate limit modal
-- ✅ Docs: README, STORE_LISTING, privacy.html updated
-- ✅ i18n: All 6 locales have Pro strings
+- ✅ Docs: README, STORE_LISTING, privacy.html, terms.html updated
+- ✅ i18n: All 6 locales have Pro strings and Terms strings
+- ✅ Legal: EULA bundled in both ZIPs, shown in the welcome page, the popup offer card, Settings and the purchase box
+- ✅ Gate: the popup and every download start require an accepted terms record (`terms-gate.js`, 4 unit tests)
+- ✅ Fail-open: a storage error never locks a user out, and never displays a false acceptance
+- ✅ Refunds: “all sales are final” shown before payment in the extension and on the Pro landing page
 - ✅ Compliance: DRM blocklist unchanged
 
 **Ready for Robin to:**

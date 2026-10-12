@@ -9,7 +9,7 @@
     "message": "Hitta och spara öppna videor (MP4, WEBM, M3U8) på sidan du tittar på. Förhandsgranska, pausa, lokal historik. Ingen DRM-kringgång."
   },
   "appVersion": {
-    "message": "v3.3.5"
+    "message": "v3.5.0"
   },
   "searchPlaceholder": {
     "message": "Sök bland videor..."
@@ -207,7 +207,7 @@
     "message": "€10.99"
   },
   "proPriceLifetime": {
-    "message": "Engångsköp · livstidsåtkomst"
+    "message": "Engångsbetalning · livstidslicens (se villkoren)"
   },
   "buyPro": {
     "message": "Köp Pro-licens"
@@ -318,7 +318,7 @@
     "message": "Nästa nedladdning om ~1 min"
   },
   "version": {
-    "message": "v3.4.1"
+    "message": "v3.5.0"
   },
   "dashNotSupported": {
     "message": "DASH/MPD-nedladdning stöds inte än. Prova en M3U8- eller direkt MP4-länk istället."
@@ -336,7 +336,7 @@
     "message": "min"
   },
   "proUpsellTitle": {
-    "message": "Pro Lifetime"
+    "message": "Pro"
   },
   "proUpsellCountdown": {
     "message": "Nästa gratisedladdning om {time}"
@@ -360,13 +360,13 @@
     "message": "Inga annonser"
   },
   "proOfferUrgency": {
-    "message": "Begränsat erbjudande — gäller till {date}. Därefter höjs priset."
+    "message": "Reducerat pris till {date}."
   },
   "proOfferCta": {
-    "message": "Skaffa Lifetime Pro"
+    "message": "Skaffa Pro"
   },
   "proOfferTrust": {
-    "message": "Ingen prenumeration. Betala en gång — behåll för alltid."
+    "message": "Ingen prenumeration. Engångsbetalning."
   },
   "proOfferRegularHint": {
     "message": "Ordinarie pris {price}"

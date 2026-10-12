@@ -14,8 +14,17 @@
 </head>
 <body>
   <h1>Privacy Policy – Flash Video Downloader</h1>
-  <p><strong>Last updated:</strong> October 8, 2026</p>
+  <p><strong>Last updated:</strong> October 12, 2026</p>
   <p><strong>Developer:</strong> nRn World (<a href="mailto:bynrnworld@gmail.com">bynrnworld@gmail.com</a>)</p>
+
+  <h2>Who is responsible</h2>
+  <p>The data controller for anything described in this policy is <strong>nRn World</strong>, reachable at
+  <a href="mailto:bynrnworld@gmail.com">bynrnworld@gmail.com</a>. We are established in Sweden and the EU General Data
+  Protection Regulation (GDPR) applies to us. There is no data protection officer, because we do not carry out processing
+  of the kind that requires one.</p>
+  <p><strong>The short version of our position:</strong> the extension is built so that almost nothing leaves your device.
+  We do not have user accounts, we do not run analytics, and the only optional server contact is a Free-tier rate-limit
+  check that is <strong>not enabled in this build</strong> — see the dedicated section below.</p>
 
   <h2>Summary</h2>
   <p>Download history, settings and your optional Pro license key stay <strong>on your device</strong>. We do not collect video URLs or browsing history on a server.</p>
@@ -53,8 +62,26 @@
     <li>No storage of raw IP addresses — the optional rate-limit service stores only a one-way hash for up to 2 hours.</li>
   </ul>
 
-  <h2>Free-tier rate limit (optional online check)</h2>
-  <p>Chrome deletes an extension’s local data when it is uninstalled. To keep the Free limit of 1 download every 2 hours, a Free download may trigger one request to our rate-limit service. The request contains no video URL, no filename, and no license key. The service records a hashed network identifier and the time, kept for at most 2 hours. Pro users are not rate-limited and do not call this check.</p>
+  <h2>Free-tier rate limit (not active in this build)</h2>
+  <p><strong>This build of the extension makes no request to any rate-limit service.</strong> The endpoint address is empty
+  in the shipped code, so the code path is never taken: no network identifier, no hash and no timestamp leaves your device.
+  The Free limit of 1 download every 2 hours is enforced entirely locally.</p>
+  <p>The section below describes what <em>would</em> be processed if we ever enable the optional service in a future version.
+  It is written now so that the description never has to be written after the fact.</p>
+  <ul>
+    <li><strong>Why it would exist:</strong> browsers delete an extension’s local storage when it is uninstalled, which would
+    otherwise let someone reset the Free limit by reinstalling.</li>
+    <li><strong>What would be processed:</strong> a one-way cryptographic hash of a coarse network identifier, plus the time of
+    the request. No video URL, no filename, no browsing history, no licence key, and never the raw network address itself.</li>
+    <li><strong>Legal basis:</strong> our legitimate interest (Art. 6(1)(f) GDPR) in preventing trivial abuse of the Free tier.
+    We have kept the data to the minimum needed for that purpose and it cannot be used to identify you in practice.</li>
+    <li><strong>Retention:</strong> at most 2 hours, after which it is deleted. It is not used for profiling, marketing or any
+    other purpose, and it is never sold or shared.</li>
+    <li><strong>Transfers:</strong> if the service is hosted outside your country, we would rely on the European Commission’s
+    standard contractual clauses and would not enable it without them in place.</li>
+    <li><strong>Pro users</strong> are never rate-limited and would never trigger this check.</li>
+  </ul>
+  <p>Enabling it would be a change to this policy, and the “Last updated” date above would change with it.</p>
 
   <h2>Pro upgrade (optional paid feature)</h2>
   <p>Flash Video Downloader is free to install. The Free tier allows <strong>1 video download every 2 hours</strong> and 1 concurrent download. An optional Pro upgrade (EUR 10.99, one-time lifetime license) unlocks unlimited downloads, 3 concurrent downloads, and unlimited local history. Payment is processed on Ko-fi (https://ko-fi.com/s/72a48b875e). After payment, Ko-fi shows your license key. You activate it in Settings → Pro. The extension stores a hashed license token locally, not the key in source code. No payment card data is collected or processed by the extension.</p>
@@ -70,11 +97,37 @@
   <h2>Data retention</h2>
   <p>Download history can be auto-deleted after 24 hours (enabled by default). You can clear history anytime in Settings.</p>
 
+  <h2>Your rights</h2>
+  <p>Because we hold almost no personal data about you, most requests resolve themselves: your download history and settings
+  can be viewed and deleted by you at any time under <em>Settings</em>, and uninstalling the extension deletes everything we
+  ever stored. Beyond that, under the GDPR you have the right to:</p>
+  <ul>
+    <li><strong>access</strong> the personal data we hold about you, and receive a copy (Art. 15);</li>
+    <li>have inaccurate data <strong>rectified</strong> (Art. 16);</li>
+    <li>have your data <strong>erased</strong> (Art. 17);</li>
+    <li>have processing <strong>restricted</strong> (Art. 18);</li>
+    <li><strong>object</strong> to processing based on legitimate interest (Art. 21) — the only such processing we ever carry out
+    is the rate-limit check described above, and objecting to it means we may have to treat you as rate-limited locally instead;</li>
+    <li><strong>data portability</strong> (Art. 20), which in practice means your local history export;</li>
+    <li>not be subject to a decision based <strong>solely on automated processing</strong> (Art. 22) — we run no such decisions.</li>
+  </ul>
+  <p>Write to <a href="mailto:bynrnworld@gmail.com">bynrnworld@gmail.com</a> and we will answer within one month.
+  If you are not satisfied, you have the right to complain to the Swedish data protection authority,
+  <strong>Integritetsskyddsmyndigheten (IMY)</strong>, or to the supervisory authority in your own country. You can always
+  contact your local authority without going through us first.</p>
+
   <h2>Children</h2>
-  <p>This extension is not directed at children under 13.</p>
+  <p>This extension is not directed at children. It must not be used by anyone under 13, and a paid Pro Licence may only be
+  purchased by someone who has reached the age of majority in their country (18 in Sweden). We do not knowingly process
+  personal data of children; if you believe a child has provided data to us, write to us and we will delete it.</p>
 
   <h2>Changes</h2>
-  <p>We may update this policy. The latest version will be published at this URL.</p>
+  <p>We may update this policy. The latest version will be published at this URL, and the same file is bundled inside the
+  extension so it is readable offline. The “Last updated” date at the top always reflects the current version.</p>
+
+  <h2>Relationship to the Terms of Service</h2>
+  <p>This policy covers data. The <a href="terms.html">End User License Agreement &amp; Terms of Service</a> covers the licence,
+  the warranty disclaimer, liability and the no-refund policy. Both apply together.</p>
 
   <h2>Contact</h2>
   <p>Questions: <a href="mailto:bynrnworld@gmail.com">bynrnworld@gmail.com</a></p>

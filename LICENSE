@@ -1,3 +1,28 @@
+Flash Video Downloader — licensing overview
+===========================================
+
+This file covers the SOURCE CODE of the Flash Video Downloader browser extension.
+
+1. Source code (this file)
+   Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0).
+   You may share and adapt the source code for non-commercial purposes, with
+   attribution and a link to the licence.
+
+2. Use of the distributed extension and the optional paid Pro licence
+   Governed by the End User License Agreement & Terms of Service in terms.html
+   (published at https://nrn-world.github.io/FlashVideoDownloader/terms.html).
+   Installing, using or paying for the extension means you accept that Agreement,
+   which contains the warranty disclaimers, the limitation of liability, the
+   indemnity you give the developer, and the no-refund policy for Pro purchases.
+
+   Where that Agreement would restrict a right that CC BY-NC 4.0 grants you in
+   respect of this source code, CC BY-NC 4.0 prevails for the source code only.
+
+3. Third-party components
+   See THIRD_PARTY_NOTICES.txt.
+
+-------------------------------------------------------------------------------
+
 Creative Commons Attribution-NonCommercial 4.0 International Public License
 
 Copyright (c) 2026 FlashVideoDownloader

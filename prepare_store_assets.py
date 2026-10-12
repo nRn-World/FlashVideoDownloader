@@ -46,7 +46,10 @@ INCLUDE_FILES = [
     "i18n.js",
     "storage-handles.js",
     "privacy.html",
+    "terms.html",
+    "terms-gate.js",
     "welcome.html",
+    "welcome.js",
     "download-success.html",
     "LICENSE",
     "THIRD_PARTY_NOTICES.txt",
@@ -382,6 +385,7 @@ def main() -> None:
     print("Upload promo tile from: Screenshots/store/promo-tile-440x280.png")
     print("Upload featured promo from: Screenshots/store/promo-featured-1400x560.png")
     print("Privacy policy URL (host privacy.html): https://nrn-world.github.io/FlashVideoDownloader/privacy.html")
+    print("Terms of Service URL (host terms.html): https://nrn-world.github.io/FlashVideoDownloader/terms.html")
 
 
 if __name__ == "__main__":

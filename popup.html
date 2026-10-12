@@ -6,6 +6,31 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
+  <!--
+    Terms of Service gate. Covers the whole popup and is only removed once the
+    user accepts. popup.js does not initialise while it is up, and background.js
+    refuses to start a download without an accepted record (terms-gate.js).
+  -->
+  <div id="terms-gate" class="terms-gate hidden" role="dialog" aria-modal="true" aria-labelledby="txt-terms-gate-title">
+    <div class="terms-gate-box">
+      <div class="terms-gate-icon" aria-hidden="true">📄</div>
+      <h2 class="terms-gate-title" id="txt-terms-gate-title" data-i18n="termsGateTitle">Terms of Service</h2>
+      <p class="terms-gate-intro" data-i18n="termsGateIntro">You must accept the Terms of Service before you can use Flash Video Downloader.</p>
+      <ul class="terms-gate-list">
+        <li data-i18n="termsGateNoWarranty">Provided “as is”, without warranty. The developer accepts no liability for how you use the extension.</li>
+        <li data-i18n="termsGateNoRefund">All purchases are final — no refunds, and no compensation if the extension stops working or is discontinued.</li>
+        <li data-i18n="termsGateOwnRisk">You are responsible for what you download and for respecting copyright and each website’s terms.</li>
+      </ul>
+      <a href="terms.html" target="_blank" rel="noopener noreferrer" class="terms-gate-read" id="link-terms-gate">
+        <span data-i18n="termsGateRead">Read the full Terms of Service</span>
+      </a>
+      <button type="button" id="btn-terms-gate-accept" class="terms-gate-accept">
+        <span data-i18n="termsGateAccept">I accept the Terms of Service</span>
+      </button>
+      <p class="terms-gate-note" data-i18n="termsGateLocked">The extension stays locked until you accept.</p>
+    </div>
+  </div>
+
   <div class="app-container">
     <!-- Header -->
     <header class="app-header">
@@ -13,7 +38,7 @@
         <img src="icons/icon32.png" alt="FVD" class="logo-img" />
         <div class="brand-text">
           <h1 id="txt-app-title">Flash Video Downloader</h1>
-          <span class="version" id="txt-app-version">v3.4.1</span>
+          <span class="version" id="txt-app-version">v3.5.0</span>
         </div>
       </div>
       <div class="header-actions">
@@ -57,14 +82,16 @@
       <div id="pro-upsell-banner" class="pro-upsell-banner hidden">
         <div class="pro-upsell-head">
           <span class="pro-upsell-icon" aria-hidden="true">⚡</span>
-          <h3 class="pro-upsell-title" id="txt-pro-upsell-title">Pro Lifetime</h3>
-          <span class="pro-upsell-badge" id="txt-offer-badge">50% OFF</span>
+          <h3 class="pro-upsell-title" id="txt-pro-upsell-title">Pro</h3>
+          <!-- Campaign-only elements start hidden and empty: a compare-at price must
+               never be shown unless a real reduction is configured (see PRO_OFFER). -->
+          <span class="pro-upsell-badge hidden" id="txt-offer-badge"></span>
         </div>
 
         <div class="pro-offer-price">
-          <span class="pro-offer-was" id="txt-offer-was">€21.98</span>
+          <span class="pro-offer-was hidden" id="txt-offer-was"></span>
           <span class="pro-offer-now" id="txt-offer-now">€10.99</span>
-          <span class="pro-offer-lifetime" id="txt-offer-lifetime">One-time payment · Lifetime license</span>
+          <span class="pro-offer-lifetime" id="txt-offer-lifetime">One-time payment · lifetime licence (see Terms)</span>
         </div>
 
         <div class="pro-offer-list">
@@ -77,8 +104,12 @@
         <p class="pro-offer-countdown" id="txt-pro-upsell-countdown"></p>
         <p class="pro-offer-urgency" id="txt-offer-urgency"></p>
 
-        <button type="button" id="btn-upsell-buy" class="btn-upsell-buy">Get Lifetime Pro · €10.99</button>
-        <p class="pro-offer-trust" data-i18n="proOfferTrust">No subscription. Pay once — yours forever.</p>
+        <button type="button" id="btn-upsell-buy" class="btn-upsell-buy">Get Pro · €10.99</button>
+        <p class="pro-offer-trust" data-i18n="proOfferTrust">No subscription. One-time payment.</p>
+        <p class="pro-legal-note">
+          <span data-i18n="proNoRefundShort">All sales are final — the Pro licence is non-refundable. No compensation if the extension stops working.</span>
+          <a href="terms.html" target="_blank" rel="noopener noreferrer"><span data-i18n="termsLink">Terms of Service</span></a>
+        </p>
 
         <!-- License activation without a detour through Settings -->
         <div class="pro-offer-license">
@@ -177,15 +208,20 @@
             <div id="pro-purchase-box" class="pro-purchase-box">
               <div class="pro-price">
                 <div class="pro-price-row">
-                  <span class="price-was" id="txt-pro-price-was">€21.98</span>
+                  <span class="price-was hidden" id="txt-pro-price-was"></span>
                   <span class="price-amount" id="txt-pro-price">€10.99</span>
-                  <span class="pro-save-badge" id="txt-pro-save-badge">50% OFF</span>
+                  <span class="pro-save-badge hidden" id="txt-pro-save-badge"></span>
                 </div>
-                <span class="price-lifetime" id="txt-pro-lifetime">One-time payment · Lifetime license</span>
+                <span class="price-lifetime" id="txt-pro-lifetime">One-time payment · lifetime licence (see Terms)</span>
               </div>
               <a href="#" id="btn-buy-pro" class="btn-buy-pro" target="_blank" rel="noopener noreferrer">
                 <span data-i18n="buyPro">Buy Pro License</span>
               </a>
+              <!-- Final-sale disclosure, shown next to the purchase button. -->
+              <p class="pro-legal-note">
+                <span data-i18n="proNoRefundShort">All sales are final — the Pro licence is non-refundable. No compensation if the extension stops working.</span>
+                <a href="terms.html#refunds" target="_blank" rel="noopener noreferrer"><span data-i18n="termsLinkRefunds">No-refund policy</span></a>
+              </p>
             </div>
           </div>
 
@@ -242,6 +278,14 @@
           </div>
         </div>
 
+        <div class="settings-section terms-section">
+          <h3 id="txt-terms-title" data-i18n="termsTitle">Terms &amp; liability</h3>
+          <p class="settings-hint" data-i18n="termsSummary">Provided “as is”, without warranty. The developer accepts no liability for how you use the extension. All purchases are final — no refunds, and no compensation if the extension stops working or is discontinued.</p>
+          <a href="terms.html" target="_blank" rel="noopener noreferrer" class="btn-secondary-action" id="btn-open-terms">
+            <span data-i18n="termsOpen">Open the full Terms of Service</span>
+          </a>
+        </div>
+
         <div class="support-section">
           <div class="support-card">
             <div class="support-icon-wrap">
@@ -270,7 +314,7 @@
               </svg>
             </button>
           </div>
-          <p class="credits-version" id="txt-settings-version">v3.4.1</p>
+          <p class="credits-version" id="txt-settings-version">v3.5.0</p>
         </div>
 
       </div>
@@ -285,7 +329,10 @@
     <!-- Footer -->
     <footer class="app-footer" id="app-footer">
       <span id="txt-footer">Captures MP4, WEBM, FLV, M3U8 & more</span>
-      <span id="txt-footer-version" class="footer-version">v3.4.1</span>
+      <a href="terms.html" target="_blank" rel="noopener noreferrer" class="footer-terms" id="link-footer-terms">
+        <span data-i18n="termsLink">Terms of Service</span> · <span data-i18n="footerNoRefund">No refunds</span>
+      </a>
+      <span id="txt-footer-version" class="footer-version">v3.5.0</span>
     </footer>
   </div>
 
@@ -368,6 +415,7 @@
   </div>
 
   <script src="storage-handles.js"></script>
+  <script src="terms-gate.js"></script>
   <script src="license.js"></script>
   <script src="i18n.js"></script>
   <script src="ads.js"></script>

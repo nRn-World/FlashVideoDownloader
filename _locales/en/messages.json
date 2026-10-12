@@ -9,7 +9,7 @@
     "message": "Detect and save open videos (MP4, WEBM, M3U8) from the page you are viewing. Preview, pause, local history. No DRM bypass."
   },
   "appVersion": {
-    "message": "v3.3.5"
+    "message": "v3.5.0"
   },
   "searchPlaceholder": {
     "message": "Search detected videos..."
@@ -207,7 +207,7 @@
     "message": "€10.99"
   },
   "proPriceLifetime": {
-    "message": "One-time · lifetime access"
+    "message": "One-time payment · lifetime licence (see Terms)"
   },
   "buyPro": {
     "message": "Buy Pro License"
@@ -318,7 +318,7 @@
     "message": "Next download in ~1 min"
   },
   "version": {
-    "message": "v3.4.1"
+    "message": "v3.5.0"
   },
   "dashNotSupported": {
     "message": "DASH/MPD download is not supported yet. Try an M3U8 or direct MP4 link instead."
@@ -336,7 +336,7 @@
     "message": "min"
   },
   "proUpsellTitle": {
-    "message": "Pro Lifetime"
+    "message": "Pro"
   },
   "proUpsellCountdown": {
     "message": "Next free download in {time}"
@@ -360,13 +360,13 @@
     "message": "No ads"
   },
   "proOfferUrgency": {
-    "message": "Limited offer — ends {date}. The price goes up afterwards."
+    "message": "Reduced price until {date}."
   },
   "proOfferCta": {
-    "message": "Get Lifetime Pro"
+    "message": "Get Pro"
   },
   "proOfferTrust": {
-    "message": "No subscription. Pay once — yours forever."
+    "message": "No subscription. One-time payment."
   },
   "proOfferRegularHint": {
     "message": "Regular price {price}"

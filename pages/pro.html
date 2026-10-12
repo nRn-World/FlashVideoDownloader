@@ -265,6 +265,29 @@
       text-decoration: underline;
     }
 
+    .legal-note {
+      margin-top: 20px;
+      padding: 14px 16px;
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      background: rgba(245, 158, 11, 0.1);
+      border-radius: 8px;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: #fcd34d;
+      text-align: left;
+    }
+
+    .legal-note strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #fde68a;
+    }
+
+    .legal-note a {
+      color: #93c5fd;
+      text-decoration: underline;
+    }
+
     @media (max-width: 768px) {
       h1 {
         font-size: 2rem;
@@ -287,16 +310,27 @@
     <div class="header">
       <img src="../icons/icon128.png" alt="Flash Video Downloader" class="logo">
       <h1>⚡ Flash Video Downloader Pro</h1>
-      <p class="subtitle">Unlock powerful features for professional video downloading. Pay once, use forever.</p>
+      <p class="subtitle">Unlock powerful features for professional video downloading. Pay once. No subscription.</p>
     </div>
 
     <div class="price-box">
       <div class="price">EUR 10.99</div>
-      <div class="price-label">One-time payment • Lifetime access • No subscription</div>
+      <div class="price-label">One-time payment • No subscription • Licence valid for as long as the extension is available</div>
       <a href="https://ko-fi.com/s/72a48b875e" class="btn-primary">Buy Pro License</a>
       <p style="margin-top: 16px; font-size: 0.9rem; color: var(--text-muted);">
-        Payment is processed on Ko-fi. After checkout you will see your lifetime license key on the thank-you page. Paste it in the extension: Settings → Pro.
+        Payment is processed on Ko-fi. After checkout you will see your licence key on the thank-you page. Paste it in the extension: Settings → Pro.
       </p>
+
+      <!-- Final-sale disclosure. Must be visible before the purchase action. -->
+      <div class="legal-note">
+        <strong>All sales are final — the Pro licence is non-refundable.</strong>
+        By buying, you expressly ask us to give you immediate access to the licence key and you acknowledge that you
+        therefore lose any statutory right of withdrawal. You are not entitled to a refund, compensation or damages if
+        the extension stops working, becomes slower, is restricted or is discontinued in the future, or if it does not
+        work on a particular website. Read the full
+        <a href="../terms.html">End User License Agreement &amp; Terms of Service</a>
+        (see also the <a href="../terms.html#refunds">no-refund policy</a>) before you pay.
+      </div>
     </div>
 
     <div class="features">
@@ -348,7 +382,7 @@
       <h2 class="activation-title">How to Activate Pro</h2>
       <ol class="activation-steps">
         <li>
-          <strong>Purchase your Pro license</strong> via the button above. Ko-fi shows your lifetime license key on the thank-you page right after payment.
+          <strong>Purchase your Pro licence</strong> via the button above. Ko-fi shows your licence key on the thank-you page right after payment.
         </li>
         <li>
           <strong>Open the extension</strong> in Chrome and click the ⚙️ Settings icon.
@@ -368,7 +402,9 @@
       
       <div class="faq-item">
         <div class="faq-question">Is this a subscription?</div>
-        <div class="faq-answer">No! Pro is a one-time payment of EUR 10.99. Pay once, use forever. No recurring charges.</div>
+        <div class="faq-answer">No! Pro is a one-time payment of EUR 10.99. No subscription and no recurring charges. The licence
+          is valid for as long as the extension is available — see section 5 of the
+          <a href="../terms.html">Terms</a> for what "lifetime" means.</div>
       </div>
 
       <div class="faq-item">
@@ -395,6 +431,28 @@
         <div class="faq-question">Can Pro download from YouTube/Netflix?</div>
         <div class="faq-answer">No. DRM-protected sites (YouTube, Netflix, Twitch, Disney+) are blocked for Chrome Web Store compliance.</div>
       </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Can I get a refund?</div>
+        <div class="faq-answer">No. All sales are final and the Pro licence is non-refundable. By purchasing you expressly request
+          immediate access to the digital content and acknowledge that you lose any statutory right of withdrawal. See the
+          <a href="../terms.html#refunds">no-refund policy</a>.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">What if the extension stops working in the future?</div>
+        <div class="faq-answer">Websites and browsers change all the time and we cannot control them. The extension is provided
+          “as is”, without any warranty, and we are not liable if it stops working, becomes slower, is restricted or is
+          discontinued — and that does not entitle you to a refund or compensation. The developer's total liability is capped
+          at the amount you paid us.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Where are the full terms?</div>
+        <div class="faq-answer">In the extension (Settings → Terms &amp; liability) and at
+          <a href="../terms.html">the End User License Agreement &amp; Terms of Service</a>. Installing or using the extension
+          means you accept them.</div>
+      </div>
     </div>
   </div>
 
@@ -404,6 +462,10 @@
       <a href="https://github.com/nRn-World/FlashVideoDownloader">GitHub</a> •
       <a href="https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg">Chrome Web Store</a> •
       <a href="https://ko-fi.com/s/72a48b875e">Support</a>
+    </p>
+    <p style="margin-top: 8px; font-size: 0.9rem;">
+      <a href="../privacy.html">Privacy Policy</a> •
+      <a href="../terms.html">Terms of Service</a>
     </p>
     <p style="margin-top: 8px; font-size: 0.9rem;">© 2026 nRn World • <a href="mailto:bynrnworld@gmail.com">bynrnworld@gmail.com</a></p>
   </div>

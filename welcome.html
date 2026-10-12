@@ -90,6 +90,32 @@
       color: var(--muted);
     }
     a { color: var(--accent); }
+    .terms {
+      margin-top: 24px;
+      padding: 18px 20px;
+      border-radius: 10px;
+      background: rgba(61, 156, 240, 0.08);
+      border: 1px solid rgba(61, 156, 240, 0.35);
+    }
+    .terms h2 { margin: 0 0 8px; font-size: 1rem; }
+    .terms p, .terms ul { margin: 0 0 10px; font-size: 0.9rem; color: var(--muted); }
+    .terms ul { padding-left: 1.1em; }
+    .terms li { margin: 4px 0; }
+    .terms strong { color: var(--text); }
+    .terms-status { margin: 10px 0 0; font-size: 0.875rem; color: var(--muted); }
+    .terms-status.ok { color: var(--ok); }
+    .terms-status.warn { color: var(--warn); }
+    .btn-accept {
+      background: var(--accent);
+      color: #061018;
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-accept:disabled { background: var(--ok); cursor: default; }
   </style>
 </head>
 <body>
@@ -129,10 +155,32 @@
       (Settings → Pro). Core detection works without Pro.
     </div>
 
+    <div class="terms">
+      <h2>Important — please read before you start</h2>
+      <p>
+        Flash Video Downloader is provided <strong>“as is”</strong>. The developer gives no warranty and accepts
+        <strong>no responsibility or liability</strong> for how you use it or for what happens as a result. In short:
+      </p>
+      <ul>
+        <li>You use the extension entirely at your own risk, and you are responsible for what you download and for
+          respecting copyright and each website’s terms.</li>
+        <li>There is <strong>no refund</strong> — all purchases of the optional Pro licence are final.
+          See the <a href="terms.html#refunds">no-refund policy</a>.</li>
+        <li>If the extension stops working, works slower, or is discontinued or restricted in the future, you are
+          <strong>not entitled to a refund, compensation or damages</strong>.</li>
+        <li>Installing or using the extension means you accept the
+          <a href="terms.html">End User License Agreement &amp; Terms of Service</a>.</li>
+      </ul>
+      <button type="button" id="btn-accept-terms" class="btn-accept">I have read and accept the Terms</button>
+      <p class="terms-status" id="terms-status" hidden></p>
+    </div>
+
     <p class="pin">
       Tip: pin the extension to your toolbar (puzzle icon → pin) so it is always one click away.
       Support: <a href="mailto:bynrnworld@gmail.com">bynrnworld@gmail.com</a>
     </p>
   </main>
+  <script src="terms-gate.js"></script>
+  <script src="welcome.js"></script>
 </body>
 </html>

@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg"><img src="https://img.shields.io/badge/Download-Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=0B57D0" alt="Download on Chrome Web Store" /></a>
-  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.4.1-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.4.1" /></a>
+  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.5.0-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.5.0" /></a>
   <a href="https://developer.chrome.com/docs/extensions/mv3/"><img src="https://img.shields.io/badge/Manifest-V3-FF6D00?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=E65100" alt="Manifest V3" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-00BFA5?style=for-the-badge&logo=creativecommons&logoColor=white&labelColor=00897B" alt="License CC BY-NC 4.0" /></a>
   <a href="https://ko-fi.com/s/72a48b875e"><img src="https://img.shields.io/badge/Pro-EUR%2010.99%20lifetime-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white&labelColor=D32F2F" alt="Buy Pro on Ko-fi" /></a>
@@ -120,6 +120,10 @@ git pull origin main
 
 Then click **Reload** on the extension card in `chrome://extensions/`.
 
+On first run the welcome page opens with the legal notice, and the popup stays locked behind the Terms of Service until they
+are accepted. The same check runs in `background.js`, so a download cannot start without an accepted record — see
+[terms-gate.js](terms-gate.js) and section 1 of [terms.html](terms.html).
+
 ---
 
 ## How to use
@@ -136,6 +140,10 @@ Then click **Reload** on the extension card in `chrome://extensions/`.
 1. Buy a license: [ko-fi.com/s/72a48b875e](https://ko-fi.com/s/72a48b875e) (EUR 10.99, lifetime).
 2. Copy the key from the Ko-fi thank-you page.
 3. Paste the key either in the front-page Pro card (**Already have a license key?**) or in **Settings → Pro**, then press **Activate**.
+
+> **All sales are final.** The Pro licence is non-refundable and buyers are not entitled to compensation if the extension
+> stops working or is discontinued. The purchase button and the welcome page both carry this notice, and the full policy is
+> in [terms.html](terms.html#refunds).
 
 ### Download location
 
@@ -170,6 +178,9 @@ Then click **Reload** on the extension card in `chrome://extensions/`.
 | `storage-handles.js` | File System Access directory handle persistence |
 | `i18n.js` | In-extension translations |
 | `privacy.html` | Privacy policy ([live](https://nrn-world.github.io/FlashVideoDownloader/privacy.html)) |
+| `welcome.html` / `welcome.js` | First-run page, including the legal notice and Terms acknowledgement |
+| `terms.html` | **End User License Agreement & Terms of Service** — liability, warranty, no-refund policy ([live](https://nrn-world.github.io/FlashVideoDownloader/terms.html)) |
+| `terms-gate.js` | Terms acceptance gate: versioned record, checked by the popup and by `background.js` before any download starts |
 | `pages/pro.html` | Pro landing page on GitHub Pages |
 | `workers/fvd-rate-limit.js` | Optional Cloudflare Worker to keep the Free limit after reinstall |
 
@@ -189,7 +200,8 @@ Free users see a small "Sponsored" banner in the popup; Pro removes it. Program 
 create_zip.bat
 ```
 
-See `STORE_LISTING.md` for Chrome Web Store listing text and the privacy-policy URL.
+See `STORE_LISTING.md` for Chrome Web Store listing text and the privacy-policy URL. The ZIP includes `terms.html`
+(the End User License Agreement) and `welcome.js`; a build fails loudly if either is missing.
 
 ---
 
@@ -202,11 +214,30 @@ See `STORE_LISTING.md` for Chrome Web Store listing text and the privacy-policy 
 
 ## License
 
-This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)**.
+Two layers, and they cover different things:
+
+**1. The source code in this repository** is licensed under the
+**Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)**.
 
 - You may share and adapt the material for **non-commercial** use.
 - You must give **appropriate credit** and link to the license.
 - See [`LICENSE`](LICENSE) for the full text.
+
+**2. Using the distributed extension and the paid Pro licence** is governed by the
+[End User License Agreement & Terms of Service](terms.html)
+([live](https://nrn-world.github.io/FlashVideoDownloader/terms.html)). Installing, using or buying the extension means you
+accept it. It contains:
+
+- the **warranty disclaimer** (“as is”, no promise that the extension works on any site or keeps working);
+- the **limitation of liability**, capped at the amount paid (see also section 9 — no compensation if the extension stops
+  working or is discontinued);
+- the **indemnity** you give the developer for how you use the extension;
+- the **[no-refund policy](terms.html#refunds)** for Pro purchases, including the express request for immediate access that
+  waives the statutory right of withdrawal;
+- the restrictions on commercial use, key sharing and prohibited use.
+
+Where the Agreement would restrict a right that CC BY-NC 4.0 grants you in respect of the source code, CC BY-NC 4.0 prevails
+for the source code only.
 
 ---
 
@@ -216,7 +247,8 @@ This project is licensed under the **Creative Commons Attribution-NonCommercial 
 Email: [bynrnworld@gmail.com](mailto:bynrnworld@gmail.com)  
 GitHub: [nRn-World/FlashVideoDownloader](https://github.com/nRn-World/FlashVideoDownloader)  
 Chrome Web Store: [Flash Video Downloader](https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg)  
-Privacy policy: [nrn-world.github.io/FlashVideoDownloader/privacy.html](https://nrn-world.github.io/FlashVideoDownloader/privacy.html)
+Privacy policy: [nrn-world.github.io/FlashVideoDownloader/privacy.html](https://nrn-world.github.io/FlashVideoDownloader/privacy.html)  
+Terms of Service: [nrn-world.github.io/FlashVideoDownloader/terms.html](https://nrn-world.github.io/FlashVideoDownloader/terms.html)
 
 ---
 
@@ -224,6 +256,7 @@ Privacy policy: [nrn-world.github.io/FlashVideoDownloader/privacy.html](https://
 
 | Version | Highlights |
 |---|---|
+| **3.5.0** | Legal and compliance release. A **Terms of Service gate** now locks the popup and every download start until the user accepts, with the accepted version and timestamp stored (`terms-gate.js`); the full EULA ships as `terms.html` (liability, warranty, no-refund and indemnity sections, Swedish law) and is linked from the welcome page, the popup, Settings, the footer and the Pro landing page. The **fictitious compare-at price is gone** — no struck-through "€21.98", no "50% OFF" and no urgency countdown unless a real reduction is configured against the lowest price actually charged in the last 30 days. Marketing copy no longer promises the licence lasts "forever", and the privacy policy gains a controller, legal-basis, retention and data-subject-rights section. Version bumped for store submission. |
 | **3.4.1** | The Back button in Settings is now pinned outside the scrolling area, so returning to the video list is always one click away instead of hiding below the Pro card, history and credits; the header gear toggles back to the video list too. Adds `Strict-Transport-Security` and `Referrer-Policy` to the optional rate-limit worker. |
 | **3.4.0** | License key entry in the front-page Pro card (**Already have a license key?**) so a buyer no longer has to open Settings, the offer card moved above the affiliate banner so it is read first, and a successful activation is confirmed on screen before the card closes |
 | **3.3.9** | Pro offer card on the front page (50 % launch price, crossed-out regular price, live countdown, lifetime license), free tier relaxed to 1 download every 2 hours, and the affiliate banner keeps its space next to the card |

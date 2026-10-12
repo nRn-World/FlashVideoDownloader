@@ -9,7 +9,7 @@
     "message": "Detect and save open videos (MP4, WEBM, M3U8) from the page you are viewing. Preview, pause, local history. No DRM bypass."
   },
   "appVersion": {
-    "message": "v3.3.5"
+    "message": "v3.5.0"
   },
   "searchPlaceholder": {
     "message": "Search detected videos..."
@@ -204,7 +204,7 @@
     "message": "One-time payment: EUR 10.99"
   },
   "proPriceLifetime": {
-    "message": "Lifetime access — pay once, use forever"
+    "message": "Tek ödeme · ömür boyu lisans (şartlara bakın)"
   },
   "buyPro": {
     "message": "Buy Pro License"
@@ -288,7 +288,7 @@
     "message": "Cannot detect videos on browser internal pages"
   },
   "version": {
-    "message": "v3.4.1"
+    "message": "v3.5.0"
   },
   "dashNotSupported": {
     "message": "DASH/MPD indirme henüz desteklenmiyor. M3U8 veya doğrudan MP4 bağlantısı deneyin."
@@ -336,7 +336,7 @@
     "message": "dk"
   },
   "proUpsellTitle": {
-    "message": "Ömür Boyu Pro"
+    "message": "Pro"
   },
   "proUpsellCountdown": {
     "message": "Sonraki ücretsiz indirme {time} sonra"
@@ -360,13 +360,13 @@
     "message": "Reklamsız"
   },
   "proOfferUrgency": {
-    "message": "Sınırlı teklif — {date} tarihine kadar. Sonrasında fiyat artar."
+    "message": "{date} tarihine kadar indirimli fiyat."
   },
   "proOfferCta": {
-    "message": "Ömür Boyu Pro Al"
+    "message": "Pro'ya geç"
   },
   "proOfferTrust": {
-    "message": "Abonelik yok. Bir kez öde — sonsuza kadar senin."
+    "message": "Abonelik yok. Tek ödeme."
   },
   "proOfferRegularHint": {
     "message": "Normal fiyat {price}"

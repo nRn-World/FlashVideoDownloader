@@ -429,6 +429,34 @@ body {
   color: var(--text-muted);
 }
 
+/* Final-sale / liability disclosure shown with every purchase button and in
+   Settings. Deliberately readable: it must be visible before payment. */
+.pro-legal-note {
+  margin: 10px 0 0;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.pro-legal-note a {
+  display: inline-block;
+  margin-top: 3px;
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+/* The notice directly under the buy button carries the final-sale terms, so it
+   gets a tinted frame rather than the muted styling used elsewhere. */
+#pro-purchase-box .pro-legal-note {
+  margin-top: 12px;
+  padding: 9px 11px;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+}
+
 /* Front-page offer card: license activation without a detour through Settings.
    Stays visible in compact mode — a returning buyer is exactly the one who
 already has a key. */
@@ -1222,6 +1250,97 @@ already has a key. */
   display: none !important;
 }
 
+/* Terms of Service gate — covers the entire popup until the user accepts.
+   Nothing behind it is interactive or initialised (see terms-gate.js). */
+.terms-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(8, 11, 19, 0.97);
+  backdrop-filter: blur(2px);
+  overflow-y: auto;
+}
+
+.terms-gate-box {
+  width: 100%;
+  max-width: 380px;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--bg-card);
+  text-align: left;
+}
+
+.terms-gate-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.terms-gate-title {
+  margin: 0 0 8px;
+  font-size: 0.98rem;
+  color: var(--text-primary);
+}
+
+.terms-gate-intro {
+  margin: 0 0 10px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.terms-gate-list {
+  margin: 0 0 12px;
+  padding-left: 1.05em;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.terms-gate-list li {
+  margin: 4px 0;
+}
+
+.terms-gate-read {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.72rem;
+  color: #93c5fd;
+}
+
+.terms-gate-accept {
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary-accent);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.terms-gate-accept:hover {
+  background: var(--primary-hover);
+}
+
+.terms-gate-accept:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.terms-gate-note {
+  margin: 8px 0 0;
+  font-size: 0.64rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
 /* Footer */
 .app-footer {
   padding: 8px 16px 10px;
@@ -1239,6 +1358,23 @@ already has a key. */
   font-size: 0.62rem;
   color: #64748b;
   letter-spacing: 0.3px;
+}
+
+.footer-terms {
+  font-size: 0.62rem;
+  color: #93c5fd;
+  text-decoration: none;
+}
+
+.footer-terms:hover {
+  text-decoration: underline;
+}
+
+.terms-section .btn-secondary-action {
+  display: block;
+  margin-top: 8px;
+  text-align: center;
+  text-decoration: none;
 }
 
 /* Active Downloads Banner */
