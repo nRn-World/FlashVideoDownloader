@@ -1,4 +1,4 @@
-// Flash Video Downloader - Popup Script (v3.5.0)
+// Flash Video Downloader - Popup Script (v3.5.2)
 
 document.addEventListener('DOMContentLoaded', async () => {
   // ── Terms of Service gate ────────────────────────────────────────────────
@@ -672,6 +672,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     fixedLocationOptions.classList.toggle('hidden', chkAskEachTime.checked);
   }
   updateFolderOptionsVisibility();
+
+  // Firefox for Android has no downloads API (platform.js). No folder can be chosen
+  // there - the browser saves the file itself - so the controls are replaced by a line
+  // that says where the file goes, rather than offering settings that do nothing.
+  // A page that loads this file without platform.js (the local dev preview does) is a
+  // desktop page, so the desktop behaviour is the correct default there.
+  const hasDownloadsApi = typeof FVD_HAS_DOWNLOADS_API === 'undefined' ? true : FVD_HAS_DOWNLOADS_API;
+  if (!hasDownloadsApi) {
+    const locationSection = document.getElementById('download-location-section');
+    if (locationSection) {
+      const askToggle = locationSection.querySelector('.toggle-control');
+      if (askToggle) askToggle.classList.add('hidden');
+      const folderOptions = document.getElementById('fixed-location-options');
+      if (folderOptions) folderOptions.classList.add('hidden');
+      const hint = document.getElementById('txt-save-without-downloads-api');
+      if (hint) hint.classList.remove('hidden');
+    }
+  }
 
   function t(key) {
     const raw = (i18n[currentLang] && i18n[currentLang][key]) || i18n['en'][key] || key;

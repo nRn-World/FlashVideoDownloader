@@ -38,7 +38,7 @@
         <img src="icons/icon32.png" alt="FVD" class="logo-img" />
         <div class="brand-text">
           <h1 id="txt-app-title">Flash Video Downloader</h1>
-          <span class="version" id="txt-app-version">v3.5.0</span>
+          <span class="version" id="txt-app-version">v3.5.2</span>
         </div>
       </div>
       <div class="header-actions">
@@ -236,7 +236,7 @@
           </div>
         </div>
 
-        <div class="settings-section">
+        <div class="settings-section" id="download-location-section">
           <h3 id="txt-download-title">Download location</h3>
           <label class="toggle-control">
             <input type="checkbox" id="chk-ask-each-time" />
@@ -246,6 +246,9 @@
             <button type="button" id="btn-pick-folder" class="btn-secondary-action">📁 Choose folder on computer</button>
             <p class="settings-hint" id="txt-selected-folder">No folder selected</p>
           </div>
+          <!-- Shown where the browser has no downloads API and saves the file itself
+               (Firefox for Android), replacing controls that could not do anything. -->
+          <p class="settings-hint hidden" id="txt-save-without-downloads-api" data-i18n="androidSaveHint">This browser saves downloads itself, so the folder cannot be chosen here. A tab opens with a link you tap to save the file.</p>
         </div>
 
         <div class="settings-section">
@@ -314,7 +317,7 @@
               </svg>
             </button>
           </div>
-          <p class="credits-version" id="txt-settings-version">v3.5.0</p>
+          <p class="credits-version" id="txt-settings-version">v3.5.2</p>
         </div>
 
       </div>
@@ -332,7 +335,7 @@
       <a href="terms.html" target="_blank" rel="noopener noreferrer" class="footer-terms" id="link-footer-terms">
         <span data-i18n="termsLink">Terms of Service</span> · <span data-i18n="footerNoRefund">No refunds</span>
       </a>
-      <span id="txt-footer-version" class="footer-version">v3.5.0</span>
+      <span id="txt-footer-version" class="footer-version">v3.5.2</span>
     </footer>
   </div>
 
@@ -414,6 +417,7 @@
     </div>
   </div>
 
+  <script src="platform.js"></script>
   <script src="storage-handles.js"></script>
   <script src="terms-gate.js"></script>
   <script src="license.js"></script>

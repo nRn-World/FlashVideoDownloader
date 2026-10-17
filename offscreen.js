@@ -1,6 +1,12 @@
 // Flash Video Downloader - Offscreen HLS Download Engine (Full Pipeline)
 // This runs in a real DOM context with URL.createObjectURL, Blob, and anchor downloads.
 
+// platform.js decides these from the browser's capabilities; the defaults keep the
+// engine working when it is loaded on its own (unit tests), where it is the desktop
+// engine: an iframe with a download manager behind it.
+const FVD_DL_API = typeof FVD_HAS_DOWNLOADS_API === 'undefined' ? true : FVD_HAS_DOWNLOADS_API;
+const FVD_ENGINE_ACTIVE = typeof FVD_ENGINE_IS_ACTIVE === 'undefined' ? true : FVD_ENGINE_IS_ACTIVE;
+
 const activeDownloadsMap = new Map();
 const downloadAbortControllers = new Map();
 let activeDownload = null; // last active (compat)
@@ -142,8 +148,112 @@ function sleepMs(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+// === Firefox for Android: saving without a download manager ===
+// There is no downloads API there, so a finished file can only reach the browser as an
+// anchor with [download] on a page the user can see and tap. That is why background.js
+// runs the engine in a real tab on Android instead of the hidden iframe it uses on
+// desktop: this page is that tab.
+let engineLanguage = 'en';
+
+function tEngine(key, fallback) {
+  try {
+    if (typeof i18n !== 'undefined') {
+      const table = i18n[engineLanguage] || i18n.en;
+      if (table && table[key]) return table[key];
+    }
+  } catch (e) {}
+  return fallback || '';
+}
+
+function setEngineStatus(text, busy) {
+  const el = document.getElementById('fvd-engine-status');
+  if (!el) return;
+  el.textContent = text || '';
+  el.setAttribute('data-busy', busy ? '1' : '');
+}
+
+function showEnginePage() {
+  const ui = document.getElementById('fvd-engine-ui');
+  if (ui) ui.hidden = false;
+  const title = document.getElementById('fvd-engine-title');
+  document.title = tEngine('engineTitle', 'Saving your download');
+  if (title) title.textContent = tEngine('engineTitle', 'Saving your download');
+  const keepOpen = document.getElementById('fvd-engine-keep-open');
+  if (keepOpen) keepOpen.textContent = tEngine('engineKeepOpen', 'Keep this tab open until the file is saved.');
+}
+
+// The page follows the download it is holding: on Android this is the only progress the
+// user can see, because there is no download manager entry to watch.
+function reportEngineProgress(dl) {
+  if (!dl) return;
+  if (dl.status === 'merging') {
+    setEngineStatus(tEngine('mergingVideo', 'Merging all parts into full MP4 video file...'), true);
+    return;
+  }
+  if (dl.status === 'completed') {
+    setEngineStatus(tEngine('engineReadyToSave', 'Ready - tap the file link above to save it.'), false);
+    return;
+  }
+  if (dl.status === 'error') {
+    setEngineStatus(dl.error || tEngine('errorOccurred', 'An error occurred'), false);
+    return;
+  }
+  const percent = Number(dl.percent) || 0;
+  setEngineStatus(`${tEngine('downloading', 'Downloading...')} ${percent}%`, true);
+}
+
+function deliverDownloadAsSaveLink(blobUrl, filename) {
+  showEnginePage();
+  const list = document.getElementById('fvd-save-link');
+  // One slot per download: a second file must not replace the first one's link.
+  const slot = document.createElement('div');
+  slot.className = 'fvd-save-slot';
+  const caption = document.createElement('p');
+  caption.className = 'fvd-save-name';
+  caption.textContent = filename;
+  slot.appendChild(caption);
+  if (list) list.appendChild(slot);
+
+  const anchor = fvdShowSaveLink(document, slot, blobUrl, filename, tEngine('engineTapToSave', 'Tap here to save the file'));
+  if (!anchor) throw new Error('Could not prepare the file for saving');
+  setEngineStatus(tEngine('engineReadyToSave', 'Ready - tap the file link above to save it.'), false);
+
+  // The tap has to be a real one and the user has to see what to tap, so the tab is
+  // brought forward now that the file exists - not when the download started.
+  try {
+    chrome.runtime.sendMessage({ type: 'ACTIVATE_ENGINE_TAB' }).catch(() => {});
+  } catch (e) {}
+  return anchor;
+}
+
+// A finished file waits for a tap on Android, so its object URL has to outlive the
+// download by far more than the two minutes desktop needs - there the download manager
+// has already taken the bytes by then. Still bounded, so a large merge does not sit in
+// memory for the rest of the session.
+const FVD_BLOB_URL_LIFETIME_MS = FVD_DL_API ? 120000 : 30 * 60 * 1000;
+
+function releaseBlobUrlLater(blobUrl) {
+  setTimeout(() => URL.revokeObjectURL(blobUrl), FVD_BLOB_URL_LIFETIME_MS);
+}
+
+// Read once: the page serves one download session and the setting cannot change while
+// a file is already waiting to be saved.
+try {
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get(['appLanguage']).then((data) => {
+      if (data && data.appLanguage && typeof i18n !== 'undefined' && i18n[data.appLanguage]) {
+        engineLanguage = data.appLanguage;
+      }
+    }).catch(() => {});
+  }
+} catch (e) {}
+
 async function deliverDownload(blobUrl, filename) {
   const safeName = (filename || 'video.mp4').replace(/[/\\?%*:|"<>]/g, '_').replace(/^\/+/, '');
+
+  if (!FVD_DL_API) {
+    return deliverDownloadAsSaveLink(blobUrl, safeName);
+  }
 
   let useCustomDir = false;
   let askSave = false;
@@ -665,7 +775,7 @@ async function runHlsDownload(downloadId, playlistUrl, filename, pageReferer) {
     try {
       await deliverDownload(blobUrl, savedFilename);
     } finally {
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+      releaseBlobUrlLater(blobUrl);
     }
 
     dl.status = 'completed';
@@ -731,7 +841,7 @@ async function runBufferDownload(downloadId, buffer, filename) {
     try {
       await deliverDownload(blobUrl, filename);
     } finally {
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+      releaseBlobUrlLater(blobUrl);
     }
 
     dl.status = 'completed';
@@ -1019,7 +1129,7 @@ async function runDashDownload(downloadId, mpdUrl, filename, pageReferer) {
     try {
       await deliverDownload(blobUrl, savedFilename);
     } finally {
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+      releaseBlobUrlLater(blobUrl);
     }
 
     dl.status = 'completed';
@@ -1149,7 +1259,7 @@ async function runGenericDownload(downloadId, fileUrl, filename, pageReferer) {
     try {
       await deliverDownload(blobUrl, filename);
     } finally {
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+      releaseBlobUrlLater(blobUrl);
     }
 
     dl.status = 'completed';
@@ -1181,6 +1291,7 @@ async function runGenericDownload(downloadId, fileUrl, filename, pageReferer) {
 function reportProgressFor(dl) {
   if (!dl) return;
   activeDownload = dl;
+  if (!FVD_DL_API) reportEngineProgress(dl);
   chrome.runtime.sendMessage({
     type: 'OFFSCREEN_PROGRESS',
     state: { ...dl }
@@ -1334,7 +1445,7 @@ async function runChunkedDownload(downloadId, fileUrl, filename, pageReferer, th
     try {
       await deliverDownload(blobUrl, filename);
     } finally {
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+      releaseBlobUrlLater(blobUrl);
     }
 
     dl.status = 'completed';
@@ -1364,8 +1475,12 @@ async function runChunkedDownload(downloadId, fileUrl, filename, pageReferer, th
   }
 }
 
-// Listen for commands from background
+// Listen for commands from background. On Firefox for Android the iframe inside the
+// background page cannot save anything, so it stands down and the engine tab that
+// background.js opens handles the download instead - otherwise every download would run
+// twice, in two contexts at once.
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!FVD_ENGINE_ACTIVE) return false;
   if (message.type === 'START_OFFSCREEN_HLS') {
     const { downloadId, url, filename, pageReferer } = message;
     runHlsDownload(downloadId, url, filename, pageReferer || null);

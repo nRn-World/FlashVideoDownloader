@@ -20,3 +20,9 @@ pro-license-keys-*.txt
 CURSOR-HANDOFF.md
 kofi-thank-you.local.txt
 *.local.txt
+
+# Jules bridge (local patches + key, never publish)
+.jules/
+
+# npm (no dependencies yet, but keep it out of git)
+node_modules/

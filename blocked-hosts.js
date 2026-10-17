@@ -7,7 +7,14 @@ var FVD_BLOCKED_HOSTS = [
   'primevideo.com',
   'tv.apple.com', 'music.apple.com',
   'open.spotify.com', 'spotify.com',
-  'twitch.tv', 'ttvnw.net'
+  'twitch.tv', 'ttvnw.net',
+  // Platforms whose terms of service forbid downloading, or that serve licensed/subscription video
+  'tiktok.com', 'tiktokcdn.com', 'musical.ly',
+  'instagram.com', 'cdninstagram.com',
+  'facebook.com', 'fb.com', 'fb.watch', 'fbcdn.net',
+  'twitter.com', 'x.com', 'twimg.com',
+  'snapchat.com',
+  'hulu.com', 'paramountplus.com', 'peacocktv.com', 'crunchyroll.com'
 ];
 
 function fvdIsBlockedHost(hostname) {

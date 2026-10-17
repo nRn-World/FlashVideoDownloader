@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/blbajmihakahbldejkginpccillhakdg"><img src="https://img.shields.io/badge/Download-Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=0B57D0" alt="Download on Chrome Web Store" /></a>
-  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.5.0-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.5.0" /></a>
+  <a href="https://github.com/nRn-World/FlashVideoDownloader"><img src="https://img.shields.io/badge/Version-3.5.2-00C853?style=for-the-badge&logo=semver&logoColor=white&labelColor=00A041" alt="Version 3.5.0" /></a>
   <a href="https://developer.chrome.com/docs/extensions/mv3/"><img src="https://img.shields.io/badge/Manifest-V3-FF6D00?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=E65100" alt="Manifest V3" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-00BFA5?style=for-the-badge&logo=creativecommons&logoColor=white&labelColor=00897B" alt="License CC BY-NC 4.0" /></a>
   <a href="https://ko-fi.com/s/72a48b875e"><img src="https://img.shields.io/badge/Pro-EUR%2010.99%20lifetime-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white&labelColor=D32F2F" alt="Buy Pro on Ko-fi" /></a>
@@ -38,7 +38,7 @@ The extension focuses on **visible page videos**, offers **pause / resume / canc
 
 Buy Pro on [Ko-fi](https://ko-fi.com/s/72a48b875e). After payment, copy the license key from the thank-you page, then either paste it into the **front-page Pro card** under **Already have a license key?** or open the extension → **Settings** → **Pro** → paste key → **Activate**.
 
-> **Important:** This extension does not bypass DRM. Sites such as YouTube, Netflix, Twitch, Disney+, and Spotify are blocked by design for Chrome Web Store compliance.
+> **Important:** This extension does not bypass DRM. Sites such as YouTube, Netflix, Twitch, Disney+, and Spotify are blocked by design for Chrome Web Store compliance, as are TikTok, Instagram, Facebook, X, Hulu, Paramount+, Peacock and Crunchyroll (their terms forbid downloading). Copyright notices: bynrnworld@gmail.com.
 
 ---
 
@@ -256,6 +256,8 @@ Terms of Service: [nrn-world.github.io/FlashVideoDownloader/terms.html](https://
 
 | Version | Highlights |
 |---|---|
+| **3.5.2** | Copyright hardening: more platforms blocked (TikTok, Instagram, Facebook, X, Snapchat, Hulu, Paramount+, Peacock, Crunchyroll), rights-holder contact in the Terms, store listing and README, full Apache-2.0 text for mux.js. Chrome and Firefox builds now share one version number. |
+| **3.5.1** | **Firefox only** — the build number for the AMO upload (`FIREFOX_VERSION` in `prepare_firefox_zip.py`); `manifest.json` in the source and the Chrome package stay at 3.5.0. Adds **Firefox for Android** support: the package opts in through `browser_specific_settings.gecko_android`, and because that browser has no downloads API (Mozilla bug 1538348, still open) the download engine runs in a real tab there and offers the finished file as an `<a download>` link the user taps to save, while a `blob:` video is read through the content script instead of a click the extension makes on the user's behalf. Desktop is untouched — it still saves through the downloads API, and the folder settings are only hidden where that API does not exist. Nine device-only test cases are listed in `TESTING.md`. |
 | **3.5.0** | Legal and compliance release. A **Terms of Service gate** now locks the popup and every download start until the user accepts, with the accepted version and timestamp stored (`terms-gate.js`); the full EULA ships as `terms.html` (liability, warranty, no-refund and indemnity sections, Swedish law) and is linked from the welcome page, the popup, Settings, the footer and the Pro landing page. The **fictitious compare-at price is gone** — no struck-through "€21.98", no "50% OFF" and no urgency countdown unless a real reduction is configured against the lowest price actually charged in the last 30 days. Marketing copy no longer promises the licence lasts "forever", and the privacy policy gains a controller, legal-basis, retention and data-subject-rights section. Version bumped for store submission. |
 | **3.4.1** | The Back button in Settings is now pinned outside the scrolling area, so returning to the video list is always one click away instead of hiding below the Pro card, history and credits; the header gear toggles back to the video list too. Adds `Strict-Transport-Security` and `Referrer-Policy` to the optional rate-limit worker. |
 | **3.4.0** | License key entry in the front-page Pro card (**Already have a license key?**) so a buyer no longer has to open Settings, the offer card moved above the affiliate banner so it is read first, and a successful activation is confirmed on screen before the card closes |

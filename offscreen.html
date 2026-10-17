@@ -3,10 +3,35 @@
 <head>
   <meta charset="utf-8">
   <title>Offscreen Downloader</title>
+  <style>
+    /* Only ever seen when the engine runs as a tab (Firefox for Android, which has no
+       downloads API), where the finished file has to be tapped to be saved. As an
+       offscreen document or a hidden iframe this stays out of sight. */
+    body { margin: 0; padding: 20px; font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #0b0f19; color: #e5e7eb; }
+    #fvd-engine-ui { max-width: 34rem; margin: 0 auto; }
+    #fvd-engine-ui h1 { font-size: 1.2rem; margin: 0 0 8px; }
+    #fvd-engine-status { color: #9ca3af; min-height: 1.5em; margin: 0 0 8px; }
+    #fvd-engine-status[data-busy="1"]::after { content: "…"; }
+    .fvd-save-slot { border-top: 1px solid #1f2937; padding: 12px 0; }
+    .fvd-save-name { margin: 0; font-size: 0.85rem; color: #6b7280; word-break: break-all; }
+    #fvd-save-link a {
+      display: inline-block; margin: 10px 0 0; padding: 14px 20px;
+      background: #2563eb; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600;
+    }
+    #fvd-engine-keep-open { color: #6b7280; font-size: 0.85rem; margin: 20px 0 0; }
+  </style>
 </head>
 <body>
+  <div id="fvd-engine-ui" hidden>
+    <h1 id="fvd-engine-title">Saving your download</h1>
+    <p id="fvd-engine-status"></p>
+    <div id="fvd-save-link"></div>
+    <p id="fvd-engine-keep-open">Keep this tab open until the file is saved.</p>
+  </div>
   <script src="lib/mux.min.js"></script>
   <script src="storage-handles.js"></script>
+  <script src="i18n.js"></script>
+  <script src="platform.js"></script>
   <script src="offscreen.js"></script>
 </body>
 </html>

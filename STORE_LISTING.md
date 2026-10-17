@@ -65,10 +65,17 @@ FREE TIER
 • 1 download at a time
 • Last 10 downloads in history
 
-ADS
-• The Free tier shows small, bundled promotional banners inside the popup
-• No ad networks, no third-party code, no tracking
-• Pro removes all ads
+ADS AND AFFILIATE LINKS
+• The Free tier shows a small, bundled promotional banner inside the popup
+• The banner is an affiliate link (a partner programme). If you click it and buy something, the developer may
+  earn a commission — at no extra cost to you.
+• Starting a Free download offers two choices: a faster download that opens one sponsor offer in a background
+  tab, or a normal download that opens nothing. Both save the same file, and the no-sponsor option is always
+  available.
+• Clicking opens the partner's website in a new tab. The extension sends no data to the partner, runs no
+  ad-network code and loads no remote script; impressions and clicks are counted locally.
+• Every banner is labelled "Sponsored" or "Ad · affiliate" and can be dismissed with ✕
+• Pro removes all ads and never opens a sponsor tab
 
 PRO (optional, EUR 10.99 one-time lifetime via Ko-fi)
 • Unlimited downloads
@@ -79,11 +86,15 @@ Buy on Ko-fi, then enter your license key under Settings → Pro.
 IMPORTANT
 • Does NOT download from YouTube, Netflix, Disney+, Twitch or other DRM-protected platforms
 • Does NOT bypass copyright protection
+• Also blocks TikTok, Instagram, Facebook, X, Hulu, Paramount+, Peacock and Crunchyroll, whose terms forbid downloading
+• Rights holders: copyright notices to bynrnworld@gmail.com (subject "Copyright notice")
 • Only save content you have the right to download
 • Free to install — Pro is optional
 
 TERMS, WARRANTY AND REFUNDS
 • Provided "as is", without warranty. The developer is not liable for how you use the extension.
+• You are buying from the independent developer, not from Google. Payment for Pro is processed by Ko-fi
+  (https://ko-fi.com/s/72a48b875e), and the Pro licence is 18+.
 • Pro is a one-time, lifetime licence (EUR 10.99). All sales are final — no refunds, and no compensation if the extension
   stops working, is restricted or is discontinued.
 • Full terms: https://nrn-world.github.io/FlashVideoDownloader/terms.html
@@ -116,12 +127,15 @@ GRATIS
 
 ANNONSER & AFFILIATE-LÄNKAR
 • Gratisnivån visar en liten, inbyggd reklambanner i popupen
-• Bannern kan vara en affiliate-länk (partnerskap) till ett tredjepartsprogram.
-  Om du klickar och köper något kan utvecklaren få en provision — utan extra kostnad för dig.
-• Klick öppnar partnerns webbplats i en ny flik; tillägget skickar inga uppgifter till partnern
-• Inga annonsnätverk, ingen tredjepartskod, ingen spårning
+• Bannern är en affiliate-länk (partnerskap). Om du klickar och köper något kan utvecklaren få en
+  provision — utan extra kostnad för dig.
+• När du startar en gratisnedladdning får du två val: snabb nedladdning som öppnar ett sponsorerbjudande
+  i en bakgrundsflik, eller vanlig nedladdning som inte öppnar något. Båda sparar samma fil, och valet utan
+  sponsor finns alltid.
+• Klick öppnar partnerns webbplats i en ny flik. Tillägget skickar inga uppgifter till partnern, kör ingen
+  annonsnätverkskod och laddar ingen fjärrkod; visningar och klick räknas lokalt.
 • Alla banners är märkta "Annons · affiliate" och kan stängas med ✕
-• Pro tar bort all reklam
+• Pro tar bort all reklam och öppnar aldrig någon sponsorflik
 
 
 PRO (valfritt, EUR 10.99 engångs via Ko-fi)
@@ -133,10 +147,14 @@ Köp på Ko-fi och ange licensnyckel under Inställningar → Pro.
 VIKTIGT
 • Laddar INTE ner från YouTube, Netflix, Disney+, Twitch eller andra DRM-skyddade plattformar
 • Kringgår INTE upphovsrättsskydd
+• Blockerar även TikTok, Instagram, Facebook, X, Hulu, Paramount+, Peacock och Crunchyroll, vars villkor förbjuder nedladdning
+• Rättighetsinnehavare: upphovsrättsanmälningar till bynrnworld@gmail.com (ämne "Copyright notice")
 • Spara bara innehåll du har rätt att ladda ner
 
 VILLKOR, GARANTI OCH ÅTERBETALNING
 • Tillhandahålls i befintligt skick, utan garanti. Utvecklaren ansvarar inte för hur du använder tillägget.
+• Du köper av den fristående utvecklaren, inte av Google. Betalningen för Pro hanteras av Ko-fi
+  (https://ko-fi.com/s/72a48b875e), och Pro-licensen är 18+.
 • Pro är en engångslicens för hela livstiden (EUR 10.99). Alla köp är slutgiltiga — inga återbetalningar och ingen
   ersättning om tillägget slutar fungera, begränsas eller läggs ner.
 • Fullständiga villkor: https://nrn-world.github.io/FlashVideoDownloader/terms.html
@@ -149,15 +167,24 @@ Hemsida: https://nrn-world.github.io/FlashVideoDownloader/
 
 ---
 
-# addons.mozilla.org (Firefox) — v3.5.0
+# addons.mozilla.org (Firefox) — v3.5.1
 
 Listing: <https://addons.mozilla.org/en-US/firefox/addon/nrn-flash-video-downloader/>
-GUID: `flash-video-downloader@nrnworld.one` · Förra publicerade version: 3.4.1
+GUID: `flash-video-downloader@nrnworld.one`
+
+**Endast Firefox.** Versionen sätts av bygget (`FIREFOX_VERSION` i `prepare_firefox_zip.py`)
+och skrivs in i paketets manifest — `manifest.json` i källan och Chrome-paketet ligger kvar på
+3.5.0. AMO kräver bara att numret är högre än den publicerade versionen.
+
+Förra publicerade version: **3.4.1**. 3.5.0 skickades aldrig in, så 3.5.1 är den första
+Firefox-versionen med ändringarna nedan — därför beskriver release notes hela listan och inte
+bara Android.
 
 ## Release Notes (fältet "Release Notes" på AMO)
 
 ```
-What's new in v3.5.0:
+What's new in v3.5.1:
+- Firefox for Android is now supported. That browser has no downloads API, so a finished download opens in a tab where you tap the file link to save it, instead of being handed to a download manager. The folder settings do not apply there and are replaced by a line that says so.
 - You now accept the Terms of Service before using the extension. On first install the welcome page shows the terms, and the popup stays locked behind a terms dialog until you accept. Nothing runs until you do.
 - The full End User License Agreement and Terms of Service is bundled with the extension and readable offline: what the licence covers, the warranty disclaimer, the limit on liability, and the policy on refunds for the optional Pro licence.
 - Clearer Pro pricing: the price is simply the price. The previous struck-through "was" price and the 50% off badge have been removed.
@@ -168,31 +195,17 @@ What's new in v3.5.0:
 ## Notes to Reviewer (fältet "Notes to Reviewer" på AMO)
 
 ```
-No new permissions: same set as 3.4.1 (activeTab, scripting, downloads, webRequest, storage, tabs, <all_urls>).
+No new permissions and no data collection: the same permission set as 3.4.1 (activeTab, scripting, downloads, webRequest, storage, tabs, <all_urls>), matching data_collection_permissions: none. History, settings, the terms acknowledgement and licence state stay in browser storage. No analytics, no telemetry, and no request to any rate-limit service (that endpoint URL is empty).
 
-Data collection: none, matching the declared data_collection_permissions. Download history, settings, the terms acknowledgement and license state stay in browser storage. This build makes no requests to any rate-limit service (the optional endpoint URL is empty), and there is no analytics or telemetry.
+Firefox for Android is the reason for this upload, and the part worth reviewing closely: the manifest opts in through browser_specific_settings.gecko_android. Firefox for Android has no downloads API (bug 1538348), so there is no download manager to hand a file to - platform.js detects that at runtime, background.js runs the download engine (offscreen.html) in a normal background tab instead of the desktop hidden iframe, and the finished file is offered as an anchor with [download] for the user to tap. That tab is reused, comes forward only once a file is ready, and needs no new permission (it uses the existing "tabs" permission). Desktop is untouched and still saves through the downloads API.
 
-What changed in this version: the extension now gates its own use behind an explicit acceptance of the Terms of Service (bundled as terms.html), and the popup's Pro pricing no longer shows a compare-at price or a discount badge. Copyright/DRM behaviour is unchanged, and the free-tier limit is unchanged at 1 download per 2 hours.
+Also since 3.4.1, which is the published version (3.5.0 was never submitted): the extension now requires accepting the Terms of Service before use - bundled as terms.html and enforced in gateDownloadStart() for every download type - and the Pro pricing no longer shows a compare-at price or a discount badge.
 
-Build process / source code: the uploaded package is plain, human-readable source — no bundler, minifier or transpiler is used, so the submitted files are the files as authored. The only minified file is lib/mux.min.js, which is the unmodified official distribution of mux.js 7.0.3 (Apache-2.0, https://github.com/videojs/mux.js). Its sha256 is 79da5742f8985d9362b14a3ca4d705eea726cea6d513d0d019c359bf4eec856b, which matches https://unpkg.com/mux.js@7.0.3/dist/mux.min.js byte for byte. All other files are unminified.
+Build: plain, human-readable source, no bundler, minifier or transpiler, so the submitted files are the files as authored. The only minified file is lib/mux.min.js, the unmodified mux.js 7.0.3 distribution (Apache-2.0); its sha256 is 79da5742f8985d9362b14a3ca4d705eea726cea6d513d0d019c359bf4eec856b, matching https://unpkg.com/mux.js@7.0.3/dist/mux.min.js byte for byte. prepare_firefox_zip.py builds this package from the same sources as the Chrome build: it removes the Chrome-only chrome.offscreen calls, switches the background to the event page, adds the gecko_android key, stamps the Firefox version number into the package (FIREFOX_VERSION; the Chrome build keeps 3.5.0) and points the review link at AMO.
 
-If a source package is required, the exact build steps are: the Firefox package is produced by prepare_firefox_zip.py, which copies the same source files as the Chrome build and then (a) removes calls to the Chrome-only chrome.offscreen API, (b) switches the background to the event page background-page.html, and (c) points the "rate this extension" link at the AMO listing. No other code is modified.
+Monetization: a labelled affiliate banner in the popup (bundled, no remote code, opens the partner page only when clicked) and a Free-tier dialog offering a sponsor tab or a normal download of the same file. Pro (EUR 10.99, one-time, non-refundable) is sold by the developer through Ko-fi. Terms, warranty and refunds are in the bundled terms.html.
 
-Monetization disclosure: the extension is free to use; an optional Pro license (EUR 10.99, one-time, lifetime) is sold through Ko-fi and activated with a key. Free users see one clearly labelled sponsored/affiliate banner in the popup — it is bundled with the extension, loads no remote code, sends no data, and only opens the partner page in a new tab when the user clicks it. On the Free tier, starting a download shows a two-option dialog: "Fast", which opens a sponsor offer in a background tab, and "Normal", which downloads without opening it. Both download the same file, and the no-sponsor option is always available. Pro users never see this dialog — they go straight to a direct multi-threaded download with no sponsor tab and no banner.
-
-Known limitation: video downloads do not work on DRM-protected services (YouTube, Netflix, Disney+, Twitch), by design.
-
-Terms and refunds: the End User License Agreement & Terms of Service is bundled in the package as terms.html and is also
-published at https://nrn-world.github.io/FlashVideoDownloader/terms.html. Installing or using the extension means accepting
-it, and the acceptance is explicit rather than implicit: the welcome page shows the notice with an accept button on first
-install, and the popup itself stays locked behind a Terms of Service overlay until the user accepts - no listener, timer or
-media scan. The service worker enforces the same check in gateDownloadStart(), so every download type (HLS, DASH, chunked,
-generic, blob) returns status "terms_required" and refuses to start until an accepted record with the current terms version
-exists in chrome.storage.local. The optional Pro licence is a one-time
-purchase and is non-refundable; the purchase button in the popup and the Pro landing page both carry the
-"all sales are final" notice before payment, and the buyer expressly requests immediate access to the licence key, which
-waives the statutory right of withdrawal. The developer gives no warranty that the extension keeps working and is not liable
-if it stops working or is discontinued.
+Known limitation: DRM-protected services (YouTube, Netflix, Disney+, Twitch) are not supported, by design.
 ```
 
 ## Beskrivningstexten behöver också uppdateras
@@ -210,6 +223,15 @@ PRO (optional, EUR 10.99 one-time lifetime via Ko-fi)
 • Unlimited downloads
 • Up to 3 concurrent downloads
 • Unlimited local history
+```
+
+Lägg också till ett kort Android-block i beskrivningen, eftersom listningen nu nås även
+från Firefox för Android:
+
+```
+FIREFOX FOR ANDROID
+• A finished download opens in a tab - tap the file link to save it
+• Folder settings do not apply: the browser decides where files are saved
 ```
 
 **Obs:** AMO-listan anger licensen **MIT**, medan `LICENSE` i paketet är **CC BY-NC 4.0**.

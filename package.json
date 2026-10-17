@@ -1,0 +1,10 @@
+{
+  "name": "flash-video-downloader",
+  "version": "3.5.2",
+  "private": true,
+  "description": "Browser extension that detects and downloads videos from web pages.",
+  "license": "CC-BY-NC-4.0",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}

@@ -1,9 +1,20 @@
-// Flash Video Downloader - Background Service Worker (v3.5.0)
+// Flash Video Downloader - Background Service Worker (v3.5.2)
 // HLS downloads are delegated to offscreen.js which has full DOM/Blob/ObjectURL access.
 
+importScripts('platform.js');
 importScripts('blocked-hosts.js');
 importScripts('license.js');
 importScripts('terms-gate.js');
+
+// Firefox for Android has no downloads API (Mozilla bug 1538348). platform.js owns
+// that capability check; the fallback below repeats it only so this file also runs
+// when it is loaded on its own, and so a test can drive the flag through a chrome stub.
+const FVD_DL_API = typeof FVD_HAS_DOWNLOADS_API === 'undefined'
+  ? (typeof chrome !== 'undefined' && !!chrome.downloads && typeof chrome.downloads.download === 'function')
+  : FVD_HAS_DOWNLOADS_API;
+
+// Shown only if a save is attempted with no download manager to hand it to.
+const NO_DOWNLOAD_MANAGER = 'This browser does not let an extension save the file itself, so the file has to be saved from the download tab.';
 
 const tabMedia = new Map();
 const activeDownloads = new Map();
@@ -402,7 +413,66 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 
 // === Offscreen Document Management ===
 // Chrome: chrome.offscreen API. Firefox: hidden iframe in background-page.html (no offscreen API).
+// Firefox for Android: the engine cannot save anything (no downloads API), so it has
+// to run somewhere the file itself is reachable. A real tab is that place - a hidden
+// iframe cannot be tapped, and a programmatic click there is not guaranteed to start a
+// download. The tab is reused across downloads instead of piling up copies.
+let engineTabId = null;
+
+async function findEngineTabId() {
+  let url;
+  try {
+    url = chrome.runtime.getURL('offscreen.html');
+  } catch (e) {
+    return engineTabId;
+  }
+  try {
+    const tabs = await chrome.tabs.query({ url });
+    if (tabs && tabs.length && tabs[0].id != null) return tabs[0].id;
+  } catch (e) {
+    // tabs.query with a url pattern is the reliable lookup; the tracked id is the fallback.
+  }
+  return engineTabId;
+}
+
+async function ensureEngineTab() {
+  let tabId = await findEngineTabId();
+
+  if (tabId == null) {
+    try {
+      const tab = await chrome.tabs.create({ url: chrome.runtime.getURL('offscreen.html'), active: false });
+      tabId = tab && tab.id != null ? tab.id : null;
+    } catch (e) {
+      console.warn('[FVD] could not open the download engine tab:', e && e.message ? e.message : e);
+      return null;
+    }
+  }
+  engineTabId = tabId;
+  if (tabId == null) return null;
+
+  // A fresh tab is not listening yet: offscreen.js registers its handler at the end of
+  // its own load. Sending the download before that rejects, and the download would be
+  // marked failed even though nothing was wrong.
+  const deadline = Date.now() + 10000;
+  while (Date.now() < deadline) {
+    let tab = null;
+    try {
+      tab = await chrome.tabs.get(tabId);
+    } catch (e) {
+      engineTabId = null;
+      return null;
+    }
+    if (tab && tab.status === 'complete') break;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return tabId;
+}
+
 async function ensureOffscreenDocument() {
+  if (!FVD_DL_API) {
+    await ensureEngineTab();
+    return;
+  }
   try {
     // Firefox / event-page path: offscreen.html is loaded in #fvd-offscreen iframe
     if (typeof document !== 'undefined') {
@@ -591,7 +661,10 @@ function failTrackedDownload(extId, message) {
   scheduleDownloadCleanup(extId);
 }
 
-chrome.downloads.onChanged.addListener((delta) => {
+// Declared here and attached below only where the API exists: at top level on a
+// browser without it the registration would throw while the background loads, and
+// that would take every other feature down with it.
+function handleChromeDownloadChanged(delta) {
   const extId = chromeDownloadMap.get(delta.id);
   if (!extId) return;
   const dl = activeDownloads.get(extId);
@@ -656,7 +729,11 @@ chrome.downloads.onChanged.addListener((delta) => {
       failTrackedDownload(extId, errText);
     }
   }
-});
+}
+
+if (FVD_DL_API) {
+  chrome.downloads.onChanged.addListener(handleChromeDownloadChanged);
+}
 
 async function ensureContentScript(tabId) {
   try {
@@ -700,6 +777,7 @@ async function collectMainWorldMedia(tabId) {
 }
 
 async function saveFileViaDownloads(blobUrl, filename) {
+  if (!FVD_DL_API) throw new Error(NO_DOWNLOAD_MANAGER);
   const safeName = (filename || 'video.mp4').replace(/[/\\?%*:|"<>]/g, '_').replace(/^\/+/, '');
   return chrome.downloads.download({
     url: blobUrl,
@@ -709,6 +787,9 @@ async function saveFileViaDownloads(blobUrl, filename) {
 }
 
 async function saveUrlViaDownloads(fileUrl, filename, pageReferer) {
+  // Throwing here is deliberate: the caller already falls back to the engine for any
+  // download-manager failure, and the engine is exactly where an Android save happens.
+  if (!FVD_DL_API) throw new Error(NO_DOWNLOAD_MANAGER);
   const safeName = (filename || 'video.mp4').replace(/[/\\?%*:|"<>]/g, '_').replace(/^\/+/, '');
   const options = {
     url: fileUrl,
@@ -733,6 +814,7 @@ function stopChromeDownloadPoll(chromeDlId) {
 }
 
 function startChromeDownloadPoll(chromeDlId, extId) {
+  if (!FVD_DL_API) return;
   stopChromeDownloadPoll(chromeDlId);
   const tick = async () => {
     try {
@@ -1013,6 +1095,32 @@ async function startBlobDownload(downloadId, tabId, blobUrl, filename) {
   updateBadge();
   persistActiveDownloads();
 
+  // Firefox for Android: a page cannot hand the file to a download manager either, and a
+  // click the extension makes on the user's behalf may simply be ignored. So the bytes are
+  // read through the content script and the engine tab offers them as a link to tap -
+  // the same finish every other Android download gets.
+  if (!FVD_DL_API) {
+    try {
+      await ensureContentScript(tabId);
+      const fetched = await chrome.tabs.sendMessage(tabId, { type: 'FETCH_BLOB', url: blobUrl });
+      if (!fetched || fetched.error || !fetched.buffer) {
+        throw new Error((fetched && fetched.error) || 'Could not read the video from the page');
+      }
+      await ensureOffscreenDocument();
+      await chrome.runtime.sendMessage({
+        type: 'START_OFFSCREEN_BUFFER',
+        downloadId: downloadId,
+        filename: filename,
+        buffer: fetched.buffer
+      });
+      return { ok: true, status: 'started' };
+    } catch (e) {
+      console.error('[FVD] startBlobDownload (Android)', e);
+      failTrackedDownload(downloadId, e && e.message ? e.message : 'Blob download failed');
+      return { ok: false, status: 'error' };
+    }
+  }
+
   try {
     await ensureContentScript(tabId);
     const blobResponse = await chrome.tabs.sendMessage(tabId, {
@@ -1286,6 +1394,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   // From popup: get all download states
+  // From the engine tab: the file is ready, so bring that tab forward. Without a
+  // download manager the save only happens through a click on a real link there.
+  else if (message.type === 'ACTIVATE_ENGINE_TAB') {
+    (async () => {
+      const tabId = await findEngineTabId();
+      if (tabId != null) {
+        try {
+          await chrome.tabs.update(tabId, { active: true });
+        } catch (e) {}
+      }
+      sendResponse({ status: 'ok' });
+    })();
+    return true;
+  }
   else if (message.type === 'GET_ALL_DOWNLOADS') {
     sendResponse({ downloads: Array.from(activeDownloads.values()) });
   }
@@ -1351,10 +1473,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   // From offscreen.js: download completed, save to history
   else if (message.type === 'OFFSCREEN_DOWNLOAD_COMPLETE') {
-    saveDownloadToHistory({
-      filename: message.filename, url: message.url,
-      size: message.size || 'Stream', duration: message.duration || ''
-    });
+    if (FVD_DL_API) {
+      saveDownloadToHistory({
+        filename: message.filename, url: message.url,
+        size: message.size || 'Stream', duration: message.duration || ''
+      });
+    } else {
+      // With no download manager, downloads.onChanged never fires: this report is the
+      // only completion signal there is. completeTrackedDownload() writes the history
+      // entry and finishes the tracked download, so Free users still get the same
+      // post-download page as on desktop.
+      completeTrackedDownload(message.downloadId);
+    }
     sendResponse({ status: 'ok' });
   }
   // From popup: pause / resume / cancel

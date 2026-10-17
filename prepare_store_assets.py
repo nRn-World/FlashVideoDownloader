@@ -33,6 +33,7 @@ STORE_SOURCES = [
 INCLUDE_FILES = [
     "manifest.json",
     "background.js",
+    "platform.js",
     "blocked-hosts.js",
     "content.js",
     "page-hook.js",

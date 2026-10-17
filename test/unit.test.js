@@ -4,21 +4,26 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 
-// Helper to load extension scripts into a VM context with mock globals
+// Helper to load extension scripts into a VM context with mock globals.
+// Accepts several files so a test can load a script together with a dependency
+// (platform.js before offscreen.js), the same way a page loads them.
 function loadScript(filename, mockGlobals = {}) {
-  const filePath = path.join(__dirname, '..', filename);
-  let code = fs.readFileSync(filePath, 'utf8');
+  const filenames = Array.isArray(filename) ? filename : [filename];
+  let code = filenames.map((name) => {
+    let text = fs.readFileSync(path.join(__dirname, '..', name), 'utf8');
 
-  // If loading i18n.js, assign to this.i18n for extraction
-  if (filename === 'i18n.js') {
-    code += '\n; this.i18n = i18n;';
-  }
+    // If loading i18n.js, assign to this.i18n for extraction
+    if (name === 'i18n.js') {
+      text += '\n; this.i18n = i18n;';
+    }
 
-  // Top-level `const` does not become a property of the VM context, so the
-  // packaged terms version/key are exported explicitly for assertions.
-  if (filename === 'terms-gate.js') {
-    code += '\n; this.FVD_TERMS_VERSION = FVD_TERMS_VERSION; this.FVD_TERMS_ACK_KEY = FVD_TERMS_ACK_KEY;';
-  }
+    // Top-level `const` does not become a property of the VM context, so the
+    // packaged terms version/key are exported explicitly for assertions.
+    if (name === 'terms-gate.js') {
+      text += '\n; this.FVD_TERMS_VERSION = FVD_TERMS_VERSION; this.FVD_TERMS_ACK_KEY = FVD_TERMS_ACK_KEY;';
+    }
+    return text;
+  }).join('\n;\n');
 
   // A caller may override individual chrome APIs; anything it does not mention
   // keeps the default stub, so a test only describes what it cares about.
@@ -60,9 +65,20 @@ function loadScript(filename, mockGlobals = {}) {
       },
       webRequest: { onHeadersReceived: { addListener: () => {} } },
       tabs: { onUpdated: { addListener: () => {} }, onRemoved: { addListener: () => {} } },
-      runtime: { onInstalled: { addListener: () => {} }, onMessage: { addListener: () => {} }, sendMessage: async () => {} },
+      runtime: {
+        onInstalled: { addListener: () => {} },
+        onMessage: { addListener: () => {} },
+        sendMessage: async () => {},
+        getURL: (page) => `moz-extension://fvd-test/${page}`
+      },
       action: { setBadgeText: async () => {}, setBadgeBackgroundColor: async () => {} },
-      downloads: { onChanged: { addListener: () => {} } }
+      // Desktop default: a full downloads API. A test that wants Firefox for Android
+      // passes `chrome: { downloads: undefined }` instead.
+      downloads: {
+        onChanged: { addListener: () => {} },
+        download: async () => 1,
+        search: async () => []
+      }
     },
     ...restGlobals
   };
@@ -86,6 +102,10 @@ test('blocked-hosts.js - fvdIsBlockedHost & fvdIsBlockedUrl', () => {
   assert.equal(ctx.fvdIsBlockedHost('m.youtube.com'), true);
   assert.equal(ctx.fvdIsBlockedHost('netflix.com'), true);
   assert.equal(ctx.fvdIsBlockedHost('open.spotify.com'), true);
+  assert.equal(ctx.fvdIsBlockedHost('www.tiktok.com'), true);
+  assert.equal(ctx.fvdIsBlockedHost('instagram.com'), true);
+  assert.equal(ctx.fvdIsBlockedHost('x.com'), true);
+  assert.equal(ctx.fvdIsBlockedHost('box.com'), false);
   assert.equal(ctx.fvdIsBlockedHost('example.com'), false);
   assert.equal(ctx.fvdIsBlockedHost('vimeo.com'), false);
 
@@ -450,4 +470,312 @@ test('background.js - no page is scanned before the terms are accepted', async (
   const injectedFiles = afterAcceptance.flatMap((arg) => arg.files || []);
   assert.ok(injectedFiles.includes('page-hook.js'), 'the MAIN-world hook must be injected');
   assert.ok(injectedFiles.includes('content.js'), 'the isolated content script must be injected');
+});
+
+// === Firefox for Android ===
+// The downloads API does not exist there (Mozilla bug 1538348), so the extension cannot
+// hand a finished file to a download manager. These tests pin both sides of that split:
+// desktop keeps the download manager, and Android finishes the download in an engine tab
+// where the file is saved through a link the user taps.
+
+// A DOM stand-in for the engine page: elements record what was done to them, which is
+// what the Android save path is judged on.
+function fakeEngineDocument() {
+  const created = [];
+  function makeElement(tagName) {
+    return {
+      tagName,
+      textContent: '',
+      href: '',
+      hidden: false,
+      className: '',
+      attrs: {},
+      children: [],
+      clicked: false,
+      setAttribute(key, value) { this.attrs[key] = value; },
+      appendChild(child) { this.children.push(child); return child; },
+      removeChild(child) {
+        const at = this.children.indexOf(child);
+        if (at >= 0) this.children.splice(at, 1);
+      },
+      click() { this.clicked = true; },
+      get firstChild() { return this.children[0] || null; }
+    };
+  }
+  const byId = {};
+  return {
+    title: '',
+    created,
+    createElement(tagName) {
+      const el = makeElement(tagName);
+      created.push(el);
+      return el;
+    },
+    getElementById(id) {
+      if (!byId[id]) byId[id] = makeElement('div');
+      return byId[id];
+    }
+  };
+}
+
+test('platform.js - the downloads API is the single switch for the save path', () => {
+  const desktop = loadScript('platform.js');
+  assert.equal(desktop.FVD_HAS_DOWNLOADS_API, true);
+  assert.equal(desktop.FVD_ENGINE_IS_ACTIVE, true);
+
+  // Firefox for Android: chrome.downloads does not exist at all.
+  const android = loadScript('platform.js', { chrome: { downloads: undefined } });
+  assert.equal(android.FVD_HAS_DOWNLOADS_API, false);
+  assert.equal(android.FVD_ENGINE_IS_ACTIVE, true, 'there the engine tab has to do the work');
+
+  // The iframe inside the Firefox background page can neither save anything nor be
+  // tapped, so on Android it must stand down or every download would run twice.
+  const framed = loadScript('platform.js', {
+    chrome: { downloads: undefined },
+    top: { parent: 'background page' }
+  });
+  assert.equal(framed.FVD_ENGINE_IN_FRAME, true);
+  assert.equal(framed.FVD_ENGINE_IS_ACTIVE, false, 'an iframe engine must not run on Android');
+
+  // The same frame stays the active engine on desktop, where it has a download manager.
+  const framedDesktop = loadScript('platform.js', { top: { parent: 'background page' } });
+  assert.equal(framedDesktop.FVD_ENGINE_IS_ACTIVE, true);
+});
+
+test('platform.js - the Android save link is a real anchor, left in place to be tapped', () => {
+  const ctx = loadScript('platform.js', { chrome: { downloads: undefined } });
+  const doc = fakeEngineDocument();
+  const container = doc.createElement('div');
+
+  const anchor = ctx.fvdShowSaveLink(doc, container, 'blob:moz-extension://fvd-test/1', 'my clip.mp4', 'Tap here');
+  assert.equal(anchor.tagName, 'a');
+  assert.equal(anchor.href, 'blob:moz-extension://fvd-test/1');
+  assert.equal(anchor.attrs.download, 'my clip.mp4', 'the filename must be on the anchor');
+  assert.equal(anchor.rel, 'noopener');
+  assert.equal(anchor.textContent, 'Tap here');
+  assert.equal(anchor.clicked, true, 'the click is attempted for the browsers that allow it');
+  assert.equal(container.children.length, 1, 'the link stays on the page for a manual tap');
+
+  // A link without a source can only ever produce a dead tap.
+  assert.equal(ctx.fvdShowSaveLink(doc, container, '', 'my clip.mp4'), null);
+  assert.equal(ctx.fvdShowSaveLink(doc, null, 'blob:x/1', 'my clip.mp4'), null);
+});
+
+test('offscreen.js - Android finishes a download as a tap-to-save link, not a download job', async () => {
+  const doc = fakeEngineDocument();
+  const sent = [];
+  const ctx = loadScript(['platform.js', 'offscreen.js'], {
+    document: doc,
+    chrome: {
+      downloads: undefined,
+      storage: {
+        local: { get: async () => ({}), set: async () => ({}), remove: async () => ({}) },
+        session: { get: async () => ({}), remove: async () => ({}) }
+      },
+      runtime: {
+        onMessage: { addListener: () => {} },
+        sendMessage: async (msg) => { sent.push(msg); return { status: 'ok' }; }
+      }
+    }
+  });
+
+  // Read from platform.js, which declares it with var; the engine's own alias of it is
+  // a const and therefore not reachable from the sandbox.
+  assert.equal(ctx.FVD_HAS_DOWNLOADS_API, false);
+  await ctx.deliverDownload('blob:moz-extension://fvd-test/1', 'my clip.mp4');
+
+  const anchors = doc.created.filter((el) => el.tagName === 'a');
+  assert.equal(anchors.length, 1, 'the finished file must end up on a real anchor');
+  assert.equal(anchors[0].attrs.download, 'my clip.mp4');
+  assert.equal(anchors[0].clicked, true);
+  assert.equal(anchors[0].children.length, 0, 'nothing is removed after the click');
+
+  // Without a download manager the save is a tap by hand, so the tab has to come forward.
+  assert.deepEqual(sent.map((m) => m.type), ['ACTIVATE_ENGINE_TAB']);
+});
+
+test('offscreen.js - desktop still hands the finished file to the download manager', async () => {
+  const calls = [];
+  const ctx = loadScript(['platform.js', 'offscreen.js'], {
+    chrome: {
+      downloads: {
+        download: async (opts) => { calls.push(opts); return 7; },
+        onChanged: { addListener: () => {} },
+        search: async () => []
+      },
+      storage: {
+        local: { get: async () => ({}), set: async () => ({}), remove: async () => ({}) },
+        session: { get: async () => ({}), remove: async () => ({}) }
+      },
+      runtime: { onMessage: { addListener: () => {} }, sendMessage: async () => {} }
+    }
+  });
+
+  assert.equal(ctx.FVD_HAS_DOWNLOADS_API, true);
+  await ctx.deliverDownload('blob:moz-extension://fvd-test/1', 'my clip.mp4');
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, 'blob:moz-extension://fvd-test/1');
+  assert.equal(calls[0].filename, 'my clip.mp4');
+});
+
+// Shared dependencencies for the background.js routing tests below.
+function backgroundStubs(overrides) {
+  return {
+    fvdIsBlockedUrl: () => false,
+    termsAcceptanceRequired: async () => false,
+    FREE_RATE_WINDOW_MINUTES: 120,
+    canStartNewDownload: async () => true,
+    consumeFreeDownloadSlot: async () => ({ allowed: true, minutesRemaining: 0 }),
+    setTimeout: () => 0,
+    setInterval: () => 0,
+    clearInterval: () => {},
+    ...overrides
+  };
+}
+
+test('background.js - loads without a downloads API instead of dying on it', () => {
+  const added = [];
+  const pageStubs = {
+    tabs: { onUpdated: { addListener: () => {} }, onRemoved: { addListener: () => {} } },
+    runtime: {
+      onInstalled: { addListener: () => {} },
+      onMessage: { addListener: () => {} },
+      sendMessage: async () => {},
+      getURL: (page) => page
+    }
+  };
+
+  // Firefox for Android: chrome.downloads does not exist. Attaching to onChanged at top
+  // level used to throw while the background loaded, which took the whole extension down
+  // with it - not just the download feature.
+  const android = loadScript(['platform.js', 'background.js'], backgroundStubs({
+    chrome: { ...pageStubs, downloads: undefined }
+  }));
+  assert.equal(android.FVD_HAS_DOWNLOADS_API, false);
+  assert.equal(typeof android.startGenericDownload, 'function', 'the background has to survive the load');
+
+  // ...and where the API does exist it must still be watched, or progress would stop.
+  const desktop = loadScript(['platform.js', 'background.js'], backgroundStubs({
+    chrome: {
+      ...pageStubs,
+      downloads: {
+        onChanged: { addListener: (fn) => added.push(fn) },
+        download: async () => 1,
+        search: async () => []
+      }
+    }
+  }));
+  assert.equal(desktop.FVD_HAS_DOWNLOADS_API, true);
+  assert.equal(added.length, 1, 'the download-manager listener must still be attached');
+});
+
+test('background.js - Android sends the download to the engine tab instead of a download manager', async () => {
+  const createdTabs = [];
+  const sent = [];
+  const ctx = loadScript(['platform.js', 'background.js'], backgroundStubs({
+    chrome: {
+      downloads: undefined,
+      tabs: {
+        onUpdated: { addListener: () => {} },
+        onRemoved: { addListener: () => {} },
+        query: async () => [],
+        create: async (opts) => { createdTabs.push(opts); return { id: 5 }; },
+        get: async () => ({ id: 5, status: 'complete' })
+      },
+      runtime: {
+        onInstalled: { addListener: () => {} },
+        onMessage: { addListener: () => {} },
+        sendMessage: async (msg) => { sent.push(msg); return { status: 'started' }; },
+        getURL: (page) => `moz-extension://fvd-test/${page}`
+      }
+    }
+  }));
+
+  assert.equal(ctx.FVD_HAS_DOWNLOADS_API, false, 'this browser has no downloads API');
+  const result = await ctx.startGenericDownload('dl-1', 'https://cdn.example.com/clip.mp4', 'clip.mp4', null);
+
+  assert.equal(result.ok, true);
+  assert.equal(createdTabs.length, 1, 'the engine has to run in a real tab on Android');
+  assert.ok(createdTabs[0].url.endsWith('offscreen.html'), 'the tab must be the engine page');
+  assert.equal(createdTabs[0].active, false, 'opening the engine must not steal the screen');
+
+  const started = sent.filter((m) => m.type !== 'OFFSCREEN_PROGRESS');
+  assert.deepEqual(started.map((m) => m.type), ['START_OFFSCREEN_GENERIC']);
+  assert.equal(started[0].url, 'https://cdn.example.com/clip.mp4');
+  assert.equal(started[0].downloadId, 'dl-1');
+});
+
+test('background.js - Android reads a page blob through the engine instead of failing on it', async () => {
+  const sent = [];
+  const createdTabs = [];
+  const ctx = loadScript(['platform.js', 'background.js'], backgroundStubs({
+    chrome: {
+      downloads: undefined,
+      tabs: {
+        onUpdated: { addListener: () => {} },
+        onRemoved: { addListener: () => {} },
+        query: async () => [],
+        create: async (opts) => { createdTabs.push(opts); return { id: 9 }; },
+        get: async () => ({ id: 9, status: 'complete' }),
+        sendMessage: async () => ({ buffer: new ArrayBuffer(4) })
+      },
+      runtime: {
+        onInstalled: { addListener: () => {} },
+        onMessage: { addListener: () => {} },
+        sendMessage: async (msg) => { sent.push(msg); return { status: 'started' }; },
+        getURL: (page) => `moz-extension://fvd-test/${page}`
+      }
+    }
+  }));
+
+  // A blob: video only exists inside the page, so the bytes have to be read there by the
+  // content script - a click made on the user's behalf may just be ignored on Android.
+  const result = await ctx.startBlobDownload('dl-3', 42, 'blob:https://site.example/9f2', 'clip.mp4');
+
+  assert.equal(result.ok, true);
+  assert.equal(createdTabs.length, 1, 'the file still has to land in the engine tab');
+  const started = sent.filter((m) => m.type !== 'OFFSCREEN_PROGRESS');
+  assert.deepEqual(started.map((m) => m.type), ['START_OFFSCREEN_BUFFER']);
+  assert.equal(started[0].downloadId, 'dl-3');
+  assert.equal(started[0].filename, 'clip.mp4');
+  assert.ok(started[0].buffer, 'the bytes read from the page must reach the engine');
+});
+
+test('background.js - desktop still downloads through the browser download manager', async () => {
+  const calls = [];
+  const sent = [];
+  const ctx = loadScript(['platform.js', 'background.js'], backgroundStubs({
+    chrome: {
+      downloads: {
+        download: async (opts) => { calls.push(opts); return 77; },
+        onChanged: { addListener: () => {} },
+        search: async () => []
+      },
+      tabs: { onUpdated: { addListener: () => {} }, onRemoved: { addListener: () => {} } },
+      runtime: {
+        onInstalled: { addListener: () => {} },
+        onMessage: { addListener: () => {} },
+        sendMessage: async (msg) => { sent.push(msg); return { status: 'ok' }; },
+        getURL: (page) => `moz-extension://fvd-test/${page}`
+      }
+    }
+  }));
+
+  assert.equal(ctx.FVD_HAS_DOWNLOADS_API, true);
+  const result = await ctx.startGenericDownload('dl-2', 'https://cdn.example.com/clip.mp4', 'clip.mp4', 'https://example.com/watch');
+
+  assert.equal(result.ok, true);
+  assert.equal(calls.length, 1, 'the download manager is used wherever it exists');
+  assert.equal(calls[0].url, 'https://cdn.example.com/clip.mp4');
+  assert.equal(calls[0].filename, 'clip.mp4');
+  assert.ok(
+    calls[0].headers.some((h) => h.name === 'Referer' && h.value === 'https://example.com/watch'),
+    'the page referer must still be forwarded'
+  );
+  assert.equal(
+    sent.some((m) => String(m.type).startsWith('START_OFFSCREEN')),
+    false,
+    'desktop must not detour through the engine'
+  );
 });

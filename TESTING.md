@@ -204,6 +204,51 @@ After activating Pro:
 
 ---
 
+## 9. Firefox for Android
+
+Everything in this section needs a real Android device or emulator. Firefox for Android
+(Fenix) has no `downloads` API — it was removed with the GeckoView rewrite (MDN support
+data: `downloads.download` / `onChanged` / `search` are `version_removed: 79`; GeckoView
+bug 1538348 is still open) — so the extension cannot hand a file to a download manager
+there. `platform.js` detects that, and on Android the download engine runs in a tab where
+the finished file is offered as a link the user taps. Nothing below can be verified
+without a device: the packaging, the capability switch and the routing are unit-tested,
+the platform behaviour itself is not.
+
+### Test: the add-on is offered on Android at all
+- **Step:** install **3.5.1** from AMO in Firefox for Android (or load the unpacked build via `about:debugging`). 3.5.1 is the Firefox-only build number: `manifest.json` in the source, and the Chrome package, are still 3.5.0.
+- **Expected:** the add-on installs; if it is missing from the Android add-on list, the packaged manifest lost `browser_specific_settings.gecko_android`
+
+### Test: the extension still loads there (the old crash)
+- **Expected:** no error for the background in `about:debugging`; the popup opens as an overlay
+- **Regression this catches:** attaching to `chrome.downloads.onChanged` at top level used to throw while the background loaded, which would kill every feature, not just downloads
+
+### Test: a direct MP4 download
+- **Step:** play a video on a normal site, open the popup, tap Download, answer the sponsor dialog
+- **Expected:** a tab opens (in the background) with a progress line, then comes forward with a file link; tapping it saves the file through Android's own download notification
+- **Expected:** if the automatic click was not honoured, the link is still there to tap by hand within 30 minutes
+
+### Test: an HLS (m3u8) download
+- **Expected:** the same end state as above, via “Merging all parts…”
+- **Expected:** the progress in the popup keeps updating while the engine tab is in the background
+
+### Test: a blob: video
+- **Expected:** the file is read through the content script and handed to the engine tab, which offers it as a tap-to-save link
+- **Regression this catches:** on Android the page-side anchor click that desktop uses may be ignored, which would previously end in “Blob download failed”
+
+### Test: pause / resume / cancel
+- **Expected:** the controls in the popup still reach the engine tab
+
+### Test: the folder settings are gone, not broken
+- **Step:** open Settings → Download location
+- **Expected:** “Ask where to save each video” and the folder picker are hidden and replaced by a line explaining that the browser saves the file itself
+
+### Test: desktop is untouched
+- **Step:** repeat a direct download and an HLS download in Firefox for **desktop** and in Chrome
+- **Expected:** identical to 3.4.1 — the download manager saves the file, the folder settings behave as before, and no engine tab is opened
+
+---
+
 ## Configuration Before Store Publish
 
 Robin must configure before publishing:

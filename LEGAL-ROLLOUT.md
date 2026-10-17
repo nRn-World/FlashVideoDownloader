@@ -87,7 +87,7 @@ consumer-law lawyer is the cheapest insurance available to you here.
 
 ## 4. Store submission checklist
 
-- [ ] Version is **3.5.0** in `manifest.json` (done) and higher than the published one.
+- [ ] Version is higher than the published one. For AMO that is **3.5.1**, which the Firefox build stamps into the package (`FIREFOX_VERSION` in `prepare_firefox_zip.py`); `manifest.json` and the Chrome package stay at 3.5.0.
 - [ ] Upload `Flash Video Downloader.zip` to Chrome Web Store, `Flash Video Downloader Firefox.zip` to AMO.
 - [ ] Paste the listing text from `STORE_LISTING.md` (both EN and SV variants are there).
 - [ ] Set the terms URL in both dashboards: `https://nrn-world.github.io/FlashVideoDownloader/terms.html`
