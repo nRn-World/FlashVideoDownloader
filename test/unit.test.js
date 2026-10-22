@@ -786,7 +786,7 @@ function loadLicenseWithServer({ stored = {}, serverReply }) {
   const store = { ...stored };
   const calls = [];
   const code = fs.readFileSync(path.join(__dirname, '..', 'license.js'), 'utf8')
-    .replace("const LICENSE_API = '';", "const LICENSE_API = 'https://license.test/';");
+    .replace(/const LICENSE_API = '[^']*';/, "const LICENSE_API = 'https://license.test/';");
   const context = {
     console, Date, Math, Set, Array, Object, String, Number, JSON, Promise, RegExp, Uint8Array, TextEncoder,
     setTimeout, clearTimeout, AbortController,

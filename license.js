@@ -18,7 +18,7 @@ const FREE_RATE_LIMIT_API = '';
 
 // Server-side license check (workers/fvd-license.js). Paste the Worker URL after deploy.
 // While empty, licenses are checked locally exactly as before (no behaviour change).
-const LICENSE_API = '';
+const LICENSE_API = 'https://fvd-license.bynrnworld.workers.dev/';
 const PRO_VERIFIED_AT_KEY = 'fvd_pro_verified_at';
 const PRO_RECHECK_MS = 24 * 60 * 60 * 1000;
 // A paid user whose server check cannot complete (offline, Worker down) keeps Pro this long.
