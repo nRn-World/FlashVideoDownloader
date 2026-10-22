@@ -16,7 +16,39 @@ const FREE_RATE_WINDOW_MS = FREE_RATE_WINDOW_HOURS * 60 * 60 * 1000;
 // Example: 'https://fvd-rate-limit.YOURNAME.workers.dev/'
 const FREE_RATE_LIMIT_API = '';
 
+// Server-side license check (workers/fvd-license.js). Paste the Worker URL after deploy.
+// While empty, licenses are checked locally exactly as before (no behaviour change).
+const LICENSE_API = '';
+const PRO_VERIFIED_AT_KEY = 'fvd_pro_verified_at';
+const PRO_RECHECK_MS = 24 * 60 * 60 * 1000;
+// A paid user whose server check cannot complete (offline, Worker down) keeps Pro this long.
+const PRO_OFFLINE_GRACE_MS = 60 * 24 * 60 * 60 * 1000;
+
+// Asks the server whether a key digest is valid.
+// Returns true/false only on a definite answer; null if the server could not be reached.
+async function verifyDigestRemote(digest) {
+  const url = (LICENSE_API || '').trim();
+  if (!url) return null;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ digest }),
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && typeof data.valid === 'boolean' ? data.valid : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 // SHA-256 hashes of valid keys (plaintext exists only on Ko-fi after payment).
+// Legacy fallback: once LICENSE_API is live and users have migrated, empty this set in a later release.
 const LICENSE_KEY_HASHES = new Set([
   '2292da59ca854fd61bb321141d8cbe2092a514d48fafad21e936a70ac7394dec'
 ]);
@@ -49,7 +81,13 @@ async function validateLicenseFormat(key) {
   }
 
   const digest = await hashLicenseKey(normalized);
-  if (!LICENSE_KEY_HASHES.has(digest)) {
+  if ((LICENSE_API || '').trim()) {
+    const remote = await verifyDigestRemote(digest);
+    if (remote === null) {
+      return { valid: false, error: 'Could not reach the license server. Check your connection and try again.' };
+    }
+    if (!remote) return { valid: false, error: 'Invalid license key' };
+  } else if (!LICENSE_KEY_HASHES.has(digest)) {
     return { valid: false, error: 'Invalid license key' };
   }
 
@@ -65,6 +103,7 @@ async function activateLicense(licenseKey) {
 
   await chrome.storage.local.set({
     [LICENSE_STORAGE_KEY]: result.digest,
+    [PRO_VERIFIED_AT_KEY]: (LICENSE_API || '').trim() ? Date.now() : 0,
     [PRO_STATUS_KEY]: {
       active: true,
       tier: result.tier,
@@ -77,35 +116,53 @@ async function activateLicense(licenseKey) {
 }
 
 async function deactivateLicense() {
-  await chrome.storage.local.remove([LICENSE_STORAGE_KEY, PRO_STATUS_KEY]);
+  await chrome.storage.local.remove([LICENSE_STORAGE_KEY, PRO_STATUS_KEY, PRO_VERIFIED_AT_KEY]);
   return { success: true };
 }
 
 async function isProUser() {
   try {
-    const data = await chrome.storage.local.get([LICENSE_STORAGE_KEY, PRO_STATUS_KEY]);
+    const data = await chrome.storage.local.get([LICENSE_STORAGE_KEY, PRO_STATUS_KEY, PRO_VERIFIED_AT_KEY]);
 
     const stored = data[LICENSE_STORAGE_KEY];
     if (!stored) {
       return { isPro: false, tier: 'free' };
     }
 
-    const digest = LICENSE_KEY_HASHES.has(stored)
-      ? stored
-      : looksLikeLicenseKey(stored)
-        ? await hashLicenseKey(normalizeLicenseKey(stored))
-        : '';
+    const digest = looksLikeLicenseKey(stored) && !LICENSE_KEY_HASHES.has(stored)
+      ? await hashLicenseKey(normalizeLicenseKey(stored))
+      : stored;
+    const proResult = { isPro: true, tier: 'pro', status: data[PRO_STATUS_KEY] };
+
+    if ((LICENSE_API || '').trim()) {
+      const now = Date.now();
+      const verifiedAt = Number(data[PRO_VERIFIED_AT_KEY]) || 0;
+      if (verifiedAt && now - verifiedAt < PRO_RECHECK_MS) return proResult;
+
+      const remote = await verifyDigestRemote(digest);
+      if (remote === true) {
+        await chrome.storage.local.set({ [LICENSE_STORAGE_KEY]: digest, [PRO_VERIFIED_AT_KEY]: now });
+        return proResult;
+      }
+      if (remote === false) {
+        await deactivateLicense();
+        return { isPro: false, tier: 'free' };
+      }
+      // Server unreachable: never take Pro away from someone who may have paid.
+      // Verified users get a long grace period; users from before the server existed
+      // are trusted while their key is in the bundled legacy list.
+      if (verifiedAt ? now - verifiedAt < PRO_OFFLINE_GRACE_MS : LICENSE_KEY_HASHES.has(digest)) {
+        return proResult;
+      }
+      return { isPro: false, tier: 'free' };
+    }
 
     if (!LICENSE_KEY_HASHES.has(digest)) {
       await deactivateLicense();
       return { isPro: false, tier: 'free' };
     }
 
-    return {
-      isPro: true,
-      tier: 'pro',
-      status: data[PRO_STATUS_KEY]
-    };
+    return proResult;
   } catch (e) {
     console.warn('[FVD License] Check failed:', e);
     return { isPro: false, tier: 'free' };

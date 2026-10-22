@@ -779,3 +779,97 @@ test('background.js - desktop still downloads through the browser download manag
     'desktop must not detour through the engine'
   );
 });
+
+// --- Server-side Pro license check -------------------------------------------------
+// Loads license.js with LICENSE_API pointed at a fake server and an in-memory storage.
+function loadLicenseWithServer({ stored = {}, serverReply }) {
+  const store = { ...stored };
+  const calls = [];
+  const code = fs.readFileSync(path.join(__dirname, '..', 'license.js'), 'utf8')
+    .replace("const LICENSE_API = '';", "const LICENSE_API = 'https://license.test/';");
+  const context = {
+    console, Date, Math, Set, Array, Object, String, Number, JSON, Promise, RegExp, Uint8Array, TextEncoder,
+    setTimeout, clearTimeout, AbortController,
+    crypto: globalThis.crypto,
+    fetch: async (url, opts) => {
+      calls.push(JSON.parse(opts.body).digest);
+      return serverReply();
+    },
+    chrome: {
+      storage: {
+        local: {
+          get: async (keys) => Object.fromEntries(keys.filter((k) => k in store).map((k) => [k, store[k]])),
+          set: async (obj) => { Object.assign(store, obj); },
+          remove: async (keys) => { keys.forEach((k) => delete store[k]); }
+        }
+      }
+    }
+  };
+  vm.createContext(context);
+  vm.runInContext(code, context);
+  return { ctx: context, store, calls };
+}
+
+const LEGACY_DIGEST = '2292da59ca854fd61bb321141d8cbe2092a514d48fafad21e936a70ac7394dec';
+const ok = (valid) => async () => ({ ok: true, json: async () => ({ valid }) });
+const down = async () => { throw new Error('offline'); };
+
+test('license server - legacy paid user is migrated and stays Pro', async () => {
+  const { ctx, store } = loadLicenseWithServer({
+    stored: { fvd_pro_license: LEGACY_DIGEST },
+    serverReply: ok(true)
+  });
+  assert.equal((await ctx.isProUser()).isPro, true);
+  assert.ok(store.fvd_pro_verified_at > 0, 'verification time is recorded');
+});
+
+test('license server - injected unknown digest is rejected and cleared', async () => {
+  const { ctx, store } = loadLicenseWithServer({
+    stored: { fvd_pro_license: 'a'.repeat(64), fvd_pro_status: { active: true } },
+    serverReply: ok(false)
+  });
+  assert.equal((await ctx.isProUser()).isPro, false);
+  assert.equal('fvd_pro_license' in store, false);
+});
+
+test('license server - paid user keeps Pro when the server is down or misconfigured', async () => {
+  const offline = loadLicenseWithServer({ stored: { fvd_pro_license: LEGACY_DIGEST }, serverReply: down });
+  assert.equal((await offline.ctx.isProUser()).isPro, true, 'legacy user, offline');
+
+  const err500 = loadLicenseWithServer({
+    stored: { fvd_pro_license: LEGACY_DIGEST },
+    serverReply: async () => ({ ok: false, json: async () => ({}) })
+  });
+  assert.equal((await err500.ctx.isProUser()).isPro, true, 'legacy user, server 500');
+
+  const verified = loadLicenseWithServer({
+    stored: { fvd_pro_license: 'b'.repeat(64), fvd_pro_verified_at: Date.now() - 3 * 24 * 3600 * 1000 },
+    serverReply: down
+  });
+  assert.equal((await verified.ctx.isProUser()).isPro, true, 'verified user, offline within grace');
+});
+
+test('license server - offline cannot unlock Pro for an unknown digest', async () => {
+  const { ctx } = loadLicenseWithServer({ stored: { fvd_pro_license: 'c'.repeat(64) }, serverReply: down });
+  assert.equal((await ctx.isProUser()).isPro, false);
+});
+
+test('license server - fresh verification is cached (no request per call)', async () => {
+  const { ctx, calls } = loadLicenseWithServer({
+    stored: { fvd_pro_license: LEGACY_DIGEST, fvd_pro_verified_at: Date.now() },
+    serverReply: ok(true)
+  });
+  await ctx.isProUser();
+  await ctx.isProUser();
+  assert.equal(calls.length, 0);
+});
+
+test('license server - activation requires a server yes', async () => {
+  const rejected = loadLicenseWithServer({ serverReply: ok(false) });
+  assert.equal((await rejected.ctx.activateLicense('FVD-PRO-AAAA-BBBB-CCCC-DDDD')).success, false);
+  assert.equal('fvd_pro_license' in rejected.store, false);
+
+  const accepted = loadLicenseWithServer({ serverReply: ok(true) });
+  assert.equal((await accepted.ctx.activateLicense('FVD-PRO-AAAA-BBBB-CCCC-DDDD')).success, true);
+  assert.equal((await accepted.ctx.isProUser()).isPro, true);
+});
