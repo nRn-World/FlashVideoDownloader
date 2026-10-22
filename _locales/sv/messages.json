@@ -375,10 +375,10 @@
     "message": "Gillar du Flash Video Downloader?"
   },
   "reviewPromptDesc": {
-    "message": "Om du gillar tillägget hjälper ett snabbt 5-stjärnigt betyg i Chrome Web Store jättemycket. Inget krav, tack!"
+    "message": "Om du gillar tillägget hjälper ett ärligt betyg i Chrome Web Store jättemycket. Inget krav, tack!"
   },
   "reviewPromptForcedDesc": {
-    "message": "Du har laddat ner 10 videor med Flash Video Downloader. Lämna gärna ett snabbt 5-stjärnigt betyg i Chrome Web Store. Det hjälper oss att fortsätta förbättra!"
+    "message": "Du har laddat ner 10 videor med Flash Video Downloader. Lämna gärna ett ärligt betyg i Chrome Web Store. Det hjälper oss att fortsätta förbättra!"
   },
   "reviewPromptLater": {
     "message": "Inte nu"
@@ -414,7 +414,7 @@
     "message": "Gillar du tillägget?"
   },
   "adReviewText": {
-    "message": "Ett snabbt 5-stjärnigt betyg hjälper fler att hitta Flash Video Downloader."
+    "message": "Ett ärligt betyg hjälper fler att hitta Flash Video Downloader."
   },
   "adAffiliateLabel": {
     "message": "Annons · affiliate"

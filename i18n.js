@@ -1,7 +1,7 @@
 const i18n = {
   en: {
     title: "Flash Video Downloader",
-    version: "v3.5.2",
+    version: "v3.5.3",
     searchPlaceholder: "Search detected videos...",
     all: "All",
     video: "Video",
@@ -167,7 +167,7 @@ const i18n = {
   },
   sv: {
     title: "Flash Video Downloader",
-    version: "v3.5.2",
+    version: "v3.5.3",
     searchPlaceholder: "Sök bland videor...",
     all: "Alla",
     video: "Video",
@@ -333,7 +333,7 @@ const i18n = {
   },
   tr: {
     title: "Flash Video Downloader",
-    version: "v3.5.2",
+    version: "v3.5.3",
     searchPlaceholder: "Tespit edilen videoları ara...",
     all: "Tümü",
     video: "Video",
@@ -499,7 +499,7 @@ const i18n = {
   },
   es: {
     title: "Flash Video Downloader",
-    version: "v3.5.2",
+    version: "v3.5.3",
     searchPlaceholder: "Buscar videos detectados...",
     all: "Todos",
     video: "Video",
@@ -665,7 +665,7 @@ const i18n = {
   },
   fr: {
     title: "Flash Video Downloader",
-    version: "v3.5.2",
+    version: "v3.5.3",
     searchPlaceholder: "Rechercher des vidéos...",
     all: "Tous",
     video: "Vidéo",
@@ -831,7 +831,7 @@ const i18n = {
   },
   ar: {
     title: "Flash Video Downloader",
-    version: "v3.5.2",
+    version: "v3.5.3",
     searchPlaceholder: "ابحث عن مقاطع الفيديو المكتشفة...",
     all: "الكل",
     video: "فيديو",

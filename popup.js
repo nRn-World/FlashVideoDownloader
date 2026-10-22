@@ -1,4 +1,4 @@
-// Flash Video Downloader - Popup Script (v3.5.2)
+// Flash Video Downloader - Popup Script (v3.5.3)
 
 document.addEventListener('DOMContentLoaded', async () => {
   // ── Terms of Service gate ────────────────────────────────────────────────

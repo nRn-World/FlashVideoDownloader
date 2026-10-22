@@ -375,10 +375,10 @@
     "message": "Enjoying Flash Video Downloader?"
   },
   "reviewPromptDesc": {
-    "message": "If you like the extension, a quick 5-star rating on the Chrome Web Store helps a lot. No pressure, thank you!"
+    "message": "If you like the extension, an honest rating on the Chrome Web Store helps a lot. No pressure, thank you!"
   },
   "reviewPromptForcedDesc": {
-    "message": "You've downloaded 10 videos with Flash Video Downloader. A quick 5-star rating on the Chrome Web Store really helps us keep improving!"
+    "message": "You've downloaded 10 videos with Flash Video Downloader. An honest rating on the Chrome Web Store really helps us keep improving!"
   },
   "reviewPromptLater": {
     "message": "Not now"
@@ -414,7 +414,7 @@
     "message": "Enjoying the extension?"
   },
   "adReviewText": {
-    "message": "A quick 5-star rating helps other people find Flash Video Downloader."
+    "message": "An honest rating helps other people find Flash Video Downloader."
   },
   "adAffiliateLabel": {
     "message": "Ad · affiliate"
