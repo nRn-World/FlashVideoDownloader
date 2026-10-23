@@ -17,7 +17,7 @@ STORE_DOC = ROOT / "STORE_LISTING.md"
 # that the Chrome build does not have yet, and Chrome keeps the version in manifest.json.
 # Raise this for every AMO upload; AMO rejects a version that is not higher than the
 # published one.
-FIREFOX_VERSION = "3.5.3"
+FIREFOX_VERSION = "3.5.4"
 
 # The review prompt inside the popup is rewritten to the AMO listing at build time.
 # Kept here so the packaged link and STORE_LISTING.md cannot drift apart again.

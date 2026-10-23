@@ -472,5 +472,11 @@
   },
   "sponsorSpeedLabel": {
     "message": "est. speed"
+  },
+  "moreToolsTitle": {
+    "message": "More tools from nRnWorld"
+  },
+  "moreToolsHint": {
+    "message": "Free extensions for Chrome and Firefox by the same developer."
   }
 }

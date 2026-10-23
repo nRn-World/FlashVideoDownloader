@@ -472,5 +472,11 @@
   },
   "sponsorSpeedLabel": {
     "message": "سرعة تقريبية"
+  },
+  "moreToolsTitle": {
+    "message": "المزيد من أدوات nRnWorld"
+  },
+  "moreToolsHint": {
+    "message": "إضافات مجانية لـ Chrome وFirefox من المطوّر نفسه."
   }
 }

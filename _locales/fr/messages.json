@@ -472,5 +472,11 @@
   },
   "sponsorSpeedLabel": {
     "message": "vit. est."
+  },
+  "moreToolsTitle": {
+    "message": "Plus d'outils de nRnWorld"
+  },
+  "moreToolsHint": {
+    "message": "Extensions gratuites pour Chrome et Firefox du même développeur."
   }
 }

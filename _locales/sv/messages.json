@@ -472,5 +472,11 @@
   },
   "sponsorSpeedLabel": {
     "message": "uppsk. fart"
+  },
+  "moreToolsTitle": {
+    "message": "Fler verktyg från nRnWorld"
+  },
+  "moreToolsHint": {
+    "message": "Gratis tillägg för Chrome och Firefox av samma utvecklare."
   }
 }

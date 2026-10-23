@@ -472,5 +472,11 @@
   },
   "sponsorSpeedLabel": {
     "message": "tahm. hız"
+  },
+  "moreToolsTitle": {
+    "message": "nRnWorld'den daha fazla araç"
+  },
+  "moreToolsHint": {
+    "message": "Aynı geliştiriciden Chrome ve Firefox için ücretsiz eklentiler."
   }
 }
