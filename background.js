@@ -913,7 +913,8 @@ chrome.runtime.onInstalled.addListener((details) => {
       useCustomDirectory: false,
       askSaveEachTime: false,
       autoDelete24h: true,
-      showWelcomeTip: true
+      showWelcomeTip: true,
+      whatsNewSeen: chrome.runtime.getManifest().version
     });
     try {
       chrome.tabs.create({ url: chrome.runtime.getURL('welcome.html') });

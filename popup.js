@@ -1171,6 +1171,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   applyLanguage();
+
+  // One-time "what's new" card; new installs are marked as seen in background.js onInstalled.
+  const WHATS_NEW_VERSION = '3.5.5';
+  const whatsNewEl = document.getElementById('whats-new');
+  if (whatsNewEl) {
+    const seen = await chrome.storage.local.get('whatsNewSeen');
+    if (seen.whatsNewSeen !== WHATS_NEW_VERSION) {
+      whatsNewEl.classList.remove('hidden');
+      document.getElementById('btn-whats-new-ok').addEventListener('click', () => {
+        whatsNewEl.classList.add('hidden');
+        chrome.storage.local.set({ whatsNewSeen: WHATS_NEW_VERSION });
+      });
+    }
+  }
   maybeShowReviewPrompt();
 
   let canLoadMedia = false;

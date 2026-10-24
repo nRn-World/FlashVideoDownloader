@@ -2181,3 +2181,10 @@ already has a key. */
   border-color: rgba(100, 116, 139, 0.7);
 }
 
+
+.whats-new { margin: 10px 12px 0; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(37, 99, 235, 0.45); background: linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(22, 30, 49, 0.85)); }
+.whats-new.hidden { display: none; }
+.whats-new-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #93c5fd; margin-bottom: 4px; }
+.whats-new-body { margin: 0 0 10px; font-size: 13px; line-height: 1.45; color: var(--text-primary); }
+.whats-new-btn { padding: 6px 14px; border: 0; border-radius: 8px; background: var(--primary-accent); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; }
+.whats-new-btn:hover { background: var(--primary-hover); }
