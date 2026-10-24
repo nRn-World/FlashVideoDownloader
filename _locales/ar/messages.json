@@ -478,5 +478,8 @@
   },
   "moreToolsHint": {
     "message": "إضافات مجانية لـ Chrome وFirefox من المطوّر نفسه."
+  },
+  "ctxDownloadVideo": {
+    "message": "تنزيل الفيديو باستخدام Flash Video Downloader"
   }
 }

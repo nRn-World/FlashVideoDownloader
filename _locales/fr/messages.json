@@ -478,5 +478,8 @@
   },
   "moreToolsHint": {
     "message": "Extensions gratuites pour Chrome et Firefox du même développeur."
+  },
+  "ctxDownloadVideo": {
+    "message": "Télécharger la vidéo avec Flash Video Downloader"
   }
 }

@@ -478,5 +478,8 @@
   },
   "moreToolsHint": {
     "message": "Gratis tillägg för Chrome och Firefox av samma utvecklare."
+  },
+  "ctxDownloadVideo": {
+    "message": "Ladda ner video med Flash Video Downloader"
   }
 }

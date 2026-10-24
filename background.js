@@ -1542,3 +1542,51 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ status: 'removed' });
   }
 });
+
+// === Right-click "Download this video" ===
+const FVD_CTX_ID = 'fvd-download-media';
+
+function fvdCreateContextMenu() {
+  if (!chrome.contextMenus) return;
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: FVD_CTX_ID,
+      title: chrome.i18n.getMessage('ctxDownloadVideo') || 'Download video with Flash Video Downloader',
+      contexts: ['video', 'audio']
+    }, () => void chrome.runtime.lastError);
+  });
+}
+chrome.runtime.onInstalled.addListener(fvdCreateContextMenu);
+if (chrome.runtime.onStartup) chrome.runtime.onStartup.addListener(fvdCreateContextMenu);
+
+if (chrome.contextMenus) chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId !== FVD_CTX_ID || !tab) return;
+  const tabId = tab.id;
+  const pageUrl = info.frameUrl || info.pageUrl || tab.url || null;
+  let url = info.srcUrl || '';
+  // Players that use blob:/MediaSource or an empty src: fall back to what was sniffed on this tab
+  if (!url || url.startsWith('blob:')) {
+    const media = Array.from((tabMedia.get(tabId) || new Map()).values());
+    const best = media.find(m => !isStreamingSegmentUrl(m.url) && !isPreviewMediaUrl(m.url));
+    if (best) url = best.url;
+  }
+  let res = { ok: false };
+  if (url && !fvdIsBlockedUrl(url) && !fvdIsBlockedUrl(pageUrl || '')) {
+    const downloadId = btoa(unescape(encodeURIComponent(url))).replace(/[^a-zA-Z0-9]/g, '').slice(0, 24) + Date.now().toString(36);
+    const filename = getCleanFilename(url, '', '');
+    const format = getFormat(url, '');
+    try {
+      if (url.startsWith('blob:')) res = await startBlobDownload(downloadId, tabId, url, filename);
+      else if (format === 'MPD') res = await startDashDownload(downloadId, url, filename, pageUrl);
+      else if (format === 'M3U8') res = await startHlsDownload(downloadId, url, filename, pageUrl);
+      else {
+        const pro = await isProUser().catch(() => ({}));
+        res = await startChunkedDownload(downloadId, url, filename, pageUrl, pro.isPro ? 8 : 1);
+      }
+    } catch (e) { res = { ok: false }; }
+  }
+  // Nothing usable, or terms/limit gate refused: show the popup, which explains and lets the user pick
+  if (!res || res.ok === false || (res.status && res.status !== 'started')) {
+    try { await chrome.action.openPopup(); } catch (e) {}
+  }
+});

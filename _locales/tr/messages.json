@@ -478,5 +478,8 @@
   },
   "moreToolsHint": {
     "message": "Aynı geliştiriciden Chrome ve Firefox için ücretsiz eklentiler."
+  },
+  "ctxDownloadVideo": {
+    "message": "Flash Video Downloader ile videoyu indir"
   }
 }
