@@ -1173,7 +1173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyLanguage();
 
   // One-time "what's new" card; new installs are marked as seen in background.js onInstalled.
-  const WHATS_NEW_VERSION = '3.5.6';
+  const WHATS_NEW_VERSION = '3.5.7';
   const whatsNewEl = document.getElementById('whats-new');
   if (whatsNewEl) {
     const seen = await chrome.storage.local.get('whatsNewSeen');

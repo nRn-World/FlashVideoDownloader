@@ -285,11 +285,167 @@ function updateBadge(tabId) {
   }
 }
 
+// === Referer injection for downloads (hotlink-protected CDNs) ===
+// Some media CDNs (e.g. erome.com) answer 403 unless the request carries the page's
+// Referer. Neither fetch() (where Referer is a forbidden header that the browser
+// silently drops) nor chrome.downloads.download() (where Referer is an "unsafe request
+// header name") can set it. webRequest rewrites headers at the network layer, so it is
+// the one place we can attach the real referer. Only hosts of URLs we are actively
+// downloading are registered, and entries expire, so ordinary browsing is never touched.
+const downloadRefererByHost = new Map(); // host -> { referer, expires }
+
+function registerDownloadReferer(url, referer) {
+  if (!url || !referer || !/^https?:\/\//i.test(referer)) return;
+  try {
+    const host = new URL(url).host;
+    if (!host) return;
+    downloadRefererByHost.set(host, { referer, expires: Date.now() + 30 * 60 * 1000 });
+  } catch (e) {}
+}
+
+// === Header rewriting via declarativeNetRequest ===
+// A normally installed MV3 extension CANNOT rewrite headers with chrome.webRequest: the
+// blocking behaviour needs webRequestBlocking, which is enterprise-only. So every
+// { responseHeaders } value returned by the listeners below is silently dropped by
+// Chrome - that is why none of the earlier header patches took effect.
+// declarativeNetRequest *can* modify headers, and that is exactly what a
+// hotlink-protected CDN such as erome.com requires: the media request must carry a
+// *.erome.com Referer, and the response must be turned into an attachment so the browser
+// saves it instead of playing it.
+// Rules go into the SESSION ruleset: it is the only ruleset where condition.tabIds is
+// legal, and the only one that never survives a browser restart.
+const DNR_ID_BASE = 100000;
+const dnrRuleIds = new Set();
+let dnrNextId = DNR_ID_BASE + 1;
+
+function dnrReady() {
+  return !!(chrome.declarativeNetRequest && chrome.declarativeNetRequest.updateSessionRules);
+}
+
+async function addDnrRule(rule) {
+  if (!dnrReady()) return null;
+  const id = rule.id || dnrNextId++;
+  try {
+    await chrome.declarativeNetRequest.updateSessionRules({
+      removeRuleIds: [id],
+      addRules: [Object.assign({}, rule, { id })]
+    });
+    dnrRuleIds.add(id);
+    return id;
+  } catch (e) {
+    console.warn('[FVD] DNR rule rejected:', (e && e.message) || e);
+    return null;
+  }
+}
+
+async function removeDnrRule(id) {
+  if (!id) return;
+  dnrRuleIds.delete(id);
+  if (!dnrReady()) return;
+  try { await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: [id] }); } catch (e) {}
+}
+
+// Drop rules that outlived a killed service worker.
+async function clearStaleDnrRules() {
+  if (!dnrReady()) return;
+  try {
+    const existing = await chrome.declarativeNetRequest.getSessionRules();
+    const ids = (existing || []).map((r) => r.id).filter((id) => id >= DNR_ID_BASE);
+    if (ids.length) await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: ids });
+  } catch (e) {}
+}
+
+// One host-scoped rule: force the site's Referer onto the request and turn the response
+// into an attachment. When tabId is given the rule only matches that tab.
+function mediaHeaderRule(host, refOrigin, filename, tabId) {
+  const safe = String(filename || 'video.mp4').replace(/["\r\n]/g, '');
+  const condition = {
+    requestDomains: [host],
+    resourceTypes: ['sub_frame', 'main_frame', 'media', 'object', 'other', 'xmlhttprequest']
+  };
+  // tabIds is rejected on dynamic rules - session rules only (see addDnrRule).
+  if (tabId && tabId > 0) condition.tabIds = [tabId];
+  const action = {
+    type: 'modifyHeaders',
+    responseHeaders: [
+      { header: 'content-disposition', operation: 'set', value: 'attachment; filename="' + safe + '"' }
+    ]
+  };
+  if (refOrigin) {
+    action.requestHeaders = [{ header: 'referer', operation: 'set', value: refOrigin + '/' }];
+  }
+  return { priority: 1, action, condition };
+}
+
+// === CORS unlock for page-context downloads ===
+// Kept for browsers that still allow response-header rewrites from webRequest. On Chrome
+// these patches are no-ops (see the note above), so nothing depends on them.
+const corsUnlockUrls = new Map(); // url -> expires
+
+function registerCorsUnlock(url) {
+  if (!url || !/^https?:\/\//i.test(url)) return;
+  corsUnlockUrls.set(url, Date.now() + 2 * 60 * 1000);
+}
+
+// === Page-navigation downloads (Referer + forced save) ===
+// The only way a normal MV3 extension can send a real page Referer is to let the PAGE
+// make the request. We navigate a hidden frame to the media URL: the browser attaches
+// erome's Referer (-> 206 video/mp4 instead of 403 HTML). The CDN sends no
+// Content-Disposition, so the navigation would just play the video; we inject
+// 'Content-Disposition: attachment' for that one URL so Chrome saves it to disk instead.
+// This stays a real browser download (streams to disk, no giant in-memory blob).
+const pendingAttachDownloads = new Map(); // url -> { filename, downloadId, expires, resolve, timer }
+
+function armAttachDownload(url, filename, downloadId, timeoutMs) {
+  if (!url || !/^https?:\/\//i.test(url)) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      const entry = pendingAttachDownloads.get(url);
+      if (entry && entry.resolve === resolve) pendingAttachDownloads.delete(url);
+      resolve(false);
+    }, timeoutMs || 15000);
+    pendingAttachDownloads.set(url, {
+      filename: filename || 'video.mp4',
+      downloadId: downloadId || null,
+      expires: Date.now() + 2 * 60 * 1000,
+      resolve,
+      timer
+    });
+  });
+}
+
 // === Network Sniffing ===
 chrome.webRequest.onHeadersReceived.addListener(
   (details) => {
-    if (details.tabId < 0) return;
     const url = details.url;
+
+    // Serve a CORS header for a URL we are actively downloading from the page context:
+    // the page fetch carries erome's Referer (so the CDN sends the video), and this
+    // header lets the page read the body the CDN would otherwise hide behind CORS.
+    if (url && corsUnlockUrls.has(url)) {
+      if (corsUnlockUrls.get(url) < Date.now()) {
+        corsUnlockUrls.delete(url);
+      } else if (details.responseHeaders) {
+        const patched = details.responseHeaders.filter((h) => (h.name || '').toLowerCase() !== 'access-control-allow-origin');
+        patched.push({ name: 'Access-Control-Allow-Origin', value: '*' });
+        return { responseHeaders: patched };
+      }
+    }
+
+    // Force a page-navigation download to save instead of play: add Content-Disposition.
+    if (url && pendingAttachDownloads.has(url)) {
+      const entry = pendingAttachDownloads.get(url);
+      if (entry.expires < Date.now()) {
+        pendingAttachDownloads.delete(url);
+      } else if (details.responseHeaders) {
+        const safe = (entry.filename || 'video.mp4').replace(/["\r\n]/g, '');
+        const patched = details.responseHeaders.filter((h) => (h.name || '').toLowerCase() !== 'content-disposition');
+        patched.push({ name: 'Content-Disposition', value: 'attachment; filename="' + safe + '"' });
+        return { responseHeaders: patched };
+      }
+    }
+
+    if (details.tabId < 0) return;
     if (!url || fvdIsBlockedUrl(url)) return;
 
     let contentType = '';
@@ -349,8 +505,39 @@ chrome.webRequest.onHeadersReceived.addListener(
     }
   },
   { urls: ['<all_urls>'] },
-  ['responseHeaders']
+  ['responseHeaders', 'extraHeaders']
 );
+
+// Rewrite the Referer (and Origin) of requests we are actively downloading, so a
+// hotlink-protected CDN sees the real page rather than the extension's own origin.
+// Registered only where the API exists; the listener does nothing for hosts we have
+// not queued a download for.
+try {
+  if (chrome.webRequest && chrome.webRequest.onBeforeSendHeaders) {
+    chrome.webRequest.onBeforeSendHeaders.addListener((details) => {
+      if (!details.url) return;
+      let host;
+      try { host = new URL(details.url).host; } catch (e) { return; }
+      const entry = downloadRefererByHost.get(host);
+      if (!entry) return;
+      if (entry.expires < Date.now()) { downloadRefererByHost.delete(host); return; }
+      const headers = (details.requestHeaders || []).slice();
+      let origin = '';
+      try { origin = new URL(entry.referer).origin; } catch (e) {}
+      let sawReferer = false, sawOrigin = false;
+      for (const h of headers) {
+        const n = (h.name || '').toLowerCase();
+        if (n === 'referer') { h.value = entry.referer; sawReferer = true; }
+        else if (n === 'origin' && origin) { h.value = origin; sawOrigin = true; }
+      }
+      if (!sawReferer) headers.push({ name: 'Referer', value: entry.referer });
+      if (!sawOrigin && origin) headers.push({ name: 'Origin', value: origin });
+      return { requestHeaders: headers };
+    }, { urls: ['<all_urls>'] }, ['requestHeaders', 'extraHeaders', 'modifyHeaders']);
+  }
+} catch (e) {
+  console.warn('[FVD] onBeforeSendHeaders referer rewrite unavailable:', e && e.message);
+}
 
 // ── Terms gate for page injection ─────────────────────────────────────────────
 // The content script must not reach a page before the user has accepted the
@@ -731,6 +918,31 @@ function handleChromeDownloadChanged(delta) {
   }
 }
 
+// Link a browser download created by our page-navigation trigger back to its tracked id.
+if (FVD_DL_API && chrome.downloads.onCreated) {
+  chrome.downloads.onCreated.addListener((item) => {
+    if (!item) return;
+    const key = item.url || '';
+    const alt = item.finalUrl || '';
+    const entry = pendingAttachDownloads.get(key) || (alt ? pendingAttachDownloads.get(alt) : null);
+    if (!entry) return;
+    if (entry.timer) clearTimeout(entry.timer);
+    pendingAttachDownloads.delete(key);
+    if (alt) pendingAttachDownloads.delete(alt);
+    if (entry.downloadId) {
+      chromeDownloadMap.set(item.id, entry.downloadId);
+      const dl = activeDownloads.get(entry.downloadId);
+      if (dl) {
+        dl.percent = Math.max(dl.percent || 5, 10);
+        activeDownloads.set(entry.downloadId, dl);
+        persistActiveDownloads();
+        emitDownloadProgress(dl);
+      }
+    }
+    if (entry.resolve) entry.resolve(true);
+  });
+}
+
 if (FVD_DL_API) {
   chrome.downloads.onChanged.addListener(handleChromeDownloadChanged);
 }
@@ -796,10 +1008,22 @@ async function saveUrlViaDownloads(fileUrl, filename, pageReferer) {
     filename: safeName,
     saveAs: await shouldPromptForSave()
   };
-  if (pageReferer && /^https?:\/\//i.test(pageReferer)) {
+  const hasReferer = pageReferer && /^https?:\/\//i.test(pageReferer);
+  if (hasReferer) {
     options.headers = [{ name: 'Referer', value: pageReferer }];
   }
-  return chrome.downloads.download(options);
+  try {
+    return await chrome.downloads.download(options);
+  } catch (err) {
+    // Some Chrome builds reject Referer as an "unsafe request header name" and fail the
+    // whole download. Drop the header and retry: webRequest re-attaches the real referer
+    // at the network layer (see registerDownloadReferer / onBeforeSendHeaders).
+    if (hasReferer) {
+      delete options.headers;
+      return chrome.downloads.download(options);
+    }
+    throw err;
+  }
 }
 
 // Poll chrome.downloads for progress — onChanged alone often misses byte updates.
@@ -813,7 +1037,7 @@ function stopChromeDownloadPoll(chromeDlId) {
   }
 }
 
-function startChromeDownloadPoll(chromeDlId, extId) {
+function startChromeDownloadPoll(chromeDlId, extId, opts) {
   if (!FVD_DL_API) return;
   stopChromeDownloadPoll(chromeDlId);
   const tick = async () => {
@@ -825,6 +1049,19 @@ function startChromeDownloadPoll(chromeDlId, extId) {
       const items = await chrome.downloads.search({ id: chromeDlId });
       const item = items && items[0];
       if (!item) return;
+
+      // A referer-less request to a hotlink-protected CDN comes back as a small HTML page
+      // with status 200, which the download manager saves as "<name>.htm". Discard it
+      // rather than leaving a bogus file behind and pretending the download worked.
+      if (opts && opts.discardIfHtml && /html|text\/plain/i.test(item.mime || '')) {
+        stopChromeDownloadPoll(chromeDlId);
+        chromeDownloadMap.delete(chromeDlId);
+        console.warn('[FVD] server returned ' + item.mime + ' instead of media; discarding', item.url);
+        discardChromeDownload(chromeDlId);
+        failTrackedDownload(extId, 'The site returned an HTML page instead of the video (host blocked the request)');
+        return;
+      }
+
       const dl = activeDownloads.get(extId);
       if (!dl || dl.status === 'completed' || dl.status === 'error' || dl.status === 'cancelled') {
         stopChromeDownloadPoll(chromeDlId);
@@ -903,6 +1140,7 @@ async function purgeExpiredHistory() {
 try {
   purgeExpiredHistory();
   restoreActiveDownloads();
+  clearStaleDnrRules();
   chrome.action.setBadgeText({ text: '' }).catch(() => {});
 } catch(e) {}
 
@@ -1016,6 +1254,8 @@ async function startHlsDownload(downloadId, playlistUrl, filename, pageReferer) 
   const gate = await gateDownloadStart();
   if (!gate.ok) return gate;
 
+  registerDownloadReferer(playlistUrl, pageReferer);
+
   try {
     activeDownloads.set(downloadId, {
       id: downloadId, url: playlistUrl, filename: filename,
@@ -1048,6 +1288,8 @@ async function startHlsDownload(downloadId, playlistUrl, filename, pageReferer) 
 async function startDashDownload(downloadId, mpdUrl, filename, pageReferer) {
   const gate = await gateDownloadStart();
   if (!gate.ok) return gate;
+
+  registerDownloadReferer(mpdUrl, pageReferer);
 
   try {
     activeDownloads.set(downloadId, {
@@ -1158,7 +1400,122 @@ async function startBlobDownload(downloadId, tabId, blobUrl, filename) {
   }
 }
 
-async function startGenericDownload(downloadId, fileUrl, filename, pageReferer) {
+// Download a direct http(s) file by fetching it from inside the page's own context.
+// This is the only method that presents the site's real Referer/cookies/Sec-Fetch
+// headers to hotlink-protected CDNs (erome, etc.). Returns { ok, size } on success,
+// or { ok:false, error } with the concrete reason (HTTP status / CORS / returned a page).
+async function tryPageContextDownload(tabId, fileUrl, filename) {
+  if (!tabId || !fileUrl || !/^https?:\/\//i.test(fileUrl)) return { ok: false };
+  try {
+    await ensureContentScript(tabId);
+    const res = await chrome.tabs.sendMessage(tabId, { type: 'DOWNLOAD_URL', url: fileUrl, filename });
+    if (res && res.ok) return { ok: true, size: res.size || 0 };
+    return { ok: false, error: (res && res.error) || 'Page download failed' };
+  } catch (e) {
+    return { ok: false, error: e && e.message ? e.message : 'No page context available' };
+  }
+}
+
+// Ask the content script to navigate a hidden frame to the media URL. The request is made
+// by the page, so it carries the site's own Referer; a session DNR rule (mediaHeaderRule)
+// adds Content-Disposition so Chrome saves the file instead of playing it.
+async function triggerNavDownload(tabId, url) {
+  if (!tabId || !url || !/^https?:\/\//i.test(url)) return false;
+  try {
+    await ensureContentScript(tabId);
+    const res = await chrome.tabs.sendMessage(tabId, { type: 'NAV_DOWNLOAD', url });
+    return !!(res && res.ok);
+  } catch (e) {
+    return false;
+  }
+}
+
+// Download a direct file by letting the PAGE navigate to it, with a session DNR rule that
+// (a) sets the site's Referer and (b) turns the response into an attachment. The page makes
+// the request, so the CDN sees a legitimate navigation, and the injected
+// Content-Disposition makes Chrome save the bytes instead of playing them. The download is
+// streamed to disk by the browser, so a 1 GB file never sits in memory.
+async function startPageNavDownload(downloadId, tabId, fileUrl, filename, pageReferer) {
+  if (!tabId || !fileUrl || !/^https?:\/\//i.test(fileUrl)) return false;
+  if (!dnrReady()) {
+    console.warn('[FVD] declarativeNetRequest unavailable - cannot force a save');
+    return false;
+  }
+
+  let host = '';
+  try { host = new URL(fileUrl).hostname; } catch (e) { return false; }
+  if (!host) return false;
+
+  // The referer is deliberately left alone here: the navigation is made by the page, so
+  // the browser already sends the site's own Referer. Forcing a value would risk sending a
+  // wrong one (e.g. the CDN's own origin) and cause the 403 we are trying to avoid.
+  const ruleId = await addDnrRule(mediaHeaderRule(host, '', filename, tabId));
+  if (!ruleId) return false;
+
+  const waiter = armAttachDownload(fileUrl, filename, downloadId, 12000);
+  const sent = await triggerNavDownload(tabId, fileUrl);
+  const created = !!(sent && await waiter);
+
+  if (!created) {
+    await removeDnrRule(ruleId);
+    console.warn('[FVD] page-navigation download did not start (nav sent=' + sent + '):', fileUrl);
+    return false;
+  }
+  // Keep the rule for a while so resumed/range requests of this download keep both headers.
+  setTimeout(() => removeDnrRule(ruleId), 60000);
+  return true;
+}
+
+// Native download with a DNR rule supplying the Referer the downloads API cannot set.
+// A hotlink-protected CDN answers a referer-less request with a small HTML page and status
+// 200, which is what used to end up saved as "<name>.htm". The response is therefore
+// verified while the download runs (discardIfHtml below) instead of being trusted.
+async function startNativeDnrDownload(downloadId, fileUrl, filename, pageReferer) {
+  if (!FVD_DL_API) return false;
+
+  let host = '';
+  try { host = new URL(fileUrl).hostname; } catch (e) { return false; }
+  // Only a real page referer is usable; the media URL's own origin would be rejected.
+  let refOrigin = '';
+  try {
+    if (pageReferer && /^https?:\/\//i.test(pageReferer)) refOrigin = new URL(pageReferer).origin;
+  } catch (e) { refOrigin = ''; }
+
+  // No tabId: download-manager requests do not originate from a tab.
+  const ruleId = await addDnrRule(mediaHeaderRule(host, refOrigin, filename, 0));
+
+  let chromeDlId;
+  try {
+    chromeDlId = await saveUrlViaDownloads(fileUrl, filename, pageReferer);
+  } catch (e) {
+    await removeDnrRule(ruleId);
+    return false;
+  }
+
+  chromeDownloadMap.set(chromeDlId, downloadId);
+  const dl = activeDownloads.get(downloadId);
+  if (dl) {
+    dl.percent = Math.max(dl.percent || 5, 15);
+    activeDownloads.set(downloadId, dl);
+    persistActiveDownloads();
+    emitDownloadProgress(dl);
+  }
+  startChromeDownloadPoll(chromeDlId, downloadId, { discardIfHtml: true });
+  if (ruleId) setTimeout(() => removeDnrRule(ruleId), 60000);
+  return true;
+}
+
+// Cancel a download we started and remove the file if it already landed on disk.
+async function discardChromeDownload(chromeDlId) {
+  try { await chrome.downloads.cancel(chromeDlId); } catch (e) {}
+  try {
+    const items = await chrome.downloads.search({ id: chromeDlId });
+    if (items && items[0] && items[0].state === 'complete') await chrome.downloads.removeFile(chromeDlId);
+  } catch (e) {}
+  try { await chrome.downloads.erase({ id: chromeDlId }); } catch (e) {}
+}
+
+async function startGenericDownload(downloadId, fileUrl, filename, pageReferer, tabId) {
   if (fileUrl && fileUrl.startsWith('blob:')) {
     console.warn('[FVD] blob: URL must use START_BLOB_DOWNLOAD');
     return { ok: false, status: 'error' };
@@ -1179,41 +1536,43 @@ async function startGenericDownload(downloadId, fileUrl, filename, pageReferer) 
   updateBadge();
   persistActiveDownloads();
 
+  registerDownloadReferer(fileUrl, pageReferer);
+
+  // Path 1: let the page navigate to the file with a DNR rule that forces the save. The
+  // page's own Referer satisfies hotlink protection and the browser streams it to disk.
+  if (await startPageNavDownload(downloadId, tabId, fileUrl, filename, pageReferer)) {
+    return { ok: true, status: 'started' };
+  }
+
+  // Path 2: the download manager, with the same DNR rule supplying the Referer it cannot
+  // set itself. The response is verified so an HTML interstitial is never kept.
+  if (await startNativeDnrDownload(downloadId, fileUrl, filename, pageReferer)) {
+    return { ok: true, status: 'started' };
+  }
+
+  // Path 3: the engine's own fetch, which is all that is left where no host-level
+  // protection applies.
   try {
-    const chromeDlId = await saveUrlViaDownloads(fileUrl, filename, pageReferer);
-    chromeDownloadMap.set(chromeDlId, downloadId);
-    dlState.percent = 15;
-    activeDownloads.set(downloadId, dlState);
-    persistActiveDownloads();
-    emitDownloadProgress(dlState);
-    startChromeDownloadPoll(chromeDlId, downloadId);
-  } catch (primaryErr) {
-    console.warn('[FVD] chrome.downloads failed, trying offscreen fetch:', primaryErr && primaryErr.message);
-    try {
-      await ensureOffscreenDocument();
-      await chrome.runtime.sendMessage({
-        type: 'START_OFFSCREEN_GENERIC',
-        downloadId: downloadId,
-        url: fileUrl,
-        filename: filename,
-        pageReferer: pageReferer || null
-      });
-    } catch (fallbackErr) {
-      failTrackedDownload(
-        downloadId,
-        (primaryErr && primaryErr.message) || (fallbackErr && fallbackErr.message) || 'Download failed'
-      );
-      return { ok: false, status: 'error' };
-    }
+    await ensureOffscreenDocument();
+    await chrome.runtime.sendMessage({
+      type: 'START_OFFSCREEN_GENERIC',
+      downloadId: downloadId,
+      url: fileUrl,
+      filename: filename,
+      pageReferer: pageReferer || null
+    });
+  } catch (fallbackErr) {
+    failTrackedDownload(downloadId, (fallbackErr && fallbackErr.message) || 'Download failed');
+    return { ok: false, status: 'error' };
   }
   return { ok: true, status: 'started' };
 }
 
 // Parallel chunk downloader — routes to offscreen runChunkedDownload
 // threads=1: normal (single stream), threads=4: fast, threads=8: pro
-async function startChunkedDownload(downloadId, fileUrl, filename, pageReferer, threads) {
+async function startChunkedDownload(downloadId, fileUrl, filename, pageReferer, threads, tabId) {
   if (fileUrl && fileUrl.startsWith('blob:')) {
-    return startGenericDownload(downloadId, fileUrl, filename, pageReferer);
+    return startGenericDownload(downloadId, fileUrl, filename, pageReferer, tabId);
   }
 
   const gate = await gateDownloadStart();
@@ -1231,6 +1590,22 @@ async function startChunkedDownload(downloadId, fileUrl, filename, pageReferer, 
   updateBadge();
   persistActiveDownloads();
 
+  registerDownloadReferer(fileUrl, pageReferer);
+
+  // Primary: download through a page navigation so the browser sends the site's real
+  // Referer, which is the only thing a hotlink-protected CDN such as erome.com accepts.
+  // The injected Content-Disposition forces a save; chrome.downloads cannot set Referer
+  // and a normal MV3 extension cannot rewrite its own requests with webRequest.
+  if (await startPageNavDownload(downloadId, tabId, fileUrl, filename, pageReferer)) {
+    return { ok: true, status: 'started' };
+  }
+
+  // Path 2: the download manager with the DNR referer; the response is verified so an
+  // HTML interstitial is never kept. Then the offscreen engine as the last resort.
+  if (await startNativeDnrDownload(downloadId, fileUrl, filename, pageReferer)) {
+    return { ok: true, status: 'started' };
+  }
+
   try {
     await ensureOffscreenDocument();
     await chrome.runtime.sendMessage({
@@ -1243,7 +1618,7 @@ async function startChunkedDownload(downloadId, fileUrl, filename, pageReferer, 
     });
   } catch (err) {
     console.warn('[FVD] Chunked offscreen failed, falling back to generic:', err && err.message);
-    return startGenericDownload(downloadId, fileUrl, filename, pageReferer);
+    return startGenericDownload(downloadId, fileUrl, filename, pageReferer, tabId);
   }
 
   return { ok: true, status: 'started' };
@@ -1369,7 +1744,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ status: 'blocked' });
       return;
     }
-    startChunkedDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message), message.threads || 1)
+    startChunkedDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message), message.threads || 1, message.tabId)
       .then((result) => sendResponse(result || { status: 'started' }))
       .catch(() => sendResponse({ status: 'error' }));
     return true;
@@ -1379,7 +1754,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ status: 'blocked' });
       return;
     }
-    startGenericDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message))
+    startGenericDownload(message.downloadId, message.url, message.filename, resolvePageReferer(message), message.tabId)
       .then((result) => sendResponse(result || { status: 'started' }))
       .catch(() => sendResponse({ status: 'error' }));
     return true;
@@ -1547,28 +1922,51 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // === Right-click "Download this video" ===
 const FVD_CTX_ID = 'fvd-download-media';
 
+// 'video'/'audio' only match when the click lands on the element itself. Most players put
+// an overlay, poster or control bar on top of the video, so the menu never appeared there.
+// 'page'/'frame'/'link' are included as well and the click handler falls back to the media
+// sniffed on the tab, which is what the popup uses too.
+function fvdMenuSpec() {
+  return {
+    id: FVD_CTX_ID,
+    title: chrome.i18n.getMessage('ctxDownloadVideo') || 'Download video with Flash Video Downloader',
+    contexts: ['video', 'audio', 'page', 'frame', 'link']
+  };
+}
+
 function fvdCreateContextMenu() {
   if (!chrome.contextMenus) return;
   chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({
-      id: FVD_CTX_ID,
-      title: chrome.i18n.getMessage('ctxDownloadVideo') || 'Download video with Flash Video Downloader',
-      contexts: ['video', 'audio']
-    }, () => void chrome.runtime.lastError);
+    chrome.contextMenus.create(fvdMenuSpec(), () => void chrome.runtime.lastError);
   });
 }
+
+// Chrome removes every context menu of an extension when it is reloaded, and a reload does
+// not fire onInstalled - so without this the menu stayed missing until the browser was
+// restarted. Re-creating is idempotent; a duplicate id only raises lastError, which is
+// ignored here.
+function fvdEnsureContextMenu() {
+  if (!chrome.contextMenus) return;
+  chrome.contextMenus.create(fvdMenuSpec(), () => void chrome.runtime.lastError);
+}
+
 chrome.runtime.onInstalled.addListener(fvdCreateContextMenu);
 if (chrome.runtime.onStartup) chrome.runtime.onStartup.addListener(fvdCreateContextMenu);
+fvdEnsureContextMenu();
 
 if (chrome.contextMenus) chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== FVD_CTX_ID || !tab) return;
   const tabId = tab.id;
   const pageUrl = info.frameUrl || info.pageUrl || tab.url || null;
   let url = info.srcUrl || '';
-  // Players that use blob:/MediaSource or an empty src: fall back to what was sniffed on this tab
+  // Players that use blob:/MediaSource or an empty src: fall back to what was sniffed on
+  // this tab. Images are skipped - an album page has plenty of those and the menu is for
+  // video - and anything that looks like a video file wins.
   if (!url || url.startsWith('blob:')) {
-    const media = Array.from((tabMedia.get(tabId) || new Map()).values());
-    const best = media.find(m => !isStreamingSegmentUrl(m.url) && !isPreviewMediaUrl(m.url));
+    const media = Array.from((tabMedia.get(tabId) || new Map()).values())
+      .filter(m => m && m.url && !isStreamingSegmentUrl(m.url) && !isPreviewMediaUrl(m.url));
+    const looksLikeVideo = (u) => /\.(mp4|webm|mkv|mov|m4v|m3u8|mpd|ts|flv|avi)(\?|#|$)/i.test(u);
+    const best = media.find(m => looksLikeVideo(m.url)) || media.find(m => m.url.startsWith('blob:'));
     if (best) url = best.url;
   }
   let res = { ok: false };
@@ -1582,7 +1980,7 @@ if (chrome.contextMenus) chrome.contextMenus.onClicked.addListener(async (info, 
       else if (format === 'M3U8') res = await startHlsDownload(downloadId, url, filename, pageUrl);
       else {
         const pro = await isProUser().catch(() => ({}));
-        res = await startChunkedDownload(downloadId, url, filename, pageUrl, pro.isPro ? 8 : 1);
+        res = await startChunkedDownload(downloadId, url, filename, pageUrl, pro.isPro ? 8 : 1, tabId);
       }
     } catch (e) { res = { ok: false }; }
   }

@@ -832,6 +832,66 @@
       })();
       return true;
     }
+    if (req && req.type === 'DOWNLOAD_URL') {
+      (async () => {
+        try {
+          if (!req.url || !/^https?:\/\//i.test(req.url)) {
+            sendResponse({ error: 'Invalid URL' });
+            return;
+          }
+          // Fetch from the page's own context: the browser attaches the real Referer
+          // (forced to the full page URL so hotlink protection is satisfied), so the
+          // CDN returns the actual media. credentials:'omit' + no cookies keeps the
+          // wildcard CORS header (injected by the background) valid for this read.
+          const res = await fetch(req.url, { credentials: 'omit', referrerPolicy: 'unsafe-url' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const type = (res.headers.get('content-type') || '').toLowerCase();
+          const blob = await res.blob();
+          if (!blob || blob.size === 0) throw new Error('Empty response');
+          if (type.indexOf('text/html') !== -1) {
+            throw new Error('The site returned a page, not the video (hotlink protected).');
+          }
+
+          const filename = (req.filename || 'video.mp4').replace(/[/\\?%*:|"<>]/g, '_');
+          const objUrl = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = objUrl;
+          anchor.download = filename;
+          anchor.rel = 'noopener';
+          anchor.style.display = 'none';
+          document.documentElement.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+          setTimeout(() => URL.revokeObjectURL(objUrl), 120000);
+          sendResponse({ ok: true, size: blob.size });
+        } catch (e) {
+          sendResponse({ error: e && e.message ? e.message : 'Page download failed' });
+        }
+      })();
+      return true;
+    }
+    if (req && req.type === 'NAV_DOWNLOAD') {
+      try {
+        if (!req.url || !/^https?:\/\//i.test(req.url)) {
+          sendResponse({ error: 'Invalid URL' });
+          return true;
+        }
+        // Navigate a hidden frame to the media URL. The browser makes the request from the
+        // page, so it carries the site's Referer (required by hotlink-protected CDNs). The
+        // background injects Content-Disposition: attachment so Chrome saves the file
+        // instead of playing it, and it streams straight to disk.
+        const frame = document.createElement('iframe');
+        frame.style.display = 'none';
+        frame.setAttribute('referrerpolicy', 'unsafe-url');
+        frame.src = req.url;
+        (document.documentElement || document.body).appendChild(frame);
+        setTimeout(() => { try { frame.remove(); } catch (e) {} }, 180000);
+        sendResponse({ ok: true });
+      } catch (e) {
+        sendResponse({ error: e && e.message ? e.message : 'Navigation download failed' });
+      }
+      return true;
+    }
     return false;
   }
 

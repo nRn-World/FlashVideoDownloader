@@ -1,6 +1,6 @@
 {
   "name": "flash-video-downloader",
-  "version": "3.5.6",
+  "version": "3.5.7",
   "private": true,
   "description": "Browser extension that detects and downloads videos from web pages.",
   "license": "CC-BY-NC-4.0",
